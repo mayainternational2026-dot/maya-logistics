@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import Shipments from "@/pages/shipments/Shipments";
 import NewShipment from "@/pages/shipments/NewShipment";
 import ShipmentDetails from "@/pages/shipments/ShipmentDetails";
+import Invoice from "@/pages/shipments/Invoice";
 import Users from "@/pages/admin/Users";
 import StaffActivity from "@/pages/admin/StaffActivity";
 import Profile from "@/pages/Profile";
@@ -45,6 +46,9 @@ function Router() {
             </Route>
             <Route path="/shipments/new">
               <ProtectedRoute><NewShipment /></ProtectedRoute>
+            </Route>
+            <Route path="/shipments/:id/invoice">
+              <ProtectedRoute><Invoice /></ProtectedRoute>
             </Route>
             <Route path="/shipments/:id">
               <ProtectedRoute><ShipmentDetails /></ProtectedRoute>

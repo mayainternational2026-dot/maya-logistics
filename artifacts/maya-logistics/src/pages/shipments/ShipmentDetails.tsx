@@ -51,7 +51,6 @@ import {
   formatNPR,
   statusBadgeClass,
   statusLabel,
-  buildInvoiceUrl,
 } from "@/lib/utils";
 
 export default function ShipmentDetails() {
@@ -157,8 +156,6 @@ export default function ShipmentDetails() {
       },
     );
   };
-
-  const invoiceUrl = buildInvoiceUrl(data);
 
   return (
     <div className="space-y-6">
@@ -321,11 +318,11 @@ export default function ShipmentDetails() {
 
             {/* Invoice button — always visible for admin/staff-with-perm; for customer only when paid */}
             {canInvoice && (
-              <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
+              <Link href={`/shipments/${id}/invoice`}>
                 <Button className="gap-2 bg-secondary hover:bg-secondary/90 text-white">
                   <FileText className="h-4 w-4" /> View Invoice
                 </Button>
-              </a>
+              </Link>
             )}
 
             {/* Admin/staff controls */}
