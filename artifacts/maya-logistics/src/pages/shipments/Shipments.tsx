@@ -23,7 +23,6 @@ import {
   formatNPR,
   statusBadgeClass,
   statusLabel,
-  buildInvoiceUrl,
 } from "@/lib/utils";
 
 type StatusFilter = "all" | "pending" | "in_transit" | "delivered";
@@ -41,8 +40,9 @@ export default function Shipments() {
     query: { queryKey: getListShipmentsQueryKey(params) },
   });
 
-  const canGenerateInvoice =
-    user?.role === "customer" || (user?.permissions?.canGenerateInvoice ?? false);
+  const isAdmin = user?.role === "admin";
+  const isStaff = user?.role === "staff";
+  const isCustomer = user?.role === "customer";
 
   return (
     <div className="space-y-6">
@@ -170,20 +170,18 @@ export default function Shipments() {
                             Track
                           </Button>
                         </Link>
-                        {canGenerateInvoice && (
-                          <a
-                            href={buildInvoiceUrl(row)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
+                        {(isAdmin ||
+                          (isStaff && (user?.permissions?.canGenerateInvoice ?? false)) ||
+                          (isCustomer && row.paid)) && (
+                          <Link href={`/shipments/${row.id}/invoice`}>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 gap-1"
+                              className="h-8 gap-1 border-blue-300 text-blue-700 hover:bg-blue-50"
                             >
                               <FileText className="h-3.5 w-3.5" /> Invoice
                             </Button>
-                          </a>
+                          </Link>
                         )}
                       </div>
                     </td>
