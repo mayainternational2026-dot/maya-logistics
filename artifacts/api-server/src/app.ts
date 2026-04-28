@@ -10,6 +10,9 @@ import { pool } from "@workspace/db";
 
 const app: Express = express();
 
+// Trust Replit's reverse proxy so req.secure and cookies work correctly in production
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
@@ -42,7 +45,7 @@ app.use(
     store: new PgSession({
       pool,
       tableName: "session",
-      createTableIfMissing: false,
+      createTableIfMissing: true,
     }),
     name: "maya.sid",
     secret: sessionSecret,

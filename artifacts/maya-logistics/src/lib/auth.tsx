@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useGetCurrentUser } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +25,15 @@ export function ProtectedRoute({
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      setLocation("/login");
+    } else if (allowedRoles && !allowedRoles.includes(user.role)) {
+      setLocation("/dashboard");
+    }
+  }, [user, isLoading, allowedRoles, setLocation]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -33,15 +42,8 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user) {
-    setLocation("/login");
-    return null;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    setLocation("/dashboard");
-    return null;
-  }
+  if (!user) return null;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return null;
 
   return <>{children}</>;
 }
