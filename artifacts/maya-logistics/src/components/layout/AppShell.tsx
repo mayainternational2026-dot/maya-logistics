@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/use-auth";
 import { LayoutDashboard, Package, Users, Activity, User as UserIcon, LogOut, Map } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";

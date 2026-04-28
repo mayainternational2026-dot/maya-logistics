@@ -10,7 +10,7 @@ import {
   getGetRecentShipmentsQueryKey,
   getGetRevenueTrendQueryKey,
 } from "@workspace/api-client-react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/use-auth";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

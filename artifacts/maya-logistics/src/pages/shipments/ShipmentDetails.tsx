@@ -9,7 +9,7 @@ import {
   getListShipmentsQueryKey,
   getGetDashboardSummaryQueryKey,
 } from "@workspace/api-client-react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/use-auth";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";

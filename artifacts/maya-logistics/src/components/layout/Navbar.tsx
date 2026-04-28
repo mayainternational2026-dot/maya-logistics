@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Plane, Ship, Truck, Package, Menu, X, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";

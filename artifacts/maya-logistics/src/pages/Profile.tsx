@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/use-auth";
 import { useLogout } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";

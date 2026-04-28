@@ -1,14 +1,9 @@
-import { createContext, useContext, ReactNode } from "react";
-import { useGetCurrentUser, User } from "@workspace/api-client-react";
+import { ReactNode } from "react";
+import { useGetCurrentUser } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from "./auth-context";
+import { useAuth } from "./use-auth";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isLoading } = useGetCurrentUser();
@@ -20,20 +15,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}
-
-export function ProtectedRoute({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) {
+export function ProtectedRoute({
+  children,
+  allowedRoles,
+}: {
+  children: ReactNode;
+  allowedRoles?: string[];
+}) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Skeleton className="h-12 w-12 rounded-full" /></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Skeleton className="h-12 w-12 rounded-full" />
+      </div>
+    );
   }
 
   if (!user) {
