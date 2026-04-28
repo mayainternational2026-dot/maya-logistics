@@ -12,7 +12,12 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { generateTrackingId } from "../lib/tracking";
-import { serializeShipment, serializeShipments } from "../lib/serialize";
+import { serializeShipment, serializeShipments, loadUserMeta } from "../lib/serialize";
+import {
+  sendStatusUpdateEmail,
+  sendPaymentConfirmedEmail,
+  type ShipmentStatus,
+} from "../lib/mailer";
 
 const router: IRouter = Router();
 
@@ -208,6 +213,18 @@ router.patch(
     }
     if (body.data.notes != null) updates.notes = body.data.notes.trim() || null;
 
+    // Fetch current row before update so we can detect changes
+    const [existing] = await db
+      .select()
+      .from(shipmentsTable)
+      .where(eq(shipmentsTable.id, params.data.id))
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "Shipment not found" });
+      return;
+    }
+
     const [row] = await db
       .update(shipmentsTable)
       .set(updates)
@@ -220,6 +237,36 @@ router.patch(
     }
 
     res.json(await serializeShipment(row));
+
+    // Send emails asynchronously — don't block the response
+    if (row.customerId) {
+      const customer = await loadUserMeta(row.customerId);
+      if (customer?.email) {
+        const shipmentData = {
+          trackingId: row.trackingId,
+          customerName: customer.name,
+          customerEmail: customer.email,
+          origin: row.origin,
+          destination: row.destination,
+          weight: Number(row.weight),
+          cost: Number(row.cost),
+        };
+
+        // Payment confirmed
+        if (body.data.paid === true && !existing.paid) {
+          sendPaymentConfirmedEmail(shipmentData).catch((e) =>
+            req.log.error({ err: e }, "Failed to send payment email"),
+          );
+        }
+
+        // Status changed
+        if (body.data.status && body.data.status !== existing.status) {
+          sendStatusUpdateEmail(shipmentData, body.data.status as ShipmentStatus).catch(
+            (e) => req.log.error({ err: e }, "Failed to send status email"),
+          );
+        }
+      }
+    }
   },
 );
 

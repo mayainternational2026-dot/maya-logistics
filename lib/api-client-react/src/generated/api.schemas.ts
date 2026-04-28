@@ -30,7 +30,11 @@ export type ShipmentStatus =
 
 export const ShipmentStatus = {
   pending: "pending",
+  collected: "collected",
+  at_warehouse: "at_warehouse",
+  customs_clearance: "customs_clearance",
   in_transit: "in_transit",
+  arrived: "arrived",
   delivered: "delivered",
 } as const;
 

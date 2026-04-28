@@ -14,7 +14,7 @@ export interface SerializedShipment {
   destination: string;
   weight: number;
   cost: number;
-  status: "pending" | "in_transit" | "delivered";
+  status: "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
   paid: boolean;
   paidAt: string | null;
   notes: string | null;

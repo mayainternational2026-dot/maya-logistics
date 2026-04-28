@@ -529,7 +529,7 @@ components:
 
     ShipmentStatus:
       type: string
-      enum: [pending, in_transit, delivered]
+      enum: [pending, collected, at_warehouse, customs_clearance, in_transit, arrived, delivered]
 
     Permissions:
       type: object

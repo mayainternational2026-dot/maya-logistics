@@ -67,9 +67,8 @@ export default function ShipmentDetails() {
   const update = useUpdateShipment();
   const remove = useDeleteShipment();
 
-  const [status, setStatus] = useState<"pending" | "in_transit" | "delivered">(
-    "pending",
-  );
+  type ShipStatus = "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
+  const [status, setStatus] = useState<ShipStatus>("pending");
   useEffect(() => {
     if (data?.status) setStatus(data.status);
   }, [data?.status]);
@@ -106,7 +105,7 @@ export default function ShipmentDetails() {
     queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
   };
 
-  const handleStatusChange = (newStatus: "pending" | "in_transit" | "delivered") => {
+  const handleStatusChange = (newStatus: ShipStatus) => {
     setStatus(newStatus);
     update.mutate(
       { id, data: { status: newStatus } },
@@ -351,17 +350,19 @@ export default function ShipmentDetails() {
 
                 <Select
                   value={status}
-                  onValueChange={(v) =>
-                    handleStatusChange(v as "pending" | "in_transit" | "delivered")
-                  }
+                  onValueChange={(v) => handleStatusChange(v as ShipStatus)}
                 >
                   <SelectTrigger className="w-44 h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_transit">In Transit</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="pending">📦 Order Received</SelectItem>
+                    <SelectItem value="collected">🚚 Shipment Collected</SelectItem>
+                    <SelectItem value="at_warehouse">🏭 At Warehouse</SelectItem>
+                    <SelectItem value="customs_clearance">🛃 Customs Clearance</SelectItem>
+                    <SelectItem value="in_transit">✈️ In Transit</SelectItem>
+                    <SelectItem value="arrived">🏢 Arrived at Office</SelectItem>
+                    <SelectItem value="delivered">✅ Dispatched</SelectItem>
                   </SelectContent>
                 </Select>
 
