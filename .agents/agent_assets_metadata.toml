@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "rXieVhVFkivPJm6Cg1tiQ"
@@ -18,3 +17,9 @@ id = "nuK-b-hfs8NGu_Ux7nwbs"
 uri = "file://artifacts/maya-logistics/public/hero-road.png"
 type = "image"
 title = "freight trucks on mountain road"
+
+[[outputs]]
+id = "w_evcbXAbxafCrahQdnW3"
+uri = "file://maya-php.zip"
+type = "unspecified"
+title = "maya-php.zip — Complete PHP + MySQL version of Maya Import Export Logistic"
