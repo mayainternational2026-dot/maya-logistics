@@ -51,7 +51,7 @@ export default function Login() {
           <p className="mt-2 text-sm text-gray-500">Manage your global shipments</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit} autoComplete="off">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -68,7 +68,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 h-12 bg-gray-50"
                   placeholder="Enter your email"
-                  autoComplete="email"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -87,7 +87,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 h-12 bg-gray-50"
                   placeholder="••••••••"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                 />
               </div>
             </div>
