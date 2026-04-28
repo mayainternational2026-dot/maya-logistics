@@ -119,6 +119,43 @@ export interface ShipmentEmailData {
   cost: number;
 }
 
+export async function sendOtpEmail(
+  toEmail: string,
+  otp: string,
+): Promise<void> {
+  const transport = createTransport();
+  if (!transport) {
+    logger.warn("GMAIL credentials not set — skipping OTP email");
+    return;
+  }
+
+  const body = `
+    <h2 style="margin:0 0 4px;font-size:20px;color:#0f1f3d;">Password Reset Request</h2>
+    <p style="margin:0 0 24px;color:#64748b;font-size:14px;">
+      We received a request to reset your Maya Logistics account password.
+      Use the code below — it expires in <strong>15 minutes</strong>.
+    </p>
+
+    <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:12px;padding:28px 24px;margin-bottom:28px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Your One-Time Code</p>
+      <p style="margin:0;font-size:40px;font-weight:800;color:#dc2626;letter-spacing:10px;font-family:monospace;">${otp}</p>
+    </div>
+
+    <p style="margin:0 0 4px;font-size:13px;color:#64748b;">
+      If you did not request a password reset, please ignore this email or contact support.
+    </p>
+  `;
+
+  await transport.sendMail({
+    from: `"${COMPANY_NAME}" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
+    subject: `🔐 Your Maya Logistics Password Reset Code: ${otp}`,
+    html: htmlTemplate(body),
+  });
+
+  logger.info({ to: toEmail }, "OTP email sent");
+}
+
 export async function sendStatusUpdateEmail(
   shipment: ShipmentEmailData,
   status: ShipmentStatus,

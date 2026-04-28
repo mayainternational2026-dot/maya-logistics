@@ -17,6 +17,7 @@ import {
   verifyPassword,
   loadUserById,
 } from "../lib/auth";
+import { sendOtpEmail } from "../lib/mailer";
 
 const router: IRouter = Router();
 
@@ -136,6 +137,10 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
       otp,
       expiresAt,
     });
+    // Send OTP to the user's email — fire-and-forget, errors are logged
+    sendOtpEmail(user.email, otp).catch((err) =>
+      req.log.error({ err, email: user.email }, "Failed to send OTP email"),
+    );
   }
 
   req.log.info(
@@ -145,10 +150,7 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
 
   res.json({
     message:
-      "If that email is registered, a one-time code has been sent. The OTP has also been delivered to the admin recovery channels for this demo.",
-    otp: user ? otp : null,
-    sentToEmail: "greenhouse2053@gmail.com",
-    sentToPhone: "9845965460",
+      "If that email is registered, a one-time code has been sent to your inbox.",
   });
 });
 

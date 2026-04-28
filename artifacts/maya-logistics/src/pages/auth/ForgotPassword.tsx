@@ -4,7 +4,7 @@ import { useForgotPassword, useResetPassword } from "@workspace/api-client-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, KeyRound, Lock } from "lucide-react";
+import { Mail, KeyRound, Lock, CheckCircle } from "lucide-react";
 
 type Step = "email" | "otp";
 
@@ -18,21 +18,17 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [demoOtp, setDemoOtp] = useState<string | null>(null);
 
   const handleRequest = (e: React.FormEvent) => {
     e.preventDefault();
     forgot.mutate(
       { data: { email } },
       {
-        onSuccess: (data) => {
-          setDemoOtp(data?.otp ?? null);
+        onSuccess: () => {
           setStep("otp");
           toast({
-            title: "Check your inbox",
-            description: data?.otp
-              ? `Demo OTP: ${data.otp}`
-              : "If that email is registered, a one-time code is on the way.",
+            title: "Code sent!",
+            description: `A 6-digit OTP has been sent to ${email}. Check your inbox.`,
           });
         },
         onError: (err: any) => {
@@ -85,13 +81,13 @@ export default function ForgotPassword() {
           </h2>
           <p className="mt-2 text-sm text-gray-500">
             {step === "email"
-              ? "We will send a one-time code to recover your account."
-              : "Enter the 6-digit code we just sent and choose a new password."}
+              ? "Enter your email and we will send a one-time code."
+              : "Enter the 6-digit code sent to your email and choose a new password."}
           </p>
         </div>
 
         {step === "email" ? (
-          <form className="mt-8 space-y-6" onSubmit={handleRequest}>
+          <form className="mt-8 space-y-6" onSubmit={handleRequest} autoComplete="off">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email address
@@ -105,6 +101,7 @@ export default function ForgotPassword() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 h-12 bg-gray-50"
                   placeholder="you@example.com"
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -117,16 +114,18 @@ export default function ForgotPassword() {
             </Button>
           </form>
         ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleReset}>
-            {demoOtp && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <strong>Demo OTP:</strong>{" "}
-                <code className="font-mono">{demoOtp}</code>
-                <p className="mt-1 text-xs text-amber-700">
-                  In production this code is delivered via SMS or email.
+          <form className="mt-8 space-y-6" onSubmit={handleReset} autoComplete="off">
+            {/* Sent confirmation banner */}
+            <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              <CheckCircle className="h-5 w-5 mt-0.5 shrink-0 text-green-600" />
+              <div>
+                <p className="font-semibold">Code sent to {email}</p>
+                <p className="text-xs text-green-700 mt-0.5">
+                  Check your inbox (and spam folder). The code expires in 15 minutes.
                 </p>
               </div>
-            )}
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 One-time code
@@ -137,9 +136,10 @@ export default function ForgotPassword() {
                   required
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  className="pl-10 h-12 bg-gray-50 font-mono tracking-widest"
+                  className="pl-10 h-12 bg-gray-50 font-mono tracking-widest text-center text-lg"
                   placeholder="000000"
                   maxLength={6}
+                  autoComplete="off"
                 />
               </div>
             </div>
@@ -157,6 +157,7 @@ export default function ForgotPassword() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="pl-10 h-12 bg-gray-50"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                 />
               </div>
             </div>
@@ -167,6 +168,13 @@ export default function ForgotPassword() {
             >
               {reset.isPending ? "Resetting..." : "Reset password"}
             </Button>
+            <button
+              type="button"
+              onClick={() => setStep("email")}
+              className="w-full text-sm text-gray-500 hover:text-gray-700 text-center"
+            >
+              Didn't receive the code? Send again
+            </button>
           </form>
         )}
 
