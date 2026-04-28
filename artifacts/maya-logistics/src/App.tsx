@@ -19,6 +19,7 @@ import InquiryPage from "@/pages/Inquiry";
 import Users from "@/pages/admin/Users";
 import Inquiries from "@/pages/admin/Inquiries";
 import StaffActivity from "@/pages/admin/StaffActivity";
+import CreateInvoice from "@/pages/admin/CreateInvoice";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
@@ -64,6 +65,9 @@ function Router() {
             </Route>
             <Route path="/admin/inquiries">
               <ProtectedRoute allowedRoles={["admin", "staff"]}><Inquiries /></ProtectedRoute>
+            </Route>
+            <Route path="/admin/create-invoice">
+              <ProtectedRoute allowedRoles={["admin"]}><CreateInvoice /></ProtectedRoute>
             </Route>
             <Route path="/profile">
               <ProtectedRoute><Profile /></ProtectedRoute>
