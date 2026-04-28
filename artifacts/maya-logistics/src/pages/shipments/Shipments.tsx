@@ -173,7 +173,13 @@ export default function Shipments() {
                         {(isAdmin ||
                           (isStaff && (user?.permissions?.canGenerateInvoice ?? false)) ||
                           (isCustomer && row.paid)) && (
-                          <Link href={`/shipments/${row.id}/invoice`}>
+                          <Link
+                            href={
+                              isAdmin
+                                ? `/admin/create-invoice?trackingId=${encodeURIComponent(row.trackingId)}&origin=${encodeURIComponent(row.origin)}&destination=${encodeURIComponent(row.destination)}&weight=${row.weight}&cost=${row.cost}&senderName=${encodeURIComponent(row.senderName)}&senderPhone=${encodeURIComponent(row.senderPhone ?? "")}&receiverName=${encodeURIComponent(row.receiverName)}&receiverPhone=${encodeURIComponent(row.receiverPhone ?? "")}&billToName=${encodeURIComponent(row.customerName ?? row.receiverName)}&billToEmail=${encodeURIComponent(row.customerEmail ?? "")}&date=${new Date(row.createdAt).toISOString().slice(0, 10)}&paid=${row.paid}`
+                                : `/shipments/${row.id}/invoice`
+                            }
+                          >
                             <Button
                               size="sm"
                               variant="outline"
