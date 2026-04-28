@@ -15,6 +15,8 @@ export interface SerializedShipment {
   weight: number;
   cost: number;
   status: "pending" | "in_transit" | "delivered";
+  paid: boolean;
+  paidAt: string | null;
   notes: string | null;
   customerId: number | null;
   customerName: string | null;
@@ -62,6 +64,8 @@ export async function serializeShipments(
       weight: Number(row.weight),
       cost: Number(row.cost),
       status: row.status as SerializedShipment["status"],
+      paid: row.paid,
+      paidAt: row.paidAt ? row.paidAt.toISOString() : null,
       notes: row.notes ?? null,
       customerId: row.customerId,
       customerName: customer?.name ?? null,

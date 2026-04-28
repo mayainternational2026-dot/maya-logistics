@@ -202,6 +202,10 @@ router.patch(
     if (body.data.weight != null) updates.weight = String(body.data.weight);
     if (body.data.cost != null) updates.cost = String(body.data.cost);
     if (body.data.status != null) updates.status = body.data.status;
+    if (body.data.paid != null) {
+      updates.paid = body.data.paid;
+      updates.paidAt = body.data.paid ? new Date() : null;
+    }
     if (body.data.notes != null) updates.notes = body.data.notes.trim() || null;
 
     const [row] = await db

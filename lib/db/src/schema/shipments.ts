@@ -6,6 +6,7 @@ import {
   varchar,
   integer,
   numeric,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
 
@@ -21,6 +22,8 @@ export const shipmentsTable = pgTable("shipments", {
   weight: numeric("weight", { precision: 10, scale: 2 }).notNull(),
   cost: numeric("cost", { precision: 12, scale: 2 }).notNull(),
   status: varchar("status", { length: 16 }).notNull().default("pending"),
+  paid: boolean("paid").notNull().default(false),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
   notes: text("notes"),
   customerId: integer("customer_id").references(() => usersTable.id, {
     onDelete: "set null",

@@ -45,6 +45,8 @@ CREATE TABLE shipments (
   weight_kg DECIMAL(10,2) NOT NULL,
   description TEXT,
   status ENUM('pending','in_transit','delivered') NOT NULL DEFAULT 'pending',
+  paid TINYINT(1) NOT NULL DEFAULT 0,
+  paid_at TIMESTAMP NULL,
   cost_npr DECIMAL(12,2) NOT NULL DEFAULT 0,
   notes TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -17,5 +17,6 @@ export interface UpdateShipmentBody {
   weight?: number;
   cost?: number;
   status?: ShipmentStatus;
+  paid?: boolean;
   notes?: string;
 }

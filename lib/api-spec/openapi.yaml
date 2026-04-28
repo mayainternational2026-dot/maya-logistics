@@ -713,6 +713,11 @@ components:
           type: number
         status:
           $ref: "#/components/schemas/ShipmentStatus"
+        paid:
+          type: boolean
+        paidAt:
+          type: ["string", "null"]
+          format: date-time
         notes:
           type: ["string", "null"]
         customerId:
@@ -741,6 +746,7 @@ components:
         - weight
         - cost
         - status
+        - paid
         - createdAt
         - updatedAt
 
@@ -830,6 +836,8 @@ components:
           type: number
         status:
           $ref: "#/components/schemas/ShipmentStatus"
+        paid:
+          type: boolean
         notes:
           type: string
 

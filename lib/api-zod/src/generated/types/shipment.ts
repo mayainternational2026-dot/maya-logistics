@@ -21,6 +21,9 @@ export interface Shipment {
   weight: number;
   cost: number;
   status: ShipmentStatus;
+  paid: boolean;
+  /** @nullable */
+  paidAt?: Date | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */

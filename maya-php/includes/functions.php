@@ -107,18 +107,38 @@ function generate_tracking_id(PDO $pdo): string {
 
 // ---------- Invoice generator URL ----------
 function build_invoice_url(array $s, array $customer): string {
+    $from = implode("\n", [
+        SITE_NAME,
+        CONTACT_ADDRESS,
+        'Tel: ' . CONTACT_PHONE,
+        'Email: ' . CONTACT_EMAIL,
+    ]);
+    $toParts = array_filter([
+        $customer['name'] ?? '',
+        $customer['email'] ?? '',
+        $customer['phone'] ?? '',
+    ]);
+    $to = implode("\n", $toParts);
     $params = [
-        'from'           => SITE_NAME . "\n" . CONTACT_ADDRESS . "\nTel: " . CONTACT_PHONE,
-        'to'             => $customer['name'] . "\n" . ($customer['phone'] ?? '') . "\n" . $s['receiver_address'],
+        'locale'         => 'en',
+        'from'           => $from,
+        'to'             => $to,
         'logo'           => '',
         'number'         => $s['tracking_id'],
         'currency'       => 'NPR',
         'date'           => date('Y-m-d', strtotime($s['created_at'])),
-        'payment_terms'  => 'Due on delivery',
-        'items[0][name]' => 'Cargo: ' . $s['origin'] . ' → ' . $s['destination'] . ' (' . strtoupper($s['mode']) . ', ' . $s['weight_kg'] . ' kg)',
+        'payment_terms'  => 'Payment Received',
+        'items[0][name]' => 'Freight: ' . $s['origin'] . ' → ' . $s['destination']
+                          . ' (' . $s['weight_kg'] . ' kg · ' . $s['tracking_id'] . ')',
         'items[0][quantity]' => 1,
         'items[0][unit_cost]' => $s['cost_npr'],
-        'notes'          => $s['notes'] ?? 'Thank you for choosing ' . SITE_NAME,
+        'notes'          => implode("\n", [
+            'Sender: ' . $s['sender_name'] . ($s['sender_phone'] ? ' · ' . $s['sender_phone'] : ''),
+            'Receiver: ' . $s['receiver_name'] . ($s['receiver_phone'] ? ' · ' . $s['receiver_phone'] : ''),
+            'Thank you for choosing ' . SITE_NAME . '.',
+        ]),
+        'tax[name]'   => '',
+        'tax[amount]' => '0',
     ];
     return 'https://invoice-generator.com/?' . http_build_query($params);
 }

@@ -41,6 +41,9 @@ import {
   Package,
   FileText,
   Trash2,
+  CheckCircle2,
+  XCircle,
+  BadgeDollarSign,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -82,37 +85,57 @@ export default function ShipmentDetails() {
     );
   }
 
+  const isAdmin = user?.role === "admin";
+  const isStaff = user?.role === "staff";
+  const isCustomer = user?.role === "customer";
+
   const canManage =
-    user?.role === "admin" ||
-    (user?.role === "staff" && (user.permissions?.canManageShipments ?? false));
+    isAdmin || (isStaff && (user.permissions?.canManageShipments ?? false));
+
+  const canMarkPaid = isAdmin;
+
+  // Customers can see invoice only when payment has been confirmed by admin
+  // Admin / staff (with invoice permission) can always see it
   const canInvoice =
-    user?.role === "customer" ||
-    user?.role === "admin" ||
-    (user?.role === "staff" && (user.permissions?.canGenerateInvoice ?? false));
+    isAdmin ||
+    (isStaff && (user.permissions?.canGenerateInvoice ?? false)) ||
+    (isCustomer && data.paid === true);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getGetShipmentQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+  };
 
   const handleStatusChange = (newStatus: "pending" | "in_transit" | "delivered") => {
     setStatus(newStatus);
     update.mutate(
       { id, data: { status: newStatus } },
       {
+        onSuccess: () => { toast({ title: "Status updated" }); invalidate(); },
+        onError: (err: any) => {
+          toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleTogglePaid = () => {
+    const next = !data.paid;
+    update.mutate(
+      { id, data: { paid: next } },
+      {
         onSuccess: () => {
-          toast({ title: "Status updated" });
-          queryClient.invalidateQueries({
-            queryKey: getGetShipmentQueryKey(id),
+          toast({
+            title: next ? "Payment confirmed" : "Payment mark removed",
+            description: next
+              ? "The customer can now access their invoice."
+              : "Invoice access has been revoked.",
           });
-          queryClient.invalidateQueries({
-            queryKey: getListShipmentsQueryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: getGetDashboardSummaryQueryKey(),
-          });
+          invalidate();
         },
         onError: (err: any) => {
-          toast({
-            title: "Update failed",
-            description: err?.data?.error,
-            variant: "destructive",
-          });
+          toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
@@ -124,24 +147,18 @@ export default function ShipmentDetails() {
       {
         onSuccess: () => {
           toast({ title: "Shipment deleted" });
-          queryClient.invalidateQueries({
-            queryKey: getListShipmentsQueryKey(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: getGetDashboardSummaryQueryKey(),
-          });
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           setLocation("/shipments");
         },
         onError: (err: any) => {
-          toast({
-            title: "Delete failed",
-            description: err?.data?.error,
-            variant: "destructive",
-          });
+          toast({ title: "Delete failed", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
   };
+
+  const invoiceUrl = buildInvoiceUrl(data);
 
   return (
     <div className="space-y-6">
@@ -153,6 +170,7 @@ export default function ShipmentDetails() {
       </button>
 
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        {/* Header */}
         <div className="bg-secondary text-white px-6 py-6 md:px-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-300">
@@ -174,16 +192,53 @@ export default function ShipmentDetails() {
             >
               {statusLabel(data.status)}
             </span>
+            {/* Payment badge */}
+            {data.paid ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400 px-3 py-1 text-xs font-semibold text-emerald-200">
+                <CheckCircle2 className="h-3 w-3" /> Payment Received
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-400 px-3 py-1 text-xs font-semibold text-amber-200">
+                <XCircle className="h-3 w-3" /> Payment Pending
+              </span>
+            )}
             <p className="text-2xl font-bold">{formatNPR(data.cost)}</p>
           </div>
         </div>
 
         <div className="p-6 md:p-8 space-y-8">
+          {/* Customer invoice notice */}
+          {isCustomer && !data.paid && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-5 py-4 flex items-start gap-3">
+              <BadgeDollarSign className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold text-amber-800">Invoice not available yet</p>
+                <p className="text-sm text-amber-700 mt-0.5">
+                  Your invoice will be available once the admin confirms your payment. Please contact us via WhatsApp or email if you need assistance.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isCustomer && data.paid && (
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-5 py-4 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-emerald-800">Payment confirmed</p>
+                <p className="text-sm text-emerald-700 mt-0.5">
+                  Your payment has been received. Click <strong>View Invoice</strong> below to open your invoice.
+                  {data.paidAt && (
+                    <> Confirmed on {format(new Date(data.paidAt), "MMMM d, yyyy")}.</>
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Details grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
-                Sender
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Sender</h3>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-secondary">
                   <User className="h-4 w-4 text-gray-400" />
@@ -198,9 +253,7 @@ export default function ShipmentDetails() {
               </div>
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
-                Receiver
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Receiver</h3>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-secondary">
                   <User className="h-4 w-4 text-gray-400" />
@@ -215,33 +268,25 @@ export default function ShipmentDetails() {
               </div>
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
-                Origin
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Origin</h3>
               <div className="flex items-center gap-2 text-secondary">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-semibold">{data.origin}</span>
               </div>
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
-                Destination
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Destination</h3>
               <div className="flex items-center gap-2 text-secondary">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-semibold">{data.destination}</span>
               </div>
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
-                Weight
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Weight</h3>
               <p className="font-semibold text-secondary">{data.weight} kg</p>
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
-                Last updated
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Last updated</h3>
               <div className="flex items-center gap-2 text-secondary">
                 <Calendar className="h-4 w-4 text-gray-400" />
                 <span className="font-semibold">
@@ -253,12 +298,8 @@ export default function ShipmentDetails() {
 
           {data.customerName && (
             <div className="rounded-xl bg-gray-50 p-4 border border-gray-100">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                Customer
-              </p>
-              <p className="font-semibold text-secondary">
-                {data.customerName}
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Customer</p>
+              <p className="font-semibold text-secondary">{data.customerName}</p>
               {data.customerEmail && (
                 <p className="text-sm text-gray-600">{data.customerEmail}</p>
               )}
@@ -267,36 +308,54 @@ export default function ShipmentDetails() {
 
           {data.notes && (
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
-                Notes
-              </h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Notes</h3>
               <p className="text-gray-700 leading-relaxed">{data.notes}</p>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
+          {/* Action bar */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100 flex-wrap">
             <Link href={`/track/${data.trackingId}`}>
               <Button variant="outline">View public tracking</Button>
             </Link>
+
+            {/* Invoice button — always visible for admin/staff-with-perm; for customer only when paid */}
             {canInvoice && (
-              <a
-                href={buildInvoiceUrl(data)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" className="gap-2">
-                  <FileText className="h-4 w-4" /> Generate Invoice
+              <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
+                <Button className="gap-2 bg-secondary hover:bg-secondary/90 text-white">
+                  <FileText className="h-4 w-4" /> View Invoice
                 </Button>
               </a>
             )}
+
+            {/* Admin/staff controls */}
             {canManage && (
-              <div className="flex items-center gap-2 sm:ml-auto">
+              <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
+                {/* Payment toggle — admin only */}
+                {canMarkPaid && (
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "gap-2",
+                      data.paid
+                        ? "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                        : "border-amber-300 text-amber-700 hover:bg-amber-50",
+                    )}
+                    onClick={handleTogglePaid}
+                    disabled={update.isPending}
+                  >
+                    {data.paid ? (
+                      <><XCircle className="h-4 w-4" /> Mark Unpaid</>
+                    ) : (
+                      <><CheckCircle2 className="h-4 w-4" /> Confirm Payment</>
+                    )}
+                  </Button>
+                )}
+
                 <Select
                   value={status}
                   onValueChange={(v) =>
-                    handleStatusChange(
-                      v as "pending" | "in_transit" | "delivered",
-                    )
+                    handleStatusChange(v as "pending" | "in_transit" | "delivered")
                   }
                 >
                   <SelectTrigger className="w-44 h-10">
@@ -308,6 +367,7 @@ export default function ShipmentDetails() {
                     <SelectItem value="delivered">Delivered</SelectItem>
                   </SelectContent>
                 </Select>
+
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" className="gap-2 text-destructive">

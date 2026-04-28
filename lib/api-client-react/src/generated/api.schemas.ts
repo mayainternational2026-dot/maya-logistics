@@ -136,6 +136,9 @@ export interface Shipment {
   weight: number;
   cost: number;
   status: ShipmentStatus;
+  paid: boolean;
+  /** @nullable */
+  paidAt?: string | null;
   /** @nullable */
   notes?: string | null;
   /** @nullable */
@@ -193,6 +196,7 @@ export interface UpdateShipmentBody {
   weight?: number;
   cost?: number;
   status?: ShipmentStatus;
+  paid?: boolean;
   notes?: string;
 }
 

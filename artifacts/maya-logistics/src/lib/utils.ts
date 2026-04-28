@@ -39,20 +39,48 @@ export function buildInvoiceUrl(s: {
   weight: number;
   cost: number;
   senderName: string;
+  senderPhone?: string | null;
   receiverName: string;
+  receiverPhone?: string | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
   createdAt: string;
 }): string {
+  const from = [
+    "Maya Import Export Logistic",
+    "Anandamaya Marg, Dhumbarahi",
+    "Kathmandu, Nepal",
+    "Tel: 9769686908",
+    "Email: mayaimportexportinternational@gmail.com",
+  ].join("\n");
+
+  const to = [
+    s.customerName ?? s.receiverName,
+    s.customerEmail ?? "",
+    s.receiverPhone ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   const params = new URLSearchParams({
     locale: "en",
-    from: `Maya Import Export Logistic\nAnandamaya Marg, Dhumbarahi\nKathmandu, Nepal`,
-    to: `${s.receiverName}`,
+    from,
+    to,
+    logo: "",
     number: s.trackingId,
     date: new Date(s.createdAt).toISOString().slice(0, 10),
-    "items[0][name]": `Shipment ${s.origin} → ${s.destination} (${s.weight}kg)`,
+    payment_terms: "Payment Received",
+    currency: "NPR",
+    "items[0][name]": `Freight: ${s.origin} → ${s.destination} (${s.weight} kg · ${s.trackingId})`,
     "items[0][quantity]": "1",
     "items[0][unit_cost]": String(s.cost),
-    currency: "NPR",
-    notes: `Sender: ${s.senderName}`,
+    notes: [
+      `Sender: ${s.senderName}${s.senderPhone ? " · " + s.senderPhone : ""}`,
+      `Receiver: ${s.receiverName}${s.receiverPhone ? " · " + s.receiverPhone : ""}`,
+      "Thank you for choosing Maya Import Export Logistic.",
+    ].join("\n"),
+    "tax[name]": "",
+    "tax[amount]": "0",
   });
   return `https://invoice-generator.com/?${params.toString()}`;
 }
