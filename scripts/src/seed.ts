@@ -57,7 +57,7 @@ async function ensureUser(opts: {
 async function main() {
   const adminId = await ensureUser({
     name: "Maya Admin",
-    email: "greenhouse2053@gmail.com",
+    email: "chapagainsirish@gmail.com",
     phone: "9768595133",
     password: "Sirish@@2054",
     role: "admin",

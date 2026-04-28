@@ -20,7 +20,7 @@ export async function runStartupSeed() {
       .insert(usersTable)
       .values({
         name: "Maya Admin",
-        email: "greenhouse2053@gmail.com",
+        email: "chapagainsirish@gmail.com",
         phone: "9768595133",
         passwordHash,
         role: "admin",
@@ -34,7 +34,7 @@ export async function runStartupSeed() {
       canGenerateInvoice: true,
     });
 
-    logger.info({ email: "greenhouse2053@gmail.com" }, "Admin account created");
+    logger.info({ email: "chapagainsirish@gmail.com" }, "Admin account created");
   } catch (err) {
     logger.error({ err }, "Startup seed failed");
   }
