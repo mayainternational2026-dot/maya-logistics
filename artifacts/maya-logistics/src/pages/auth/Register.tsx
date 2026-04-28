@@ -25,7 +25,9 @@ export default function Register() {
       {
         onSuccess: () => {
           toast({ title: "Registration Successful", description: "Welcome to Maya Logistics!" });
-          window.location.href = import.meta.env.BASE_URL + "dashboard";
+          window.location.replace(
+            window.location.origin + import.meta.env.BASE_URL + "dashboard",
+          );
         },
         onError: (err: any) => {
           toast({

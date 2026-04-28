@@ -143,10 +143,7 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
     );
   }
 
-  req.log.info(
-    { email, otp: user ? otp : "(no user)" },
-    "Password reset OTP generated",
-  );
+  req.log.info({ email, hasUser: !!user }, "Password reset OTP generated");
 
   res.json({
     message:

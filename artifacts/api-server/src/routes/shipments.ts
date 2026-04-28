@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, or, desc, ilike, sql } from "drizzle-orm";
+import { eq, and, or, desc, ilike } from "drizzle-orm";
 import { db, shipmentsTable } from "@workspace/db";
 import {
   ListShipmentsQueryParams,
@@ -292,5 +292,3 @@ router.delete(
 );
 
 export default router;
-// silence unused import in some toolchains
-void sql;
