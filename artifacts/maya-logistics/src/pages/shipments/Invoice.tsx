@@ -9,15 +9,16 @@ import { formatNPR } from "@/lib/utils";
 
 const CO = {
   name: "Maya Import Export Logistic",
-  tagline: "Global Freight Forwarding · Kathmandu, Nepal",
-  address: "Anandamaya Marg, Dhumbarahi, Kathmandu",
-  phone: "+977 9768595133",
+  address1: "Anandamaya Marg, Dhumbarahi",
+  address2: "Kathmandu, Nepal",
+  phone: "Tel: 9769686908",
   email: "mayaimportexportinternational@gmail.com",
-  reg: "Reg. No. MIE-2054",
 };
 
-const RED = "#c0392b";
-const DARK = "#1a1a2e";
+const BLUE = "#007bff";
+const GRAY = "#555555";
+const LIGHT = "#f8f9fa";
+const BORDER = "#dee2e6";
 
 export default function Invoice() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function Invoice() {
   });
 
   if (isLoading) return <Skeleton className="h-96 w-full rounded-2xl" />;
+
   if (!data) {
     return (
       <div className="py-16 text-center">
@@ -65,30 +67,24 @@ export default function Invoice() {
     );
   }
 
-  const invoiceNo = `MIE-${data.trackingId}`;
-  const issuedDate = format(new Date(data.createdAt), "dd MMM yyyy");
-  const dueDate = format(new Date(data.createdAt), "dd MMM yyyy");
-  const subtotal = Number(data.cost);
-  const total = subtotal;
-
-  const billTo = {
-    name: data.customerName ?? data.receiverName,
-    email: data.customerEmail ?? "",
-    phone: data.receiverPhone ?? "",
-  };
+  const invoiceDate = format(new Date(data.createdAt), "MMMM d, yyyy");
+  const paymentTerms = data.paid ? "Payment Received" : "Due on Receipt";
+  const billToName = data.customerName ?? data.receiverName;
+  const billToEmail = data.customerEmail ?? "";
+  const itemDescription = `Freight: ${data.origin} → ${data.destination} (${data.weight} kg · ${data.trackingId})`;
+  const amount = Number(data.cost);
+  const notes = `Sender: ${data.senderName}\nReceiver: ${data.receiverName}\nThank you for choosing Maya Import Export Logistic.`;
 
   return (
     <>
-      {/* Controls – hidden on print */}
-      <div className="no-print flex items-center gap-3 mb-8">
+      {/* Controls — hidden on print */}
+      <div
+        className="no-print flex items-center gap-3 mb-8"
+      >
         <Button variant="outline" onClick={() => setLocation(`/shipments/${id}`)} className="gap-2">
           <ArrowLeft className="h-4 w-4" /> Back
         </Button>
-        <Button
-          onClick={() => window.print()}
-          className="gap-2 text-white"
-          style={{ background: RED }}
-        >
+        <Button onClick={() => window.print()} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
           <Printer className="h-4 w-4" /> Print / Save PDF
         </Button>
       </div>
@@ -96,289 +92,165 @@ export default function Invoice() {
       {/* ── INVOICE DOCUMENT ── */}
       <div
         id="invoice-doc"
-        className="bg-white max-w-3xl mx-auto overflow-hidden"
         style={{
-          fontFamily: "'Segoe UI', Arial, sans-serif",
-          border: "1px solid #e5e7eb",
-          borderRadius: 12,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: 14,
+          color: "#212529",
+          background: "white",
+          maxWidth: 760,
+          margin: "0 auto",
+          padding: "40px 48px",
+          border: `1px solid ${BORDER}`,
+          borderRadius: 4,
         }}
       >
-
-        {/* ── TOP ACCENT STRIP ── */}
-        <div style={{ height: 6, background: `linear-gradient(to right, ${RED}, #e74c3c, ${DARK})` }} />
-
-        {/* ── HEADER ── */}
-        <div className="px-10 pt-8 pb-6 flex items-start justify-between gap-6">
-          {/* Logo + company */}
-          <div className="flex items-center gap-4">
-            <div
-              style={{ border: `2px solid ${RED}`, borderRadius: 10, overflow: "hidden", width: 64, height: 64, flexShrink: 0 }}
-            >
-              <img
-                src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
-                alt="Maya"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
-            </div>
+        {/* ── TOP ROW: Company + INVOICE title ── */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
+          {/* Logo + Company */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <img
+              src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
+              alt="Maya"
+              style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
             <div>
-              <p style={{ color: DARK, fontWeight: 800, fontSize: 17, letterSpacing: "-0.3px" }}>
-                {CO.name}
-              </p>
-              <p style={{ color: "#6b7280", fontSize: 11, marginTop: 2 }}>{CO.tagline}</p>
-              <p style={{ color: "#6b7280", fontSize: 11 }}>{CO.phone} · {CO.email}</p>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "#212529" }}>{CO.name}</div>
+              <div style={{ color: GRAY, fontSize: 12, marginTop: 2 }}>{CO.address1}</div>
+              <div style={{ color: GRAY, fontSize: 12 }}>{CO.address2}</div>
+              <div style={{ color: GRAY, fontSize: 12 }}>{CO.phone}</div>
+              <div style={{ color: GRAY, fontSize: 12 }}>{CO.email}</div>
             </div>
           </div>
 
-          {/* Invoice badge */}
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <p
-              style={{
-                fontSize: 34,
-                fontWeight: 900,
-                letterSpacing: 3,
-                color: RED,
-                lineHeight: 1,
-                textTransform: "uppercase",
-              }}
-            >
-              Invoice
-            </p>
-            <p style={{ color: "#374151", fontSize: 13, fontWeight: 700, marginTop: 6, fontFamily: "monospace" }}>
-              # {invoiceNo}
-            </p>
-            <p style={{ color: "#9ca3af", fontSize: 11, marginTop: 3 }}>Issued: {issuedDate}</p>
-            {data.paidAt && (
-              <p style={{ color: "#9ca3af", fontSize: 11 }}>
-                Paid: {format(new Date(data.paidAt), "dd MMM yyyy")}
-              </p>
-            )}
+          {/* INVOICE title */}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 36, fontWeight: 700, color: BLUE, letterSpacing: 1 }}>INVOICE</div>
           </div>
         </div>
 
         {/* ── DIVIDER ── */}
-        <div style={{ height: 1, background: "#f3f4f6", margin: "0 40px" }} />
+        <hr style={{ border: "none", borderTop: `1px solid ${BORDER}`, marginBottom: 24 }} />
 
-        {/* ── BILL TO / SHIP INFO BAND ── */}
-        <div
-          style={{
-            margin: "24px 40px",
-            borderRadius: 10,
-            overflow: "hidden",
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            border: "1px solid #e5e7eb",
-          }}
-        >
+        {/* ── BILL TO + INVOICE META ── */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 32, gap: 32 }}>
           {/* Bill To */}
-          <div style={{ padding: "16px 20px", borderRight: "1px solid #e5e7eb" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: RED, marginBottom: 8 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: GRAY, marginBottom: 6, letterSpacing: 0.8 }}>
               Bill To
-            </p>
-            <p style={{ fontWeight: 700, fontSize: 14, color: DARK }}>{billTo.name}</p>
-            {billTo.email && <p style={{ color: "#6b7280", fontSize: 12, marginTop: 3 }}>{billTo.email}</p>}
-            {billTo.phone && <p style={{ color: "#6b7280", fontSize: 12, marginTop: 2 }}>{billTo.phone}</p>}
-          </div>
-
-          {/* Route */}
-          <div style={{ padding: "16px 20px", borderRight: "1px solid #e5e7eb" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: RED, marginBottom: 8 }}>
-              Route
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: DARK, fontWeight: 600 }}>
-              <span>{data.origin}</span>
-              <span style={{ color: RED, fontWeight: 900 }}>→</span>
-              <span>{data.destination}</span>
             </div>
-            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>Weight: <strong>{data.weight} kg</strong></p>
-            <p style={{ fontSize: 11, color: "#9ca3af", fontFamily: "monospace", marginTop: 2 }}>{data.trackingId}</p>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#212529" }}>{billToName}</div>
+            {billToEmail && <div style={{ color: GRAY, fontSize: 13, marginTop: 2 }}>{billToEmail}</div>}
           </div>
 
-          {/* Payment status */}
-          <div style={{ padding: "16px 20px", background: data.paid ? "#f0fdf4" : "#fffbeb" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: RED, marginBottom: 8 }}>
-              Payment
-            </p>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "4px 12px",
-                borderRadius: 99,
-                fontSize: 12,
-                fontWeight: 700,
-                background: data.paid ? "#dcfce7" : "#fef9c3",
-                color: data.paid ? "#166534" : "#854d0e",
-                border: `1px solid ${data.paid ? "#86efac" : "#fde047"}`,
-              }}
-            >
-              <span style={{ fontSize: 10 }}>{data.paid ? "●" : "○"}</span>
-              {data.paid ? "PAID" : "PENDING"}
-            </div>
-            {data.paidAt && (
-              <p style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>
-                {format(new Date(data.paidAt), "dd MMM yyyy")}
-              </p>
-            )}
-            <p style={{ fontSize: 12, fontWeight: 700, color: DARK, marginTop: 8 }}>
-              Due: {dueDate}
-            </p>
-          </div>
-        </div>
-
-        {/* ── SENDER / RECEIVER STRIP ── */}
-        <div style={{ margin: "0 40px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div style={{ background: "#f9fafb", borderRadius: 8, padding: "12px 16px" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Sender</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: DARK }}>{data.senderName}</p>
-            {data.senderPhone && <p style={{ fontSize: 12, color: "#6b7280" }}>{data.senderPhone}</p>}
-          </div>
-          <div style={{ background: "#f9fafb", borderRadius: 8, padding: "12px 16px" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Receiver</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: DARK }}>{data.receiverName}</p>
-            {data.receiverPhone && <p style={{ fontSize: 12, color: "#6b7280" }}>{data.receiverPhone}</p>}
+          {/* Invoice meta */}
+          <div style={{ minWidth: 220 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: "4px 8px 4px 0", fontSize: 12, color: GRAY, fontWeight: 600, whiteSpace: "nowrap" }}>Invoice #</td>
+                  <td style={{ padding: "4px 0", fontSize: 12, color: "#212529", textAlign: "right" }}>{data.trackingId}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "4px 8px 4px 0", fontSize: 12, color: GRAY, fontWeight: 600 }}>Invoice Date</td>
+                  <td style={{ padding: "4px 0", fontSize: 12, color: "#212529", textAlign: "right" }}>{invoiceDate}</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "4px 8px 4px 0", fontSize: 12, color: GRAY, fontWeight: 600 }}>Payment Terms</td>
+                  <td style={{ padding: "4px 0", fontSize: 12, color: data.paid ? "#198754" : "#212529", fontWeight: data.paid ? 700 : 400, textAlign: "right" }}>
+                    {paymentTerms}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
         {/* ── LINE ITEMS TABLE ── */}
-        <div style={{ margin: "0 40px" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: DARK, color: "white" }}>
-                <th style={{ textAlign: "left", padding: "10px 14px", borderRadius: "8px 0 0 0", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                  Description
-                </th>
-                <th style={{ textAlign: "center", padding: "10px 14px", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, width: 60 }}>
-                  Qty
-                </th>
-                <th style={{ textAlign: "right", padding: "10px 14px", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                  Rate
-                </th>
-                <th style={{ textAlign: "right", padding: "10px 14px", borderRadius: "0 8px 0 0", fontWeight: 600, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                  Amount
-                </th>
-              </tr>
-            </thead>
+        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 0 }}>
+          <thead>
+            <tr style={{ background: BLUE, color: "white" }}>
+              <th style={{ textAlign: "left", padding: "10px 12px", fontWeight: 600, fontSize: 12 }}>Item</th>
+              <th style={{ textAlign: "center", padding: "10px 12px", fontWeight: 600, fontSize: 12, width: 70 }}>Quantity</th>
+              <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 600, fontSize: 12, width: 110 }}>Rate</th>
+              <th style={{ textAlign: "right", padding: "10px 12px", fontWeight: 600, fontSize: 12, width: 110 }}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ background: LIGHT }}>
+              <td style={{ padding: "12px", fontSize: 13, color: "#212529", verticalAlign: "top" }}>
+                {itemDescription}
+              </td>
+              <td style={{ padding: "12px", fontSize: 13, textAlign: "center", color: "#212529" }}>1</td>
+              <td style={{ padding: "12px", fontSize: 13, textAlign: "right", color: "#212529" }}>
+                {formatNPR(amount)}
+              </td>
+              <td style={{ padding: "12px", fontSize: 13, textAlign: "right", color: "#212529", fontWeight: 600 }}>
+                {formatNPR(amount)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* ── TOTALS ── */}
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 0 }}>
+          <table style={{ borderCollapse: "collapse", minWidth: 240 }}>
             <tbody>
-              <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td style={{ padding: "14px 14px", verticalAlign: "top" }}>
-                  <p style={{ fontWeight: 600, color: DARK, fontSize: 13 }}>
-                    International Freight Service
-                  </p>
-                  <p style={{ color: "#6b7280", fontSize: 11, marginTop: 3 }}>
-                    {data.origin} → {data.destination} · {data.weight} kg
-                  </p>
-                  <p style={{ color: "#9ca3af", fontSize: 11, fontFamily: "monospace", marginTop: 2 }}>
-                    Tracking: {data.trackingId}
-                  </p>
-                </td>
-                <td style={{ padding: "14px 14px", textAlign: "center", color: "#374151" }}>1</td>
-                <td style={{ padding: "14px 14px", textAlign: "right", color: "#374151" }}>
-                  {formatNPR(subtotal)}
-                </td>
-                <td style={{ padding: "14px 14px", textAlign: "right", fontWeight: 700, color: DARK }}>
-                  {formatNPR(subtotal)}
+              <tr style={{ borderTop: `1px solid ${BORDER}` }}>
+                <td style={{ padding: "8px 12px", fontSize: 13, color: GRAY }}>Subtotal</td>
+                <td style={{ padding: "8px 12px", fontSize: 13, textAlign: "right", color: "#212529" }}>
+                  {formatNPR(amount)}
                 </td>
               </tr>
+              <tr style={{ borderTop: `1px solid ${BORDER}` }}>
+                <td style={{ padding: "8px 12px", fontSize: 13, color: GRAY }}>Tax</td>
+                <td style={{ padding: "8px 12px", fontSize: 13, textAlign: "right", color: "#212529" }}>NPR 0.00</td>
+              </tr>
+              <tr style={{ borderTop: `2px solid ${BLUE}`, background: BLUE }}>
+                <td style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "white" }}>Total</td>
+                <td style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, textAlign: "right", color: "white" }}>
+                  {formatNPR(amount)}
+                </td>
+              </tr>
+              {data.paid && (
+                <tr style={{ borderTop: `1px solid ${BORDER}` }}>
+                  <td style={{ padding: "8px 12px", fontSize: 13, color: "#198754", fontWeight: 600 }}>Amount Paid</td>
+                  <td style={{ padding: "8px 12px", fontSize: 13, textAlign: "right", color: "#198754", fontWeight: 600 }}>
+                    {formatNPR(amount)}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* ── TOTALS ── */}
-        <div style={{ margin: "0 40px 8px", display: "flex", justifyContent: "flex-end" }}>
-          <div style={{ width: 260, marginTop: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
-              <span>Subtotal</span>
-              <span>{formatNPR(subtotal)}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13, color: "#6b7280", borderBottom: "1px solid #f3f4f6" }}>
-              <span>Tax / VAT</span>
-              <span>Rs. 0.00</span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "10px 14px",
-                marginTop: 6,
-                borderRadius: 8,
-                background: RED,
-                color: "white",
-                fontWeight: 800,
-                fontSize: 15,
-              }}
-            >
-              <span>Total Due</span>
-              <span>{formatNPR(total)}</span>
-            </div>
-          </div>
-        </div>
-
         {/* ── NOTES ── */}
-        {data.notes && (
-          <div style={{ margin: "20px 40px 0", background: "#fffbeb", borderLeft: `3px solid #fbbf24`, borderRadius: 6, padding: "10px 14px" }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Notes</p>
-            <p style={{ fontSize: 12, color: "#78350f" }}>{data.notes}</p>
+        <div style={{ marginTop: 32 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: GRAY, marginBottom: 6, letterSpacing: 0.8 }}>
+            Notes
           </div>
-        )}
-
-        {/* ── FOOTER ── */}
-        <div
-          style={{
-            margin: "28px 0 0",
-            padding: "18px 40px",
-            background: "#f9fafb",
-            borderTop: "1px solid #e5e7eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-          }}
-        >
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: DARK }}>Thank you for your business!</p>
-            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>
-              {CO.address}
-            </p>
-            <p style={{ fontSize: 11, color: "#9ca3af" }}>
-              {CO.phone} · {CO.email}
-            </p>
+          <div style={{ fontSize: 13, color: "#212529", whiteSpace: "pre-line", lineHeight: 1.6 }}>
+            {notes}
           </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <p style={{ fontSize: 10, color: "#d1d5db", fontFamily: "monospace" }}>{CO.reg}</p>
-            <div
-              style={{
-                width: 80,
-                height: 36,
-                marginTop: 6,
-                borderTop: "1.5px solid #d1d5db",
-                display: "flex",
-                alignItems: "flex-end",
-                justifyContent: "center",
-                paddingBottom: 4,
-              }}
-            >
-              <p style={{ fontSize: 10, color: "#9ca3af" }}>Authorised Signature</p>
+          {data.notes && (
+            <div style={{ fontSize: 13, color: GRAY, marginTop: 6 }}>
+              {data.notes}
             </div>
-          </div>
+          )}
         </div>
-
-        {/* ── BOTTOM ACCENT STRIP ── */}
-        <div style={{ height: 4, background: `linear-gradient(to right, ${DARK}, ${RED})` }} />
       </div>
 
       {/* Print styles */}
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; margin: 0; }
+          body { background: white !important; margin: 0; padding: 0; }
           #invoice-doc {
             box-shadow: none !important;
             border: none !important;
             max-width: 100% !important;
             border-radius: 0 !important;
+            padding: 24px 32px !important;
           }
         }
       `}</style>
