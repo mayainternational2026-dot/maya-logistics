@@ -2,6 +2,17 @@
 
 A logistics management web app for Maya Import Export Logistic, a Nepali cargo company shipping freight by air, sea, and road from Kathmandu to the world.
 
+## Key Features
+
+- 7-stage shipment tracking: pending → collected → at_warehouse → customs_clearance → in_transit → arrived → delivered
+- Role-based access: admin / staff / customer
+- SMTP email notifications via Gmail (nodemailer) on status changes and payment confirmation
+- Printable invoice page at `/shipments/:id/invoice`
+- Product inquiry form at `/inquiry` (with image upload, product link, quantity, estimated value)
+- Admin inquiries management at `/admin/inquiries` with status workflow (pending → reviewing → quoted → closed)
+- Chat support bot (floating widget, rule-based FAQ, WhatsApp escalation) on every public page
+- WhatsApp button linking to `wa.me/9779768595133` on every public page
+
 ## Tech stack
 
 - **Monorepo**: pnpm workspaces with TypeScript project references

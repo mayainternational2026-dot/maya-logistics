@@ -15,7 +15,9 @@ import Shipments from "@/pages/shipments/Shipments";
 import NewShipment from "@/pages/shipments/NewShipment";
 import ShipmentDetails from "@/pages/shipments/ShipmentDetails";
 import Invoice from "@/pages/shipments/Invoice";
+import InquiryPage from "@/pages/Inquiry";
 import Users from "@/pages/admin/Users";
+import Inquiries from "@/pages/admin/Inquiries";
 import StaffActivity from "@/pages/admin/StaffActivity";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
@@ -30,6 +32,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/track" component={Track} />
       <Route path="/track/:trackingId" component={Track} />
+      <Route path="/inquiry" component={InquiryPage} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
@@ -58,6 +61,9 @@ function Router() {
             </Route>
             <Route path="/admin/staff-activity">
               <ProtectedRoute allowedRoles={["admin"]}><StaffActivity /></ProtectedRoute>
+            </Route>
+            <Route path="/admin/inquiries">
+              <ProtectedRoute allowedRoles={["admin", "staff"]}><Inquiries /></ProtectedRoute>
             </Route>
             <Route path="/profile">
               <ProtectedRoute><Profile /></ProtectedRoute>

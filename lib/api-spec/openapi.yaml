@@ -480,6 +480,76 @@ paths:
                 items:
                   $ref: "#/components/schemas/StaffActivity"
 
+  # ----- Inquiries -----
+  /inquiries:
+    post:
+      operationId: createInquiry
+      tags: [inquiries]
+      summary: Submit a product inquiry / freight quote request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInquiryBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inquiry"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listInquiries
+      tags: [inquiries]
+      summary: List all inquiries (admin/staff)
+      responses:
+        "200":
+          description: Inquiries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inquiry"
+
+  /inquiries/{id}:
+    patch:
+      operationId: updateInquiry
+      tags: [inquiries]
+      summary: Update inquiry status or admin notes (admin/staff)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInquiryBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inquiry"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ----- Contact -----
   /contact:
     post:
@@ -919,3 +989,72 @@ components:
           type: string
           minLength: 1
       required: [name, email, message]
+
+    Inquiry:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        productDetails:
+          type: string
+        images:
+          type: string
+          nullable: true
+        productLink:
+          type: string
+          nullable: true
+        quantity:
+          type: number
+          nullable: true
+        estimatedCost:
+          type: number
+          nullable: true
+        status:
+          type: string
+        adminNotes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, email, productDetails, status, createdAt]
+
+    CreateInquiryBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+        productDetails:
+          type: string
+          minLength: 1
+        images:
+          type: string
+        productLink:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        estimatedCost:
+          type: number
+          minimum: 0
+      required: [name, email, productDetails]
+
+    UpdateInquiryBody:
+      type: object
+      properties:
+        status:
+          type: string
+        adminNotes:
+          type: string

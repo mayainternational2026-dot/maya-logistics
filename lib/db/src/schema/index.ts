@@ -4,3 +4,4 @@ export * from "./shipments";
 export * from "./passwordResets";
 export * from "./contactMessages";
 export * from "./sessions";
+export * from "./inquiries";

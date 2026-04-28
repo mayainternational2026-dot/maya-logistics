@@ -491,6 +491,71 @@ export const GetStaffActivityResponseItem = zod.object({
 export const GetStaffActivityResponse = zod.array(GetStaffActivityResponseItem);
 
 /**
+ * @summary Submit a product inquiry / freight quote request
+ */
+
+export const createInquiryBodyQuantityMin = 0;
+
+export const createInquiryBodyEstimatedCostMin = 0;
+
+export const CreateInquiryBody = zod.object({
+  name: zod.string().min(1),
+  email: zod.string(),
+  phone: zod.string().optional(),
+  productDetails: zod.string().min(1),
+  images: zod.string().optional(),
+  productLink: zod.string().optional(),
+  quantity: zod.number().min(createInquiryBodyQuantityMin).optional(),
+  estimatedCost: zod.number().min(createInquiryBodyEstimatedCostMin).optional(),
+});
+
+/**
+ * @summary List all inquiries (admin/staff)
+ */
+export const ListInquiriesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  productDetails: zod.string(),
+  images: zod.string().nullish(),
+  productLink: zod.string().nullish(),
+  quantity: zod.number().nullish(),
+  estimatedCost: zod.number().nullish(),
+  status: zod.string(),
+  adminNotes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInquiriesResponse = zod.array(ListInquiriesResponseItem);
+
+/**
+ * @summary Update inquiry status or admin notes (admin/staff)
+ */
+export const UpdateInquiryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateInquiryBody = zod.object({
+  status: zod.string().optional(),
+  adminNotes: zod.string().optional(),
+});
+
+export const UpdateInquiryResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  productDetails: zod.string(),
+  images: zod.string().nullish(),
+  productLink: zod.string().nullish(),
+  quantity: zod.number().nullish(),
+  estimatedCost: zod.number().nullish(),
+  status: zod.string(),
+  adminNotes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+
+/**
  * @summary Submit a contact form message
  */
 

@@ -7,6 +7,7 @@ import { Plane, Ship, Truck, Package, MapPin, Search, ArrowRight, Phone, Mail, M
 import { useSendContactMessage } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
+import { ChatBot } from "@/components/ui/ChatBot";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -224,6 +225,7 @@ export default function Home() {
       </footer>
 
       <WhatsAppButton />
+      <ChatBot onOpenInquiry={() => setLocation("/inquiry")} />
     </div>
   );
 }

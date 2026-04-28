@@ -23,6 +23,7 @@ export function Navbar() {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Track Shipment", href: "/track" },
+    { name: "Get a Quote", href: "/inquiry" },
   ];
 
   return (

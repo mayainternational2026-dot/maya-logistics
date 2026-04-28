@@ -20,6 +20,7 @@ import type {
   AdminResetPasswordBody,
   AuthResponse,
   ContactBody,
+  CreateInquiryBody,
   CreateShipmentBody,
   CreateUserBody,
   CurrentUserResponse,
@@ -28,6 +29,7 @@ import type {
   ForgotPasswordBody,
   ForgotPasswordResponse,
   HealthStatus,
+  Inquiry,
   ListShipmentsParams,
   ListUsersParams,
   LoginBody,
@@ -40,6 +42,7 @@ import type {
   RevenuePoint,
   Shipment,
   StaffActivity,
+  UpdateInquiryBody,
   UpdateShipmentBody,
   UpdateUserBody,
   User,
@@ -2007,6 +2010,254 @@ export function useGetStaffActivity<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Submit a product inquiry / freight quote request
+ */
+export const getCreateInquiryUrl = () => {
+  return `/api/inquiries`;
+};
+
+export const createInquiry = async (
+  createInquiryBody: CreateInquiryBody,
+  options?: RequestInit,
+): Promise<Inquiry> => {
+  return customFetch<Inquiry>(getCreateInquiryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInquiryBody),
+  });
+};
+
+export const getCreateInquiryMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInquiry>>,
+    TError,
+    { data: BodyType<CreateInquiryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInquiry>>,
+  TError,
+  { data: BodyType<CreateInquiryBody> },
+  TContext
+> => {
+  const mutationKey = ["createInquiry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInquiry>>,
+    { data: BodyType<CreateInquiryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInquiry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInquiryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInquiry>>
+>;
+export type CreateInquiryMutationBody = BodyType<CreateInquiryBody>;
+export type CreateInquiryMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit a product inquiry / freight quote request
+ */
+export const useCreateInquiry = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInquiry>>,
+    TError,
+    { data: BodyType<CreateInquiryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInquiry>>,
+  TError,
+  { data: BodyType<CreateInquiryBody> },
+  TContext
+> => {
+  return useMutation(getCreateInquiryMutationOptions(options));
+};
+
+/**
+ * @summary List all inquiries (admin/staff)
+ */
+export const getListInquiriesUrl = () => {
+  return `/api/inquiries`;
+};
+
+export const listInquiries = async (
+  options?: RequestInit,
+): Promise<Inquiry[]> => {
+  return customFetch<Inquiry[]>(getListInquiriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInquiriesQueryKey = () => {
+  return [`/api/inquiries`] as const;
+};
+
+export const getListInquiriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInquiries>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listInquiries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListInquiriesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listInquiries>>> = ({
+    signal,
+  }) => listInquiries({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInquiries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInquiriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInquiries>>
+>;
+export type ListInquiriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all inquiries (admin/staff)
+ */
+
+export function useListInquiries<
+  TData = Awaited<ReturnType<typeof listInquiries>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listInquiries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInquiriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update inquiry status or admin notes (admin/staff)
+ */
+export const getUpdateInquiryUrl = (id: number) => {
+  return `/api/inquiries/${id}`;
+};
+
+export const updateInquiry = async (
+  id: number,
+  updateInquiryBody: UpdateInquiryBody,
+  options?: RequestInit,
+): Promise<Inquiry> => {
+  return customFetch<Inquiry>(getUpdateInquiryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateInquiryBody),
+  });
+};
+
+export const getUpdateInquiryMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInquiry>>,
+    TError,
+    { id: number; data: BodyType<UpdateInquiryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInquiry>>,
+  TError,
+  { id: number; data: BodyType<UpdateInquiryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateInquiry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInquiry>>,
+    { id: number; data: BodyType<UpdateInquiryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateInquiry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInquiryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInquiry>>
+>;
+export type UpdateInquiryMutationBody = BodyType<UpdateInquiryBody>;
+export type UpdateInquiryMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update inquiry status or admin notes (admin/staff)
+ */
+export const useUpdateInquiry = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInquiry>>,
+    TError,
+    { id: number; data: BodyType<UpdateInquiryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateInquiry>>,
+  TError,
+  { id: number; data: BodyType<UpdateInquiryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateInquiryMutationOptions(options));
+};
 
 /**
  * @summary Submit a contact form message

@@ -241,6 +241,41 @@ export interface ContactBody {
   message: string;
 }
 
+export interface Inquiry {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  productDetails: string;
+  images?: string | null;
+  productLink?: string | null;
+  quantity?: number | null;
+  estimatedCost?: number | null;
+  status: string;
+  adminNotes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateInquiryBody {
+  /** @minLength 1 */
+  name: string;
+  email: string;
+  phone?: string;
+  /** @minLength 1 */
+  productDetails: string;
+  images?: string;
+  productLink?: string;
+  /** @minimum 0 */
+  quantity?: number;
+  /** @minimum 0 */
+  estimatedCost?: number;
+}
+
+export interface UpdateInquiryBody {
+  status?: string;
+  adminNotes?: string;
+}
+
 export type ListUsersParams = {
   role?: ListUsersRole;
 };

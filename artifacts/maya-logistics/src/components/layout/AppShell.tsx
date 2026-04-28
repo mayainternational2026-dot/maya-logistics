@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/use-auth";
-import { LayoutDashboard, Package, Users, Activity, User as UserIcon, LogOut, Map } from "lucide-react";
+import { LayoutDashboard, Package, Users, Activity, User as UserIcon, LogOut, Map, ClipboardList } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, show: true },
     { name: "Shipments", href: "/shipments", icon: Package, show: true },
+    { name: "Inquiries", href: "/admin/inquiries", icon: ClipboardList, show: isInternal },
     { name: "Users", href: "/admin/users", icon: Users, show: isAdmin },
     { name: "Staff Activity", href: "/admin/staff-activity", icon: Activity, show: isAdmin },
     { name: "Track", href: "/track", icon: Map, show: true },
