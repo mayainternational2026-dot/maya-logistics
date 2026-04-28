@@ -23,3 +23,9 @@ id = "w_evcbXAbxafCrahQdnW3"
 uri = "file://maya-php.zip"
 type = "unspecified"
 title = "maya-php.zip — Updated PHP + MySQL (with payment & invoice features)"
+
+[[outputs]]
+id = "7Sg5-oQqlNtUes5w5XJc4"
+uri = "file://maya-logistics-source.zip"
+type = "unspecified"
+title = "Maya Import Export Logistic — Source Code (Node.js + PostgreSQL)"
