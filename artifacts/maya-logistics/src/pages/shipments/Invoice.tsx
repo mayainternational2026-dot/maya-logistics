@@ -11,7 +11,7 @@ const COMPANY = {
   name: "Maya Import Export Logistic",
   address: "Anandamaya Marg, Dhumbarahi",
   city: "Kathmandu, Nepal",
-  phone: "+977 9769686908",
+  phone: "+977 9768595133",
   email: "mayaimportexportinternational@gmail.com",
 };
 
