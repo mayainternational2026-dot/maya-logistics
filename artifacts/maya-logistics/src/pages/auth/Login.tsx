@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
-import { useLogin, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { useLogin } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -48,9 +47,7 @@ const BANNER_COLORS: Record<LoginMode, string> = {
 };
 
 export default function Login() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const loginMutation = useLogin();
 
   const [mode, setMode] = useState<LoginMode>("customer");
@@ -62,11 +59,13 @@ export default function Login() {
     loginMutation.mutate(
       { data: { email, password } },
       {
-        onSuccess: (data) => {
-          // Immediately populate the auth cache so ProtectedRoute sees the user
-          queryClient.setQueryData(getGetCurrentUserQueryKey(), data);
+        onSuccess: () => {
           toast({ title: "Welcome back!" });
-          setLocation("/dashboard");
+          // Full reload so the session cookie is sent fresh and /api/auth/me
+          // re-fetches cleanly — most reliable across all environments
+          window.location.replace(
+            window.location.origin + import.meta.env.BASE_URL + "dashboard",
+          );
         },
         onError: (err: any) => {
           toast({
