@@ -1,27 +1,69 @@
-# Workspace
+# Maya Import Export Logistic
 
-## Overview
+A logistics management web app for Maya Import Export Logistic, a Nepali cargo company shipping freight by air, sea, and road from Kathmandu to the world.
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+## Tech stack
 
-## Stack
+- **Monorepo**: pnpm workspaces with TypeScript project references
+- **Frontend**: React + Vite + wouter + TanStack Query + Tailwind + shadcn/ui (artifact `maya-logistics`, port 25999, base path `/`)
+- **API**: Express 5 (artifact `api-server`, port 8080) with `pino-http`, `cors`, `express-session` + `connect-pg-simple` for cookie sessions
+- **DB**: PostgreSQL via Drizzle ORM (`@workspace/db`)
+- **API contract**: OpenAPI 3 in `lib/api-spec`, codegen produces Zod schemas (`@workspace/api-zod`) and React Query hooks (`@workspace/api-client-react`)
+- **Auth**: bcrypt-hashed passwords + httpOnly session cookies. Frontend monkey-patches `window.fetch` in `src/main.tsx` to send `credentials: "include"` on every request.
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+## Roles
 
-## Key Commands
+Three roles enforced server-side:
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- **admin**: full access (users, shipments, dashboard, staff activity)
+- **staff**: scoped by per-user permissions (`canManageShipments`, `canManageCustomers`, `canGenerateInvoice`)
+- **customer**: can register, book shipments for themselves, view only their own shipments, generate their own invoices
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## Default seed accounts
+
+| Email | Password | Role |
+| --- | --- | --- |
+| admin@maya.com | admin123 | admin |
+| sangita@maya.com | staff123 | staff (full perms) |
+| bikash@maya.com | staff123 | staff (no customer mgmt) |
+| aarati@example.com / rohan@example.com / pemba@example.com | customer123 | customer |
+
+12 demo shipments are seeded across all customers spanning the last 12 months.
+
+## Key features
+
+- Public marketing/home page with services, embedded Google Map of Anandamaya Marg, Dhumbarahi, Kathmandu, contact form, and an inline tracking widget.
+- Public tracking page at `/track` and `/track/:trackingId` with status timeline (Pending → In Transit → Delivered).
+- Email + password auth with multi-step OTP-based password reset (OTP returned in API response in demo mode and surfaced inline as a "Demo OTP" banner).
+- Role-aware dashboard: staff/admin see KPI cards, monthly revenue + shipment volume chart (Recharts), recent shipments; customers see their own active shipments and total spent.
+- Shipments list with status filter + free-text search; admin/staff see everything, customers see only their own (server-enforced).
+- Shipment detail with status update + delete (admin/staff with permission), Generate Invoice deep-link to `https://invoice-generator.com/` with prefilled NPR pricing and shipment metadata.
+- Admin Users page: create staff/customers, edit per-user permissions, reset passwords, delete users.
+- Staff Activity leaderboard for admin.
+- Floating WhatsApp button on every page → `https://wa.me/9779769686908`.
+- Brand: deep navy + crimson red + white, with Nepali flag accents — sourced from the company logo at `public/maya-logo.jpeg`.
+
+## Repository layout
+
+- `lib/api-spec/openapi.yaml` — single source of truth for the API contract
+- `lib/api-zod` — generated Zod schemas (re-exported from `src/index.ts`)
+- `lib/api-client-react` — generated React Query hooks
+- `lib/db/src/schema/` — Drizzle tables (users, permissions, shipments, password_resets, contact_messages, sessions)
+- `artifacts/api-server/src/routes/` — auth, users, shipments, dashboard, contact
+- `artifacts/api-server/src/lib/auth.ts` — session middleware + `requireAuth(...roles)` guard
+- `artifacts/maya-logistics/src/pages/` — Home, Track, auth/, Dashboard, shipments/, admin/, Profile
+- `scripts/src/seed.ts` — idempotent seed script (run with `pnpm --filter @workspace/scripts run seed`)
+
+## Running locally
+
+Workflows are configured automatically:
+
+- `artifacts/api-server: API Server` — Express on port 8080
+- `artifacts/maya-logistics: web` — Vite on port 25999
+
+To re-seed the database: `pnpm --filter @workspace/scripts run seed`
+
+## Notes
+
+- OTP delivery is currently demo-only — codes are returned in the API response and surfaced in the UI. Wire up SMTP or an SMS gateway to send real codes.
+- Session secret is read from `SESSION_SECRET`. A development fallback is used if unset.

@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "rXieVhVFkivPJm6Cg1tiQ"
+uri = "file://artifacts/maya-logistics/public/hero-air.png"
+type = "image"
+title = "cargo plane flying over himalayas"
+
+[[generated]]
+id = "OKSmqR_yS3Ygsd-Dj6E1d"
+uri = "file://artifacts/maya-logistics/public/hero-sea.png"
+type = "image"
+title = "container ship on the ocean"
+
+[[generated]]
+id = "nuK-b-hfs8NGu_Ux7nwbs"
+uri = "file://artifacts/maya-logistics/public/hero-road.png"
+type = "image"
+title = "freight trucks on mountain road"

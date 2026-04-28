@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Maya Import Export Logistic API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and password reset
+  - name: users
+    description: User and staff management (admin)
+  - name: shipments
+    description: Shipment management
+  - name: dashboard
+    description: Dashboard analytics
+  - name: contact
+    description: Contact form
 paths:
   /healthz:
     get:
@@ -24,6 +34,472 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ----- Auth -----
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new customer account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out the current session
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the current authenticated user
+      responses:
+        "200":
+          description: Current user (or null when not signed in)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      summary: Request a password-reset OTP
+      description: Sends an OTP to the user's email and admin recovery phone. In demo mode, the OTP is returned in the response so it can be verified without a real email/SMS provider.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordBody"
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForgotPasswordResponse"
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Reset password using a verified OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ----- Users (admin) -----
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users (admin only)
+      parameters:
+        - in: query
+          name: role
+          required: false
+          schema:
+            type: string
+            enum: [admin, staff, customer]
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a staff or customer account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /users/{id}/permissions:
+    patch:
+      operationId: updateUserPermissions
+      tags: [users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionsBody"
+      responses:
+        "200":
+          description: Updated permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Permissions"
+
+  /users/{id}/reset-password:
+    post:
+      operationId: adminResetUserPassword
+      tags: [users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminResetPasswordBody"
+      responses:
+        "200":
+          description: Password reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ----- Shipments -----
+  /shipments:
+    get:
+      operationId: listShipments
+      tags: [shipments]
+      summary: List shipments (staff/admin see all; customers see their own)
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+            enum: [pending, in_transit, delivered]
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+    post:
+      operationId: createShipment
+      tags: [shipments]
+      summary: Create a new shipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShipmentBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  /shipments/{id}:
+    get:
+      operationId: getShipment
+      tags: [shipments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Shipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+    patch:
+      operationId: updateShipment
+      tags: [shipments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateShipmentBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+    delete:
+      operationId: deleteShipment
+      tags: [shipments]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /shipments/track/{trackingId}:
+    get:
+      operationId: trackShipment
+      tags: [shipments]
+      summary: Public shipment tracking by tracking ID
+      parameters:
+        - in: path
+          name: trackingId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicShipment"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ----- Dashboard -----
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Headline numbers for the admin dashboard
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-shipments:
+    get:
+      operationId: getRecentShipments
+      tags: [dashboard]
+      summary: Most recent shipments (admin/staff)
+      responses:
+        "200":
+          description: Recent shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+
+  /dashboard/revenue-trend:
+    get:
+      operationId: getRevenueTrend
+      tags: [dashboard]
+      summary: Revenue and shipment counts grouped by month for the last 12 months
+      responses:
+        "200":
+          description: Trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenuePoint"
+
+  /dashboard/staff-activity:
+    get:
+      operationId: getStaffActivity
+      tags: [dashboard]
+      summary: Per-staff shipment activity counts
+      responses:
+        "200":
+          description: Staff activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffActivity"
+
+  # ----- Contact -----
+  /contact:
+    post:
+      operationId: sendContactMessage
+      tags: [contact]
+      summary: Submit a contact form message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactBody"
+      responses:
+        "201":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +507,407 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    Role:
+      type: string
+      enum: [admin, staff, customer]
+
+    ShipmentStatus:
+      type: string
+      enum: [pending, in_transit, delivered]
+
+    Permissions:
+      type: object
+      properties:
+        canManageShipments:
+          type: boolean
+        canManageCustomers:
+          type: boolean
+        canGenerateInvoice:
+          type: boolean
+      required: [canManageShipments, canManageCustomers, canGenerateInvoice]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        createdAt:
+          type: string
+          format: date-time
+        permissions:
+          $ref: "#/components/schemas/Permissions"
+      required: [id, name, email, phone, role, createdAt, permissions]
+
+    CurrentUserResponse:
+      type: object
+      properties:
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+      required: [user]
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+      required: [user]
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 6
+      required: [name, email, phone, password]
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    ForgotPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+      required: [email]
+
+    ForgotPasswordResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        # In demo / development mode the generated OTP is included so the user
+        # can complete the reset without a configured SMTP/SMS provider.
+        otp:
+          type: ["string", "null"]
+        sentToEmail:
+          type: string
+        sentToPhone:
+          type: string
+      required: [message, sentToEmail, sentToPhone]
+
+    ResetPasswordBody:
+      type: object
+      properties:
+        email:
+          type: string
+        otp:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+      required: [email, otp, newPassword]
+
+    CreateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 6
+        role:
+          $ref: "#/components/schemas/Role"
+        permissions:
+          $ref: "#/components/schemas/Permissions"
+      required: [name, email, phone, password, role]
+
+    UpdateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+
+    PermissionsBody:
+      type: object
+      properties:
+        canManageShipments:
+          type: boolean
+        canManageCustomers:
+          type: boolean
+        canGenerateInvoice:
+          type: boolean
+      required: [canManageShipments, canManageCustomers, canGenerateInvoice]
+
+    AdminResetPasswordBody:
+      type: object
+      properties:
+        newPassword:
+          type: string
+          minLength: 6
+      required: [newPassword]
+
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: integer
+        trackingId:
+          type: string
+        senderName:
+          type: string
+        senderPhone:
+          type: ["string", "null"]
+        receiverName:
+          type: string
+        receiverPhone:
+          type: ["string", "null"]
+        origin:
+          type: string
+        destination:
+          type: string
+        weight:
+          type: number
+        cost:
+          type: number
+        status:
+          $ref: "#/components/schemas/ShipmentStatus"
+        notes:
+          type: ["string", "null"]
+        customerId:
+          type: ["integer", "null"]
+        customerName:
+          type: ["string", "null"]
+        customerEmail:
+          type: ["string", "null"]
+        createdById:
+          type: ["integer", "null"]
+        createdByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - trackingId
+        - senderName
+        - receiverName
+        - origin
+        - destination
+        - weight
+        - cost
+        - status
+        - createdAt
+        - updatedAt
+
+    PublicShipment:
+      type: object
+      properties:
+        trackingId:
+          type: string
+        senderName:
+          type: string
+        receiverName:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        weight:
+          type: number
+        status:
+          $ref: "#/components/schemas/ShipmentStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - trackingId
+        - senderName
+        - receiverName
+        - origin
+        - destination
+        - weight
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateShipmentBody:
+      type: object
+      properties:
+        senderName:
+          type: string
+          minLength: 1
+        senderPhone:
+          type: string
+        receiverName:
+          type: string
+          minLength: 1
+        receiverPhone:
+          type: string
+        origin:
+          type: string
+          minLength: 1
+        destination:
+          type: string
+          minLength: 1
+        weight:
+          type: number
+          minimum: 0
+        cost:
+          type: number
+          minimum: 0
+        notes:
+          type: string
+        customerId:
+          type: integer
+      required: [senderName, receiverName, origin, destination, weight, cost]
+
+    UpdateShipmentBody:
+      type: object
+      properties:
+        senderName:
+          type: string
+        senderPhone:
+          type: string
+        receiverName:
+          type: string
+        receiverPhone:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        weight:
+          type: number
+        cost:
+          type: number
+        status:
+          $ref: "#/components/schemas/ShipmentStatus"
+        notes:
+          type: string
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalShipments:
+          type: integer
+        pending:
+          type: integer
+        inTransit:
+          type: integer
+        delivered:
+          type: integer
+        totalRevenue:
+          type: number
+        deliveredRevenue:
+          type: number
+        totalCustomers:
+          type: integer
+        totalStaff:
+          type: integer
+        avgShipmentCost:
+          type: number
+        shipmentsThisMonth:
+          type: integer
+        revenueThisMonth:
+          type: number
+      required:
+        - totalShipments
+        - pending
+        - inTransit
+        - delivered
+        - totalRevenue
+        - deliveredRevenue
+        - totalCustomers
+        - totalStaff
+        - avgShipmentCost
+        - shipmentsThisMonth
+        - revenueThisMonth
+
+    RevenuePoint:
+      type: object
+      properties:
+        month:
+          type: string
+        shipments:
+          type: integer
+        revenue:
+          type: number
+      required: [month, shipments, revenue]
+
+    StaffActivity:
+      type: object
+      properties:
+        userId:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        shipmentsCreated:
+          type: integer
+        revenueGenerated:
+          type: number
+      required: [userId, name, email, shipmentsCreated, revenueGenerated]
+
+    ContactBody:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+        message:
+          type: string
+          minLength: 1
+      required: [name, email, message]

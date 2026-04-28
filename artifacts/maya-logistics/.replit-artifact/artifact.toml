@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Maya Import Export Logistic"
+version = "1.0.0"
+id = "artifacts/maya-logistics"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25999
+
+[services.development]
+run = "pnpm --filter @workspace/maya-logistics run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/maya-logistics", "run", "build" ]
+publicDir = "artifacts/maya-logistics/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25999"
+BASE_PATH = "/"

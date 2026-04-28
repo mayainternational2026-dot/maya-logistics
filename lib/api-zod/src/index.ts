@@ -1,2 +1,3 @@
 export * from "./generated/api";
-export * from "./generated/types";
+export { Role } from "./generated/types/role";
+export { ShipmentStatus } from "./generated/types/shipmentStatus";
