@@ -38,14 +38,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isStaff = user.role === "staff";
   const isInternal = isAdmin || isStaff;
 
+  const canInvoice = isAdmin || (isStaff && (user.permissions?.canGenerateInvoice ?? false));
+
   const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, show: true },
-    { name: "Shipments", href: "/shipments", icon: Package, show: true },
-    { name: "Create Invoice", href: "/admin/create-invoice", icon: FilePlus, show: isAdmin || (isStaff && (user.permissions?.canGenerateInvoice ?? false)) },
-    { name: "Inquiries", href: "/admin/inquiries", icon: ClipboardList, show: isInternal },
-    { name: "Users", href: "/admin/users", icon: Users, show: isAdmin },
-    { name: "Staff Activity", href: "/admin/staff-activity", icon: Activity, show: isAdmin },
-    { name: "Track", href: "/track", icon: Map, show: true },
+    { name: "Dashboard",      href: "/dashboard",            icon: LayoutDashboard, show: true },
+    { name: "Create Invoice", href: "/admin/create-invoice", icon: FilePlus,        show: canInvoice },
+    { name: "Shipments",      href: "/shipments",            icon: Package,         show: true },
+    { name: "Inquiries",      href: "/admin/inquiries",      icon: ClipboardList,   show: isInternal },
+    { name: "Users",          href: "/admin/users",          icon: Users,           show: isAdmin },
+    { name: "Staff Activity", href: "/admin/staff-activity", icon: Activity,        show: isAdmin },
+    { name: "Track",          href: "/track",                icon: Map,             show: true },
   ].filter((item) => item.show);
 
   const NavLink = ({ item, onClick }: { item: typeof navItems[0]; onClick?: () => void }) => {
