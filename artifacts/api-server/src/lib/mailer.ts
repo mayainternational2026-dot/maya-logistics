@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+
 import { logger } from "./logger";
 
 const COMPANY_NAME = "Maya Import Export Logistic";
@@ -73,6 +74,16 @@ function escapeHtml(str: string): string {
 }
 
 function createTransport() {
+  // Prefer Resend SMTP if API key is set
+  if (process.env.RESEND_API_KEY) {
+    return nodemailer.createTransport({
+      host: "smtp.resend.com",
+      port: 465,
+      secure: true,
+      auth: { user: "resend", pass: process.env.RESEND_API_KEY },
+    });
+  }
+  // Fall back to Gmail
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) return null;
@@ -82,6 +93,15 @@ function createTransport() {
     secure: false,
     auth: { user, pass },
   });
+}
+
+function getSenderAddress(): string {
+  // When using Resend, must send from a verified domain
+  // Use onboarding@resend.dev for testing or a verified domain
+  if (process.env.RESEND_API_KEY) {
+    return process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
+  }
+  return process.env.GMAIL_USER ?? COMPANY_EMAIL;
 }
 
 function htmlTemplate(body: string): string {
@@ -159,7 +179,7 @@ export async function sendRegistrationOtpEmail(
   `;
 
   await transport.sendMail({
-    from: `"${COMPANY_NAME}" <${process.env.GMAIL_USER}>`,
+    from: `"${COMPANY_NAME}" <${getSenderAddress()}>`,
     to: toEmail,
     subject: `🔐 ${otp} — Your Maya Logistics Email Verification Code`,
     html: htmlTemplate(body),
@@ -196,7 +216,7 @@ export async function sendOtpEmail(
   `;
 
   await transport.sendMail({
-    from: `"${COMPANY_NAME}" <${process.env.GMAIL_USER}>`,
+    from: `"${COMPANY_NAME}" <${getSenderAddress()}>`,
     to: toEmail,
     subject: `🔐 Your Maya Logistics Password Reset Code: ${otp}`,
     html: htmlTemplate(body),
@@ -265,7 +285,7 @@ export async function sendStatusUpdateEmail(
   `;
 
   await transport.sendMail({
-    from: `"${COMPANY_NAME}" <${process.env.GMAIL_USER}>`,
+    from: `"${COMPANY_NAME}" <${getSenderAddress()}>`,
     to: shipment.customerEmail,
     subject: `${icon} ${label} — Tracking: ${shipment.trackingId}`,
     html: htmlTemplate(body),
@@ -309,7 +329,7 @@ export async function sendPaymentConfirmedEmail(
   `;
 
   await transport.sendMail({
-    from: `"${COMPANY_NAME}" <${process.env.GMAIL_USER}>`,
+    from: `"${COMPANY_NAME}" <${getSenderAddress()}>`,
     to: shipment.customerEmail,
     subject: `✅ Payment Confirmed — Tracking: ${shipment.trackingId}`,
     html: htmlTemplate(body),
