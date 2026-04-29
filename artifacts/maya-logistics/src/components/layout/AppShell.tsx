@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
+import { ChatBot } from "@/components/ui/ChatBot";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -202,6 +204,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="max-w-6xl mx-auto">{children}</div>
         </div>
       </main>
+
+      <WhatsAppButton />
+      <ChatBot onOpenInquiry={() => setLocation("/inquiry")} />
     </div>
   );
 }

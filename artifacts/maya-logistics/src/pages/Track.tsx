@@ -3,11 +3,27 @@ import { useLocation, useParams } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText } from "lucide-react";
+import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText, Warehouse, ShieldCheck, PlaneTakeoff, Building2 } from "lucide-react";
 import { useTrackShipment, getTrackShipmentQueryKey } from "@workspace/api-client-react";
-import { formatNPR, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
+import { ChatBot } from "@/components/ui/ChatBot";
+
+type ShipmentStatus = "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
+
+const STAGES: { status: ShipmentStatus; label: string; icon: React.ReactNode }[] = [
+  { status: "pending",           label: "Order Received",     icon: <FileText className="h-4 w-4" /> },
+  { status: "collected",         label: "Collected",          icon: <Truck className="h-4 w-4" /> },
+  { status: "at_warehouse",      label: "At Warehouse",       icon: <Warehouse className="h-4 w-4" /> },
+  { status: "customs_clearance", label: "Customs Clearance",  icon: <ShieldCheck className="h-4 w-4" /> },
+  { status: "in_transit",        label: "In Transit",         icon: <PlaneTakeoff className="h-4 w-4" /> },
+  { status: "arrived",           label: "Arrived at Office",  icon: <Building2 className="h-4 w-4" /> },
+  { status: "delivered",         label: "Dispatched",         icon: <CheckCircle className="h-4 w-4" /> },
+];
+
+const STATUS_ORDER: ShipmentStatus[] = ["pending","collected","at_warehouse","customs_clearance","in_transit","arrived","delivered"];
+const statusIndex = (s: ShipmentStatus) => STATUS_ORDER.indexOf(s);
 
 export default function Track() {
   const params = useParams();
@@ -90,52 +106,43 @@ export default function Track() {
             </div>
 
             <div className="p-6 md:p-8">
-              {/* Timeline */}
-              <div className="relative mb-12 py-8">
-                <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 rounded-full hidden md:block"></div>
-                <div className="absolute top-1/2 left-0 h-1 bg-primary -translate-y-1/2 rounded-full hidden md:block transition-all duration-500" 
-                     style={{ 
-                       width: shipment.status === 'pending' ? '0%' : 
-                              shipment.status === 'in_transit' ? '50%' : '100%' 
-                     }}>
-                </div>
-                
-                <div className="flex flex-col md:flex-row justify-between relative z-10 gap-8 md:gap-0">
-                  <div className="flex flex-row md:flex-col items-center md:items-center gap-4 md:gap-2">
-                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors", 
-                      shipment.status === 'pending' || shipment.status === 'in_transit' || shipment.status === 'delivered' ? "bg-primary text-white" : "bg-gray-200 text-gray-400")}>
-                      <FileText className="h-4 w-4" />
-                    </div>
-                    <div className="md:text-center">
-                      <p className="font-bold text-secondary">Order Placed</p>
-                      <p className="text-sm text-gray-500">{format(new Date(shipment.createdAt), "MMM d, yyyy")}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-row md:flex-col items-center md:items-center gap-4 md:gap-2">
-                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors", 
-                      shipment.status === 'in_transit' || shipment.status === 'delivered' ? "bg-primary text-white" : "bg-gray-200 text-gray-400")}>
-                      <Truck className="h-4 w-4" />
-                    </div>
-                    <div className="md:text-center">
-                      <p className="font-bold text-secondary">In Transit</p>
-                      <p className="text-sm text-gray-500">
-                        {shipment.status === 'in_transit' || shipment.status === 'delivered' ? "Departed" : "Pending"}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-row md:flex-col items-center md:items-center gap-4 md:gap-2">
-                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors", 
-                      shipment.status === 'delivered' ? "bg-primary text-white" : "bg-gray-200 text-gray-400")}>
-                      <CheckCircle className="h-4 w-4" />
-                    </div>
-                    <div className="md:text-center">
-                      <p className="font-bold text-secondary">Delivered</p>
-                      <p className="text-sm text-gray-500">
-                        {shipment.status === 'delivered' ? format(new Date(shipment.updatedAt), "MMM d, yyyy") : "Pending"}
-                      </p>
-                    </div>
+              {/* 7-Stage Timeline */}
+              <div className="mb-10">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">Shipment Journey</h3>
+                <div className="relative">
+                  {/* Progress bar (desktop only) */}
+                  <div className="hidden md:block absolute top-5 left-5 right-5 h-1 bg-gray-100 rounded-full z-0" />
+                  <div
+                    className="hidden md:block absolute top-5 left-5 h-1 bg-primary rounded-full z-0 transition-all duration-700"
+                    style={{
+                      width: `calc(${(statusIndex(shipment.status as ShipmentStatus) / (STAGES.length - 1)) * 100}% - ${statusIndex(shipment.status as ShipmentStatus) === 0 ? "20px" : statusIndex(shipment.status as ShipmentStatus) === STAGES.length - 1 ? "0px" : "0px"})`,
+                    }}
+                  />
+                  <div className="grid grid-cols-7 gap-1 relative z-10">
+                    {STAGES.map((stage, i) => {
+                      const done = statusIndex(shipment.status as ShipmentStatus) >= i;
+                      const current = shipment.status === stage.status;
+                      return (
+                        <div key={stage.status} className="flex flex-col items-center gap-2">
+                          <div className={cn(
+                            "h-10 w-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all duration-300",
+                            done ? "bg-primary text-white" : "bg-gray-100 text-gray-400",
+                            current && "ring-2 ring-primary ring-offset-2 scale-110"
+                          )}>
+                            {done && !current ? <CheckCircle className="h-4 w-4" /> : stage.icon}
+                          </div>
+                          <div className="text-center">
+                            <p className={cn("text-xs font-semibold leading-tight", done ? "text-secondary" : "text-gray-400")}>
+                              {stage.label}
+                            </p>
+                            {current && <p className="text-xs text-primary font-bold mt-0.5">● Active</p>}
+                            {!current && done && i === 0 && (
+                              <p className="text-xs text-gray-400">{format(new Date(shipment.createdAt), "MMM d")}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -189,6 +196,7 @@ export default function Track() {
         )}
       </div>
       <WhatsAppButton />
+      <ChatBot onOpenInquiry={() => setLocation("/inquiry")} />
     </div>
   );
 }

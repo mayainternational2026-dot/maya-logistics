@@ -7,9 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
 import { Package, Link2, DollarSign, ImagePlus, X, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
+const BASE = import.meta.env.BASE_URL;
 const MAX_IMAGES = 4;
 const MAX_SIZE_MB = 2;
+
+type Errors = { name?: string; email?: string; productDetails?: string };
 
 export default function InquiryPage() {
   const [, setLocation] = useLocation();
@@ -18,6 +22,24 @@ export default function InquiryPage() {
   const [images, setImages] = useState<{ name: string; dataUrl: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    productDetails: "",
+    productLink: "",
+    quantity: "",
+    estimatedCost: "",
+  });
+
+  const set = (field: keyof typeof form) => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm((p) => ({ ...p, [field]: e.target.value }));
+    setErrors((p) => ({ ...p, [field]: undefined }));
+  };
 
   const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -29,10 +51,7 @@ export default function InquiryPage() {
       }
       const reader = new FileReader();
       reader.onload = () => {
-        setImages((prev) => [
-          ...prev,
-          { name: file.name, dataUrl: reader.result as string },
-        ]);
+        setImages((prev) => [...prev, { name: file.name, dataUrl: reader.result as string }]);
       };
       reader.readAsDataURL(file);
     });
@@ -41,30 +60,49 @@ export default function InquiryPage() {
 
   const removeImage = (i: number) => setImages((prev) => prev.filter((_, idx) => idx !== i));
 
+  const validate = (): boolean => {
+    const errs: Errors = {};
+    if (!form.name.trim()) errs.name = "Full name is required";
+    if (!form.email.trim()) {
+      errs.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errs.email = "Enter a valid email address";
+    }
+    if (!form.productDetails.trim()) errs.productDetails = "Please describe your product";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    if (!validate()) return;
 
     const body = {
-      name: fd.get("name") as string,
-      email: fd.get("email") as string,
-      phone: fd.get("phone") as string,
-      productDetails: fd.get("productDetails") as string,
-      productLink: fd.get("productLink") as string,
-      quantity: fd.get("quantity") ? Number(fd.get("quantity")) : undefined,
-      estimatedCost: fd.get("estimatedCost") ? Number(fd.get("estimatedCost")) : undefined,
-      images: images.length > 0 ? JSON.stringify(images.map((i) => ({ name: i.name, dataUrl: i.dataUrl }))) : undefined,
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim() || undefined,
+      productDetails: form.productDetails.trim(),
+      productLink: form.productLink.trim() || undefined,
+      quantity: form.quantity ? Number(form.quantity) : undefined,
+      estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : undefined,
+      images: images.length > 0
+        ? JSON.stringify(images.map((i) => ({ name: i.name, dataUrl: i.dataUrl })))
+        : undefined,
     };
 
     setLoading(true);
     try {
-      const res = await fetch("/api/inquiries", {
+      const res = await fetch(`${BASE}api/inquiries`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: "Submission failed", description: data.error ?? "Please try again.", variant: "destructive" });
+        return;
+      }
       setSubmitted(true);
     } catch {
       toast({ title: "Submission failed", description: "Please try again or contact us on WhatsApp.", variant: "destructive" });
@@ -90,6 +128,11 @@ export default function InquiryPage() {
           </div>
         </div>
         <WhatsAppButton />
+        <ChatBot onOpenInquiry={() => {
+          setSubmitted(false);
+          setForm({ name: "", email: "", phone: "", productDetails: "", productLink: "", quantity: "", estimatedCost: "" });
+          setImages([]);
+        }} />
       </div>
     );
   }
@@ -110,22 +153,35 @@ export default function InquiryPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="space-y-6">
           {/* Contact info */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider">Your Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                <Input name="name" required placeholder="Ram Bahadur" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+                <Input
+                  value={form.name} onChange={set("name")}
+                  placeholder="Ram Bahadur"
+                  className={cn(errors.name && "border-red-400 focus-visible:ring-red-400")}
+                />
+                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <Input name="email" type="email" required placeholder="ram@email.com" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                <Input
+                  type="email" value={form.email} onChange={set("email")}
+                  placeholder="ram@email.com"
+                  className={cn(errors.email && "border-red-400 focus-visible:ring-red-400")}
+                />
+                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <Input name="phone" placeholder="+977 98XXXXXXXX" />
+                <Input
+                  value={form.phone} onChange={set("phone")}
+                  placeholder="+977 98XXXXXXXX"
+                />
               </div>
             </div>
           </div>
@@ -135,35 +191,50 @@ export default function InquiryPage() {
             <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider">Product Details</h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Description *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Description <span className="text-red-500">*</span></label>
               <textarea
-                name="productDetails"
-                required
+                value={form.productDetails}
+                onChange={set("productDetails")}
                 rows={4}
                 placeholder="Describe the product — type, brand, material, size, special handling requirements…"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none"
+                className={cn(
+                  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none",
+                  errors.productDetails && "border-red-400 focus:ring-red-200"
+                )}
               />
+              {errors.productDetails && <p className="mt-1 text-xs text-red-600">{errors.productDetails}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <Link2 className="inline h-3.5 w-3.5 mr-1 text-gray-400" />
-                Product Link
+                Product Link <span className="text-gray-400 font-normal">(optional)</span>
               </label>
-              <Input name="productLink" type="url" placeholder="https://amazon.com/product..." />
+              <Input
+                value={form.productLink} onChange={set("productLink")}
+                placeholder="https://amazon.com/product..."
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Quantity / Amount</label>
-                <Input name="quantity" type="number" min="0" step="any" placeholder="e.g. 10" />
+                <Input
+                  value={form.quantity} onChange={set("quantity")}
+                  type="number" min="0" step="any"
+                  placeholder="e.g. 10"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   <DollarSign className="inline h-3.5 w-3.5 mr-1 text-gray-400" />
                   Estimated Value (NPR)
                 </label>
-                <Input name="estimatedCost" type="number" min="0" step="any" placeholder="e.g. 25000" />
+                <Input
+                  value={form.estimatedCost} onChange={set("estimatedCost")}
+                  type="number" min="0" step="any"
+                  placeholder="e.g. 25000"
+                />
               </div>
             </div>
 
@@ -236,7 +307,11 @@ export default function InquiryPage() {
       </div>
 
       <WhatsAppButton />
-      <ChatBot onOpenInquiry={() => setLocation("/inquiry")} />
+      <ChatBot onOpenInquiry={() => {
+        setSubmitted(false);
+        setForm({ name: "", email: "", phone: "", productDetails: "", productLink: "", quantity: "", estimatedCost: "" });
+        setImages([]);
+      }} />
     </div>
   );
 }
