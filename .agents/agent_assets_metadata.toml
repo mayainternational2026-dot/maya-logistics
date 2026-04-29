@@ -53,3 +53,9 @@ id = "xU6Wdj9IUWBh4pTn1P8RT"
 uri = "file://maya-railway-fixed.zip"
 type = "unspecified"
 title = "Maya Logistics — Fixed ZIP for Railway"
+
+[[outputs]]
+id = "uaN7OAbRxQC8RTaLgLMx3"
+uri = "file://maya-railway-final.zip"
+type = "unspecified"
+title = "Maya Logistics — Railway Final (No Errors)"

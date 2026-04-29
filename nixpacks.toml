@@ -2,11 +2,14 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["npm install -g pnpm@9 && pnpm install --no-frozen-lockfile"]
+cmds = [
+  "npm install -g pnpm@10",
+  "pnpm install --no-frozen-lockfile"
+]
 
 [phases.build]
 cmds = [
-  "pnpm --filter @workspace/maya-logistics run build",
+  "NODE_ENV=production pnpm --filter @workspace/maya-logistics run build",
   "pnpm --filter @workspace/api-server run build"
 ]
 
