@@ -1,8 +1,3 @@
 #!/bin/sh
-set -e
-
-echo "Running database migrations..."
-pnpm --filter @workspace/db run push-force || echo "Migration warning — continuing..."
-
-echo "Starting server..."
+echo "Starting Maya Logistics server on port $PORT..."
 exec node --enable-source-maps ./artifacts/api-server/dist/index.mjs
