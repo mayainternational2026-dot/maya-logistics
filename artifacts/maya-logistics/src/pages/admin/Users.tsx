@@ -217,9 +217,9 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
     phone: "",
     password: "",
     role: "staff" as "staff" | "customer",
-    canManageShipments: true,
+    canManageShipments: false,
     canManageCustomers: false,
-    canGenerateInvoice: true,
+    canGenerateInvoice: false,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -306,6 +306,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
             required
             type="password"
             minLength={6}
+            autoComplete="new-password"
             value={form.password}
             onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
             placeholder="Initial password"
