@@ -1,12 +1,10 @@
-FROM node:20
-
-RUN corepack enable && corepack prepare pnpm@10 --activate
+FROM node:20-slim
 
 WORKDIR /app
 
 COPY . .
 
-RUN pnpm install --prod --no-frozen-lockfile
+RUN npm install nodemailer@8
 
 ENV NODE_ENV=production
 ENV PORT=3000
