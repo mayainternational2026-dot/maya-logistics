@@ -223,9 +223,6 @@ export default function Shipments() {
                     <td className="px-6 py-4 text-gray-500 text-xs">{format(new Date(row.createdAt), "MMM d, yyyy")}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/track/${row.trackingId}`}>
-                          <Button size="sm" variant="outline" className="h-8">Track</Button>
-                        </Link>
                         {(isAdmin ||
                           (isStaff && (user?.permissions?.canGenerateInvoice ?? false)) ||
                           (isCustomer && row.paid)) && (
@@ -241,6 +238,9 @@ export default function Shipments() {
                             </Button>
                           </Link>
                         )}
+                        <Link href={`/track/${row.trackingId}`}>
+                          <Button size="sm" variant="outline" className="h-8">Track</Button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
