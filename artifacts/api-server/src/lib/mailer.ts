@@ -63,6 +63,15 @@ const STATUS_ICONS: Record<ShipmentStatus, string> = {
   delivered: "✅",
 };
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 function createTransport() {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
@@ -130,10 +139,11 @@ export async function sendRegistrationOtpEmail(
     return;
   }
 
+  const safeName = escapeHtml(name);
   const body = `
     <h2 style="margin:0 0 4px;font-size:20px;color:#0f1f3d;">Verify Your Email Address</h2>
     <p style="margin:0 0 24px;color:#64748b;font-size:14px;">
-      Hi <strong>${name}</strong>, welcome to Maya Import Export Logistic!<br/>
+      Hi <strong>${safeName}</strong>, welcome to Maya Import Export Logistic!<br/>
       Use the code below to verify your email and complete your registration.
       The code expires in <strong>15 minutes</strong>.
     </p>

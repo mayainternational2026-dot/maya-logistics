@@ -5,11 +5,48 @@ import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
+function isSafeUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeImages(raw: unknown): string | null {
+  if (raw == null) return null;
+  let parsed: unknown;
+  try {
+    parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed)) return null;
+  const safe = parsed.filter(
+    (item) =>
+      item !== null &&
+      typeof item === "object" &&
+      typeof (item as Record<string, unknown>).name === "string" &&
+      typeof (item as Record<string, unknown>).dataUrl === "string" &&
+      /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/.test(
+        (item as Record<string, unknown>).dataUrl as string,
+      ),
+  );
+  return safe.length > 0 ? JSON.stringify(safe) : null;
+}
+
 // Public — anyone can submit an inquiry
 router.post("/inquiries", async (req, res): Promise<void> => {
   const { name, email, phone, productDetails, images, productLink, quantity, estimatedCost } = req.body;
   if (!name || !email || !productDetails) {
     res.status(400).json({ error: "name, email, and productDetails are required" });
+    return;
+  }
+
+  const safeProductLink = productLink ? String(productLink).trim() : null;
+  if (safeProductLink && !isSafeUrl(safeProductLink)) {
+    res.status(400).json({ error: "productLink must be a valid http or https URL" });
     return;
   }
 
@@ -20,8 +57,8 @@ router.post("/inquiries", async (req, res): Promise<void> => {
       email: String(email).trim().toLowerCase(),
       phone: phone ? String(phone).trim() : null,
       productDetails: String(productDetails).trim(),
-      images: images ?? null,
-      productLink: productLink ? String(productLink).trim() : null,
+      images: sanitizeImages(images),
+      productLink: safeProductLink,
       quantity: quantity != null ? String(quantity) : null,
       estimatedCost: estimatedCost != null ? String(estimatedCost) : null,
     })

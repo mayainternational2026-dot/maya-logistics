@@ -9,6 +9,15 @@ import { formatNPR } from "@/lib/utils";
 
 const STATUS_OPTIONS = ["pending", "reviewing", "quoted", "closed"];
 
+function isSafeUrl(url: string): boolean {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 const statusColor: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700",
   reviewing: "bg-blue-100 text-blue-700",
@@ -110,7 +119,7 @@ export default function Inquiries() {
                     <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Product Info</p>
                     {inq.quantity != null && <p className="text-gray-700">Qty: <span className="font-medium">{inq.quantity}</span></p>}
                     {inq.estimatedCost != null && <p className="text-gray-700">Est. Value: <span className="font-semibold text-gray-900">{formatNPR(inq.estimatedCost)}</span></p>}
-                    {inq.productLink && (
+                    {inq.productLink && isSafeUrl(inq.productLink) && (
                       <a href={inq.productLink} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm mt-1">
                         <ExternalLink className="h-3 w-3" /> Product Link
@@ -128,11 +137,14 @@ export default function Inquiries() {
                   <div>
                     <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Images</p>
                     <div className="flex flex-wrap gap-2">
-                      {parsedImages.map((img, i) => (
-                        <a key={i} href={img.dataUrl} target="_blank" rel="noopener noreferrer">
-                          <img src={img.dataUrl} alt={img.name} className="h-24 w-24 object-cover rounded-lg border border-gray-200 hover:opacity-90 transition-opacity" />
-                        </a>
-                      ))}
+                      {parsedImages.map((img, i) => {
+                        const safeSrc = /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/.test(img.dataUrl)
+                          ? img.dataUrl
+                          : null;
+                        return safeSrc ? (
+                          <img key={i} src={safeSrc} alt={img.name} className="h-24 w-24 object-cover rounded-lg border border-gray-200" />
+                        ) : null;
+                      })}
                     </div>
                   </div>
                 )}
