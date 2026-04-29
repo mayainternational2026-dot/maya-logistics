@@ -59,3 +59,9 @@ id = "uaN7OAbRxQC8RTaLgLMx3"
 uri = "file://maya-railway-final.zip"
 type = "unspecified"
 title = "Maya Logistics — Railway Final (No Errors)"
+
+[[outputs]]
+id = "a0Wd0_1mrGqGfv4Wxo9l5"
+uri = "file://maya-final.zip"
+type = "unspecified"
+title = "Maya Logistics - Final Build (Upload to GitHub)"

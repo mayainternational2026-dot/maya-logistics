@@ -1,3 +1,4 @@
 maya-railway-fixed.zip filter=lfs diff=lfs merge=lfs -text
 artifacts/maya-logistics/public/maya-deploy.zip filter=lfs diff=lfs merge=lfs -text
 maya-deploy.zip filter=lfs diff=lfs merge=lfs -text
+maya-final.zip filter=lfs diff=lfs merge=lfs -text
