@@ -162,6 +162,52 @@ router.post("/auth/register-verify", async (req, res): Promise<void> => {
   res.status(201).json({ user: sessionUser });
 });
 
+// ── DIRECT customer registration (no OTP required) ──
+router.post("/auth/register", async (req, res): Promise<void> => {
+  const parsed = RegisterInitBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Invalid input" });
+    return;
+  }
+
+  const email = parsed.data.email.toLowerCase().trim();
+
+  const existing = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
+
+  if (existing.length > 0) {
+    res.status(409).json({ error: "An account with this email already exists" });
+    return;
+  }
+
+  const passwordHash = await hashPassword(parsed.data.password);
+  const [user] = await db
+    .insert(usersTable)
+    .values({
+      name: parsed.data.name.trim(),
+      email,
+      phone: parsed.data.phone.trim(),
+      passwordHash,
+      role: "customer",
+    })
+    .returning();
+
+  await db.insert(permissionsTable).values({
+    userId: user.id,
+    canManageShipments: false,
+    canManageCustomers: false,
+    canGenerateInvoice: false,
+  });
+
+  req.session.userId = user.id;
+  const sessionUser = await loadUserById(user.id);
+  req.log.info({ email, userId: user.id }, "Customer account created via direct registration");
+  res.status(201).json({ user: sessionUser });
+});
+
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {

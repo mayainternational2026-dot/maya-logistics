@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
+import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plane, Ship, Truck, Package, MapPin, Search, ArrowRight, Phone, Mail, MapPin as MapPinIcon } from "lucide-react";
+import { Plane, Ship, Truck, Package, Search, Phone, Mail, MapPin as MapPinIcon, UserPlus, LogIn } from "lucide-react";
 import { useSendContactMessage } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
@@ -11,6 +12,7 @@ import { ChatBot } from "@/components/ui/ChatBot";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [trackingId, setTrackingId] = useState("");
 
   const handleTrack = (e: React.FormEvent) => {
@@ -94,6 +96,38 @@ export default function Home() {
               Track
             </Button>
           </form>
+
+          {/* Register / Login CTA for guests */}
+          {!user && (
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/register">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-white gap-2 px-8 h-13 text-base font-bold shadow-lg shadow-primary/30 w-full sm:w-auto">
+                  <UserPlus className="h-5 w-5" />
+                  Create a Free Account
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="lg" variant="outline" className="bg-white/10 border-white/40 text-white hover:bg-white/20 hover:text-white gap-2 px-8 h-13 text-base w-full sm:w-auto backdrop-blur-sm">
+                  <LogIn className="h-5 w-5" />
+                  Sign In
+                </Button>
+              </Link>
+            </div>
+          )}
+          {!user && (
+            <p className="mt-4 text-sm text-gray-300">
+              Register once to track all your shipments, view invoices, and manage your cargo.
+            </p>
+          )}
+          {user && (
+            <div className="mt-6">
+              <Link href="/dashboard">
+                <Button size="lg" className="bg-white text-secondary hover:bg-gray-100 gap-2 px-8 font-bold shadow-lg">
+                  Go to Dashboard
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
