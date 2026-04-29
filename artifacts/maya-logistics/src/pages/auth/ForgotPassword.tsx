@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, KeyRound, Lock, CheckCircle } from "lucide-react";
+import { logoUrl } from "@/lib/assets";
 
 type Step = "email" | "otp";
 
@@ -71,7 +72,7 @@ export default function ForgotPassword() {
         <div className="text-center">
           <Link href="/" className="inline-flex justify-center mb-6">
             <img
-              src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
+              src={logoUrl}
               alt="Maya Logistics"
               className="h-16 w-auto"
             />

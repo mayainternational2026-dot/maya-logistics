@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Printer, ArrowLeft, Package } from "lucide-react";
 import { formatNPR } from "@/lib/utils";
+import { logoUrl } from "@/lib/assets";
 
 const CO = {
   name: "Maya Import Export Logistic",
@@ -109,7 +110,7 @@ export default function Invoice() {
           {/* Logo + Company */}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <img
-              src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
+              src={logoUrl}
               alt="Maya"
               style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }}
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}

@@ -8,6 +8,7 @@ import { Plane, Ship, Truck, Package, Search, Phone, Mail, MapPin as MapPinIcon,
 import { useSendContactMessage } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
+import { logoUrl } from "@/lib/assets";
 import { ChatBot } from "@/components/ui/ChatBot";
 
 export default function Home() {
@@ -73,7 +74,7 @@ export default function Home() {
 
         <div className="relative z-10 container mx-auto px-4 text-center text-white">
           <div className="mb-8 inline-flex items-center justify-center p-4 bg-white rounded-xl shadow-2xl shadow-black/20">
-             <img src={`${import.meta.env.BASE_URL}maya-logo.jpeg`} alt="Maya Logistics" className="h-24 w-auto" />
+             <img src={logoUrl} alt="Maya Logistics" className="h-24 w-auto" />
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 drop-shadow-lg">
             From Nepal to the <span className="text-primary">World</span>
@@ -247,7 +248,7 @@ export default function Home() {
       <footer className="bg-secondary text-gray-300 py-12 border-t border-secondary-border">
         <div className="container mx-auto px-4 text-center">
           <div className="mb-6 flex justify-center">
-            <img src={`${import.meta.env.BASE_URL}maya-logo.jpeg`} alt="Maya Logistics" className="h-16 w-auto opacity-90" />
+            <img src={logoUrl} alt="Maya Logistics" className="h-16 w-auto opacity-90" />
           </div>
           <p className="mb-4 text-sm max-w-md mx-auto">
             Your trusted logistics partner connecting Nepal with the global market through reliable air, sea, and road freight services.

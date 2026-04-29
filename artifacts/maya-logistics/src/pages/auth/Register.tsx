@@ -7,8 +7,7 @@ import {
   User, Mail, Phone, Lock, CheckCircle2, XCircle, Eye, EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const BASE = import.meta.env.BASE_URL;
+import { logoUrl } from "@/lib/assets";
 
 const rules = [
   { label: "At least 8 characters",         test: (p: string) => p.length >= 8 },
@@ -110,7 +109,7 @@ export default function Register() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-block mb-4">
-            <img src={`${BASE}maya-logo.jpeg`} alt="Maya" className="h-14 w-auto mx-auto" />
+            <img src={logoUrl} alt="Maya" className="h-14 w-auto mx-auto" />
           </Link>
           <h2 className="text-2xl font-extrabold text-secondary">Create your account</h2>
           <p className="mt-1 text-sm text-gray-500">Ship globally with Maya Logistics</p>

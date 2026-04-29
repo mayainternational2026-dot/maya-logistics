@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { logoUrl } from "@/lib/assets";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
 
@@ -79,7 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/" className="flex items-center gap-3">
             <div className="h-8 w-8 overflow-hidden rounded-md bg-white flex items-center justify-center">
               <img
-                src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
+                src={logoUrl}
                 alt="Logo"
                 className="h-full w-full object-cover"
               />
@@ -136,7 +137,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href="/" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
             <div className="h-7 w-7 overflow-hidden rounded-md bg-white flex items-center justify-center">
               <img
-                src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
+                src={logoUrl}
                 alt="Logo"
                 className="h-full w-full object-cover"
               />

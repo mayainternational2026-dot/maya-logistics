@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Lock, Mail, ShieldCheck, User, UserCog } from "lucide-react";
+import { logoUrl } from "@/lib/assets";
 
 type LoginMode = "customer" | "staff" | "admin";
 
@@ -87,7 +88,7 @@ export default function Login() {
         <div className="text-center">
           <Link href="/" className="inline-flex justify-center mb-4">
             <img
-              src={`${import.meta.env.BASE_URL}maya-logo.jpeg`}
+              src={logoUrl}
               alt="Maya Logistics"
               className="h-16 w-auto"
             />

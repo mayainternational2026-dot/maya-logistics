@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/use-auth";
+import { logoUrl } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Plane, Ship, Truck, Package, Menu, X, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
@@ -32,7 +33,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="flex items-center gap-3">
             <div className="h-10 w-10 overflow-hidden rounded-md flex items-center justify-center bg-primary">
-               <img src={`${import.meta.env.BASE_URL}maya-logo.jpeg`} alt="Maya Logistics Logo" className="h-full w-full object-cover" />
+               <img src={logoUrl} alt="Maya Logistics Logo" className="h-full w-full object-cover" />
             </div>
             <span className="font-bold text-xl tracking-tight text-secondary">
               MAYA <span className="text-primary">LOGISTICS</span>

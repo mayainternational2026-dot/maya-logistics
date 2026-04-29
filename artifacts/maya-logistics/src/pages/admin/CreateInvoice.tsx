@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { logoUrl } from "@/lib/assets";
 import { useLocation, useSearch, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -243,7 +244,7 @@ export default function CreateInvoice() {
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {form.logoUrl
             ? <img src={form.logoUrl} alt="Logo" style={{ width: 64, height: 64, objectFit: "contain", borderRadius: 4 }} />
-            : <img src={`${BASE}maya-logo.jpeg`} alt="Maya" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            : <img src={logoUrl} alt="Maya" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 4 }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           }
           <div>
             <div style={{ fontWeight: 700, fontSize: 16 }}>{CO.name}</div>
