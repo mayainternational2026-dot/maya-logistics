@@ -10,7 +10,14 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Neon requires SSL in production; explicitly configure it to suppress
+  // the libpq SSL mode warning written to stderr on Node.js 24+.
+  ssl: process.env.DATABASE_URL?.includes("neon.tech")
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
