@@ -8,6 +8,9 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { attachUser } from "./lib/auth";
 import { pool } from "@workspace/db";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
 const app: Express = express();
 
@@ -95,5 +98,18 @@ app.use("/api/auth/reset-password", resetPasswordLimiter);
 app.use("/api/auth/login", loginLimiter);
 
 app.use("/api", router);
+
+// Serve React frontend in production (Railway / any single-service deploy)
+if (process.env.NODE_ENV === "production") {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const frontendDist = path.resolve(__dirname, "../../maya-logistics/dist/public");
+  if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(frontendDist, "index.html"));
+    });
+    logger.info({ frontendDist }, "Serving frontend static files");
+  }
+}
 
 export default app;
