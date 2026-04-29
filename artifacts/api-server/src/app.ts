@@ -104,8 +104,14 @@ if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const frontendDist = path.resolve(__dirname, "../../maya-logistics/dist/public");
   if (fs.existsSync(frontendDist)) {
+    // Disable CDN caching so stale error pages are never served
+    app.use((_, res, next) => {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      next();
+    });
     app.use(express.static(frontendDist));
     app.get("*path", (_req, res) => {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
       res.sendFile(path.join(frontendDist, "index.html"));
     });
     logger.info({ frontendDist }, "Serving frontend static files");
