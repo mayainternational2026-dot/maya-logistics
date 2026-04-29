@@ -29,3 +29,9 @@ id = "7Sg5-oQqlNtUes5w5XJc4"
 uri = "file://maya-logistics-source.zip"
 type = "unspecified"
 title = "Maya Import Export Logistic — Source Code (Node.js + PostgreSQL)"
+
+[[outputs]]
+id = "m4j_qz91LgLlKB6Sm1jI1"
+uri = "file://maya-logistics-project.tar.gz"
+type = "unspecified"
+title = "Maya Import Export Logistic — Full Project"
