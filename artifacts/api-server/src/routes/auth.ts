@@ -1,11 +1,13 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, lt } from "drizzle-orm";
+import { randomInt } from "node:crypto";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
 import {
   db,
   usersTable,
   permissionsTable,
   passwordResetsTable,
   registrationOtpsTable,
+  sessionsTable,
 } from "@workspace/db";
 import {
   LoginBody,
@@ -69,7 +71,7 @@ router.post("/auth/register-otp", async (req, res): Promise<void> => {
   }
 
   const passwordHash = await hashPassword(parsed.data.password);
-  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  const otp = String(randomInt(100000, 1000000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
 
   // Delete any previous pending OTP for this email
@@ -269,10 +271,16 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
     .where(eq(usersTable.email, email))
     .limit(1);
 
-  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  const otp = String(randomInt(100000, 1000000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   if (user) {
+    // Delete any existing reset codes before issuing a new one so only one
+    // valid code exists at a time, preventing OTP accumulation attacks.
+    await db
+      .delete(passwordResetsTable)
+      .where(eq(passwordResetsTable.email, user.email));
+
     await db.insert(passwordResetsTable).values({
       email: user.email,
       otp,
@@ -308,23 +316,40 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   const email = parsed.data.email.toLowerCase().trim();
   const now = new Date();
 
-  const [reset] = await db
+  // Fetch the active (non-expired) reset record for this email regardless of
+  // OTP value first, so we can invalidate it on a wrong guess (lockout).
+  const [activeReset] = await db
     .select()
     .from(passwordResetsTable)
     .where(
       and(
         eq(passwordResetsTable.email, email),
-        eq(passwordResetsTable.otp, parsed.data.otp),
         gte(passwordResetsTable.expiresAt, now),
       ),
     )
     .orderBy(passwordResetsTable.createdAt)
     .limit(1);
 
-  if (!reset) {
+  if (!activeReset) {
     res.status(400).json({ error: "Invalid or expired OTP" });
     return;
   }
+
+  if (activeReset.otp !== parsed.data.otp) {
+    // Wrong guess — delete the active code so the attacker cannot keep guessing
+    // the same code. The user must request a fresh code to try again.
+    await db
+      .delete(passwordResetsTable)
+      .where(eq(passwordResetsTable.email, email));
+    res.status(400).json({ error: "Invalid or expired OTP" });
+    return;
+  }
+
+  const [targetUser] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
 
   const passwordHash = await hashPassword(parsed.data.newPassword);
   await db
@@ -335,6 +360,16 @@ router.post("/auth/reset-password", async (req, res): Promise<void> => {
   await db
     .delete(passwordResetsTable)
     .where(eq(passwordResetsTable.email, email));
+
+  // Invalidate all existing sessions for this user so any stolen or active
+  // sessions are immediately revoked after a password change.
+  if (targetUser) {
+    await db
+      .delete(sessionsTable)
+      .where(
+        sql`${sessionsTable.sess}->>'userId' = ${String(targetUser.id)}`,
+      );
+  }
 
   res.json({ message: "Password reset successfully" });
 });

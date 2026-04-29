@@ -3,37 +3,39 @@ import { eq } from "drizzle-orm";
 import { db, usersTable, permissionsTable } from "@workspace/db";
 import { logger } from "./logger";
 
-const ADMIN_EMAIL = "chapagainsirish@gmail.com";
-const ADMIN_PASSWORD = "Sirish@@2054";
-
 export async function runStartupSeed() {
   try {
-    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
-
     const [existing] = await db
       .select({ id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.email, ADMIN_EMAIL))
+      .where(eq(usersTable.role, "admin"))
       .limit(1);
 
     if (existing) {
-      // Always keep the admin password in sync with the configured value
-      await db
-        .update(usersTable)
-        .set({ passwordHash, role: "admin" })
-        .where(eq(usersTable.email, ADMIN_EMAIL));
-      logger.info({ email: ADMIN_EMAIL }, "Admin password synced on startup");
+      logger.info("Admin account already exists — skipping startup seed");
       return;
     }
 
-    logger.info("No admin found — running startup seed");
+    const adminEmail = process.env["ADMIN_EMAIL"];
+    const adminPassword = process.env["ADMIN_PASSWORD"];
+
+    if (!adminEmail || !adminPassword) {
+      logger.warn(
+        "No admin account found and ADMIN_EMAIL / ADMIN_PASSWORD env vars are not set — skipping startup seed. Set these variables to bootstrap the first admin account.",
+      );
+      return;
+    }
+
+    logger.info("No admin found — running one-time startup seed");
+
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
 
     const [admin] = await db
       .insert(usersTable)
       .values({
         name: "Maya Admin",
-        email: ADMIN_EMAIL,
-        phone: "9768595133",
+        email: adminEmail.toLowerCase().trim(),
+        phone: "",
         passwordHash,
         role: "admin",
       })
@@ -46,7 +48,7 @@ export async function runStartupSeed() {
       canGenerateInvoice: true,
     });
 
-    logger.info({ email: ADMIN_EMAIL }, "Admin account created");
+    logger.info({ email: adminEmail }, "Admin account created via startup seed");
   } catch (err) {
     logger.error({ err }, "Startup seed failed");
   }
