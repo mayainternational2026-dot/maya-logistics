@@ -41,3 +41,9 @@ id = "50tH7F7QWosj034qJGs9Z"
 uri = "file://maya-logistics-project.zip"
 type = "unspecified"
 title = "Maya Import Export Logistic — Windows ZIP"
+
+[[outputs]]
+id = "qXhd-9iV4rYIx892zyNSk"
+uri = "file://maya-logistics-github.zip"
+type = "unspecified"
+title = "Maya Logistics — Upload this to GitHub"
