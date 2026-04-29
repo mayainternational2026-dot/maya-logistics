@@ -23,7 +23,7 @@ export default function Profile() {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
-        setLocation("/");
+        setLocation("/login");
         window.location.reload();
       },
     });

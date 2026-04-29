@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
-        setLocation("/");
+        setLocation("/login");
         window.location.reload();
       },
     });
