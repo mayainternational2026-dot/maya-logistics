@@ -119,6 +119,45 @@ export interface ShipmentEmailData {
   cost: number;
 }
 
+export async function sendRegistrationOtpEmail(
+  toEmail: string,
+  name: string,
+  otp: string,
+): Promise<void> {
+  const transport = createTransport();
+  if (!transport) {
+    logger.warn("GMAIL credentials not set — skipping registration OTP email");
+    return;
+  }
+
+  const body = `
+    <h2 style="margin:0 0 4px;font-size:20px;color:#0f1f3d;">Verify Your Email Address</h2>
+    <p style="margin:0 0 24px;color:#64748b;font-size:14px;">
+      Hi <strong>${name}</strong>, welcome to Maya Import Export Logistic!<br/>
+      Use the code below to verify your email and complete your registration.
+      The code expires in <strong>15 minutes</strong>.
+    </p>
+
+    <div style="background:#eff6ff;border:2px solid #007bff;border-radius:12px;padding:28px 24px;margin-bottom:28px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:2px;">Your Verification Code</p>
+      <p style="margin:0;font-size:40px;font-weight:800;color:#007bff;letter-spacing:10px;font-family:monospace;">${otp}</p>
+    </div>
+
+    <p style="margin:0 0 4px;font-size:13px;color:#64748b;">
+      If you did not create an account, please ignore this email.
+    </p>
+  `;
+
+  await transport.sendMail({
+    from: `"${COMPANY_NAME}" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
+    subject: `🔐 ${otp} — Your Maya Logistics Email Verification Code`,
+    html: htmlTemplate(body),
+  });
+
+  logger.info({ to: toEmail }, "Registration OTP email sent");
+}
+
 export async function sendOtpEmail(
   toEmail: string,
   otp: string,

@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, show: true },
     { name: "Shipments", href: "/shipments", icon: Package, show: true },
-    { name: "Create Invoice", href: "/admin/create-invoice", icon: FilePlus, show: isAdmin },
+    { name: "Create Invoice", href: "/admin/create-invoice", icon: FilePlus, show: isAdmin || (isStaff && (user.permissions?.canGenerateInvoice ?? false)) },
     { name: "Inquiries", href: "/admin/inquiries", icon: ClipboardList, show: isInternal },
     { name: "Users", href: "/admin/users", icon: Users, show: isAdmin },
     { name: "Staff Activity", href: "/admin/staff-activity", icon: Activity, show: isAdmin },

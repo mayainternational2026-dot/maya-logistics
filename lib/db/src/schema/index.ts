@@ -2,6 +2,7 @@ export * from "./users";
 export * from "./permissions";
 export * from "./shipments";
 export * from "./passwordResets";
+export * from "./registrationOtps";
 export * from "./contactMessages";
 export * from "./sessions";
 export * from "./inquiries";
