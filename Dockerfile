@@ -8,9 +8,9 @@ COPY . .
 
 RUN pnpm install --no-frozen-lockfile
 
-RUN cd artifacts/maya-logistics && NODE_ENV=production pnpm run build
+RUN NODE_ENV=production pnpm -C artifacts/maya-logistics run build
 
-RUN cd artifacts/api-server && pnpm run build
+RUN pnpm -C artifacts/api-server run build
 
 RUN chmod +x ./start.sh
 
