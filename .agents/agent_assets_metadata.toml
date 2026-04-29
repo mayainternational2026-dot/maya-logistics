@@ -35,3 +35,9 @@ id = "m4j_qz91LgLlKB6Sm1jI1"
 uri = "file://maya-logistics-project.tar.gz"
 type = "unspecified"
 title = "Maya Import Export Logistic — Full Project"
+
+[[outputs]]
+id = "50tH7F7QWosj034qJGs9Z"
+uri = "file://maya-logistics-project.zip"
+type = "unspecified"
+title = "Maya Import Export Logistic — Windows ZIP"
