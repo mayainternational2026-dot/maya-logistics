@@ -56,19 +56,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0 flex">
-          <div className="w-1/3 h-full relative">
-            <img src={`${import.meta.env.BASE_URL}hero-air.png`} alt="Air Freight" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-secondary/80 mix-blend-multiply"></div>
-          </div>
-          <div className="w-1/3 h-full relative">
-            <img src={`${import.meta.env.BASE_URL}hero-sea.png`} alt="Sea Freight" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-secondary/60 mix-blend-multiply"></div>
-          </div>
-          <div className="w-1/3 h-full relative">
-            <img src={`${import.meta.env.BASE_URL}hero-road.png`} alt="Road Freight" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-secondary/80 mix-blend-multiply"></div>
-          </div>
+        <div className="absolute inset-0 z-0">
+          <img src={`${import.meta.env.BASE_URL}hero-main.png`} alt="Maya Logistics" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-secondary/60"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-secondary via-transparent to-transparent"></div>
         </div>
 
@@ -142,17 +132,36 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: "Air Freight", icon: Plane, desc: "Express global delivery via major international airlines from TIA." },
-              { title: "Sea Freight", icon: Ship, desc: "Cost-effective container shipping routing through major transit ports." },
-              { title: "Road Freight", icon: Truck, desc: "Reliable cross-border trucking and domestic distribution network." },
-              { title: "Customs Clearance", icon: Package, desc: "Expert handling of export/import documentation and compliance." },
+              { title: "Air Freight", icon: Plane, desc: "Express global delivery via major international airlines from TIA.", img: "air-freight.png" },
+              { title: "Sea Freight", icon: Ship, desc: "Cost-effective container shipping routing through major transit ports.", img: "sea-freight.png" },
+              { title: "Road Freight", icon: Truck, desc: "Reliable cross-border trucking and domestic distribution network.", img: "road-freight.png" },
+              { title: "Customs Clearance", icon: Package, desc: "Expert handling of export/import documentation and compliance.", img: null },
             ].map((service, i) => (
-              <div key={i} className="group p-8 border border-gray-100 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                <div className="h-16 w-16 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
-                  <service.icon className="h-8 w-8" />
+              <div key={i} className="group border border-gray-100 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
+                {service.img ? (
+                  <div className="h-44 overflow-hidden bg-white flex items-center justify-center">
+                    <img
+                      src={`${import.meta.env.BASE_URL}${service.img}`}
+                      alt={service.title}
+                      className="h-full w-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ) : (
+                  <div className="h-44 bg-primary/5 flex items-center justify-center">
+                    <div className="h-20 w-20 bg-primary/10 text-primary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                      <service.icon className="h-10 w-10" />
+                    </div>
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-9 w-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors flex-shrink-0">
+                      <service.icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-lg font-bold text-secondary">{service.title}</h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed text-sm">{service.desc}</p>
                 </div>
-                <h3 className="text-xl font-bold text-secondary mb-3">{service.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{service.desc}</p>
               </div>
             ))}
           </div>
