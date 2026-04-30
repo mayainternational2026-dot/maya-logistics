@@ -159,6 +159,23 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Logistics Image Banner */}
+      <section className="relative overflow-hidden h-80 md:h-96">
+        <img
+          src={`${import.meta.env.BASE_URL}logistics-hero.png`}
+          alt="Maya Logistics — Nepal to the World"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-secondary/50 flex items-center justify-center">
+          <div className="text-center text-white px-4">
+            <h2 className="text-3xl md:text-4xl font-extrabold drop-shadow-lg mb-3">Nepal to the World</h2>
+            <p className="text-lg md:text-xl text-gray-200 drop-shadow-md max-w-xl mx-auto">
+              Air, sea, and road freight — handled with care from Kathmandu.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Contact & Location */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4">
@@ -185,6 +202,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h4 className="font-bold text-secondary">Phone & WhatsApp</h4>
+                    <p className="text-gray-600">014527999</p>
                     <p className="text-gray-600">+977 9769686908</p>
                   </div>
                 </div>
@@ -195,6 +213,15 @@ export default function Home() {
                   <div>
                     <h4 className="font-bold text-secondary">Email</h4>
                     <p className="text-gray-600">mayaimportexportinternational@gmail.com</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="mt-1 bg-white p-3 rounded-full shadow-sm text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-secondary">Website</h4>
+                    <a href="https://www.mayaimportexport.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.mayaimportexport.com</a>
                   </div>
                 </div>
               </div>
@@ -252,6 +279,10 @@ export default function Home() {
           </div>
           <p className="mb-4 text-sm max-w-md mx-auto">
             Your trusted logistics partner connecting Nepal with the global market through reliable air, sea, and road freight services.
+          </p>
+          <p className="text-sm text-gray-400 mb-2">
+            <a href="https://www.mayaimportexport.com" className="hover:text-primary transition-colors">www.mayaimportexport.com</a>
+            {" · "}014527999{" · "}+977 9769686908
           </p>
           <p className="text-xs text-gray-500">
             &copy; {new Date().getFullYear()} Maya Import Export Logistic. All rights reserved.

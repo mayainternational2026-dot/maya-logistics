@@ -21,8 +21,9 @@ const CO = {
   name: "Maya Import Export Logistic",
   address1: "Anandamaya Marg, Dhumbarahi",
   address2: "Kathmandu, Nepal",
-  phone: "Tel: 9769686908",
+  phone: "Tel: 014527999 | +977 9769686908",
   email: "mayaimportexportinternational@gmail.com",
+  website: "www.mayaimportexport.com",
 };
 
 const BLUE = "#007bff";
@@ -252,6 +253,7 @@ export default function CreateInvoice() {
             <div style={{ color: GRAY, fontSize: 12 }}>{CO.address2}</div>
             <div style={{ color: GRAY, fontSize: 12 }}>{CO.phone}</div>
             <div style={{ color: GRAY, fontSize: 12 }}>{CO.email}</div>
+            <div style={{ color: GRAY, fontSize: 12 }}>{CO.website}</div>
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -351,6 +353,16 @@ export default function CreateInvoice() {
       <div style={{ marginTop: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, marginBottom: 6, letterSpacing: 0.8 }}>Notes</div>
         <div style={{ fontSize: 13, whiteSpace: "pre-line" as const, lineHeight: 1.6 }}>{notesText}</div>
+      </div>
+
+      {/* SIGNATURE */}
+      <div style={{ marginTop: 48, display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ textAlign: "center", minWidth: 200 }}>
+          <div style={{ borderTop: `1px solid #212529`, paddingTop: 8, marginTop: 40 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#212529" }}>Authorized Signature</div>
+            <div style={{ fontSize: 12, color: GRAY, marginTop: 2 }}>{CO.name}</div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -67,7 +67,7 @@ function Router() {
               <ProtectedRoute allowedRoles={["admin", "staff"]}><Inquiries /></ProtectedRoute>
             </Route>
             <Route path="/admin/create-invoice">
-              <ProtectedRoute allowedRoles={["admin"]}><CreateInvoice /></ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin", "staff"]}><CreateInvoice /></ProtectedRoute>
             </Route>
             <Route path="/profile">
               <ProtectedRoute><Profile /></ProtectedRoute>
