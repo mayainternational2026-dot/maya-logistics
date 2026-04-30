@@ -296,6 +296,25 @@ export default function Home() {
           <p className="text-xs text-gray-500">
             &copy; {new Date().getFullYear()} Maya Import Export Logistic. All rights reserved.
           </p>
+
+          <div className="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <span className="text-xs text-gray-600">Developed & Designed by</span>
+            <a
+              href="https://www.facebook.com/share/16dd3aJ8BF/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 group"
+            >
+              <img
+                src={`${import.meta.env.BASE_URL}doko-digital-logo.png`}
+                alt="DokoDigital Tech"
+                className="h-8 w-8 rounded-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+              />
+              <span className="text-xs font-semibold text-gray-400 group-hover:text-blue-400 transition-colors">
+                DokoDigital Tech · 9768595133
+              </span>
+            </a>
+          </div>
         </div>
       </footer>
 
