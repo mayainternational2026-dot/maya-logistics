@@ -297,22 +297,25 @@ export default function Home() {
             &copy; {new Date().getFullYear()} Maya Import Export Logistic. All rights reserved.
           </p>
 
-          <div className="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <span className="text-xs text-gray-600">Developed & Designed by</span>
+          <div className="mt-8 pt-8 border-t border-gray-700">
+            <p className="text-sm text-gray-500 mb-4 tracking-wide uppercase font-medium">Developed &amp; Designed by</p>
             <a
               href="https://www.facebook.com/share/16dd3aJ8BF/"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 group"
+              className="inline-flex flex-col items-center gap-3 group"
             >
               <img
                 src={`${import.meta.env.BASE_URL}doko-digital-logo.png`}
                 alt="DokoDigital Tech"
-                className="h-8 w-8 rounded-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                className="h-24 w-24 rounded-full object-cover ring-2 ring-blue-500/40 group-hover:ring-blue-400 group-hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-900/30"
               />
-              <span className="text-xs font-semibold text-gray-400 group-hover:text-blue-400 transition-colors">
-                DokoDigital Tech · 9768595133
-              </span>
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-400 group-hover:text-blue-300 transition-colors tracking-wide">
+                  DokoDigital Tech
+                </div>
+                <div className="text-sm text-gray-400 mt-0.5">📞 9768595133</div>
+              </div>
             </a>
           </div>
         </div>
