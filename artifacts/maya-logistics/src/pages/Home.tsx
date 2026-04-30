@@ -135,7 +135,7 @@ export default function Home() {
               { title: "Air Freight", icon: Plane, desc: "Express global delivery via major international airlines from TIA.", img: "air-freight.png" },
               { title: "Sea Freight", icon: Ship, desc: "Cost-effective container shipping routing through major transit ports.", img: "sea-freight.png" },
               { title: "Road Freight", icon: Truck, desc: "Reliable cross-border trucking and domestic distribution network.", img: "road-freight.png" },
-              { title: "Customs Clearance", icon: Package, desc: "Expert handling of export/import documentation and compliance.", img: null },
+              { title: "Customs Clearance", icon: Package, desc: "Expert handling of export/import documentation and compliance.", img: "customs-clearance.png" },
             ].map((service, i) => (
               <div key={i} className="group border border-gray-100 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
                 {service.img ? (
