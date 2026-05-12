@@ -6,8 +6,10 @@ import { requireAuth } from "../lib/auth";
 const router: IRouter = Router();
 
 const NEPAL_TZ = "Asia/Kathmandu";
-const LATE_HOUR = 9;
-const LATE_MINUTE = 30;
+const LATE_HOUR = 10;      // Late if clock-in after 10:00 AM NPT
+const LATE_MINUTE = 0;
+const EARLY_OUT_HOUR = 17; // Early leave if clock-out before 5:00 PM NPT
+const EARLY_OUT_MINUTE = 0;
 
 function getNepalDate(d: Date = new Date()): string {
   return d.toLocaleDateString("en-CA", { timeZone: NEPAL_TZ });
@@ -27,6 +29,11 @@ function getNepalTime(d: Date): { hours: number; minutes: number } {
 function isLateArrival(clockIn: Date): boolean {
   const { hours, minutes } = getNepalTime(clockIn);
   return hours > LATE_HOUR || (hours === LATE_HOUR && minutes > LATE_MINUTE);
+}
+
+function isEarlyLeave(clockOut: Date): boolean {
+  const { hours, minutes } = getNepalTime(clockOut);
+  return hours < EARLY_OUT_HOUR || (hours === EARLY_OUT_HOUR && minutes < EARLY_OUT_MINUTE);
 }
 
 function calcMinutes(clockIn: Date, clockOut: Date): number {
@@ -79,6 +86,7 @@ router.post(
 
     const { lat, lng } = req.body ?? {};
     const late = isLateArrival(now);
+    const { hours, minutes } = getNepalTime(now);
 
     const [row] = await db
       .insert(attendanceTable)
@@ -93,7 +101,13 @@ router.post(
       .returning();
 
     req.log.info({ userId, date: today, late }, "clock-in");
-    res.status(201).json({ ...row, late });
+    res.status(201).json({
+      ...row,
+      late,
+      lateMessage: late
+        ? `You arrived late at ${hours}:${String(minutes).padStart(2, "0")} AM NPT. Office starts at 10:00 AM. Please come on time.`
+        : null,
+    });
   }
 );
 
@@ -114,7 +128,7 @@ router.post(
 
     const record = existing[0];
     if (!record) {
-      res.status(404).json({ error: "No clock-in found for today" });
+      res.status(404).json({ error: "You have not clocked in today. Please clock in first." });
       return;
     }
     if (record.clockOut) {
@@ -125,6 +139,11 @@ router.post(
     const now = new Date();
     const { lat, lng } = req.body ?? {};
     const minutes = calcMinutes(record.clockIn, now);
+    const earlyLeave = isEarlyLeave(now);
+    const { hours, mins: outMins } = (() => {
+      const t = getNepalTime(now);
+      return { hours: t.hours, mins: t.minutes };
+    })();
 
     const [updated] = await db
       .update(attendanceTable)
@@ -137,8 +156,15 @@ router.post(
       .where(eq(attendanceTable.id, record.id))
       .returning();
 
-    req.log.info({ userId, minutes }, "clock-out");
-    res.json({ ...updated, duration: formatDuration(minutes) });
+    req.log.info({ userId, minutes, earlyLeave }, "clock-out");
+    res.json({
+      ...updated,
+      duration: formatDuration(minutes),
+      earlyLeave,
+      earlyLeaveMessage: earlyLeave
+        ? `You left early at ${hours}:${String(outMins).padStart(2, "0")} PM NPT. Office ends at 5:00 PM. Please stay until end of office hours.`
+        : null,
+    });
   }
 );
 
@@ -149,7 +175,7 @@ router.get(
     const userId = req.currentUser!.id;
     const { month } = req.query as { month?: string };
 
-    let conditions = [eq(attendanceTable.userId, userId)];
+    const conditions: ReturnType<typeof eq>[] = [eq(attendanceTable.userId, userId)];
 
     if (month) {
       conditions.push(
@@ -275,9 +301,7 @@ router.get(
       .orderBy(attendanceTable.date, usersTable.name);
 
     const toNPT = (d: Date | null) =>
-      d
-        ? d.toLocaleString("en-US", { timeZone: NEPAL_TZ, hour12: false })
-        : "";
+      d ? d.toLocaleString("en-US", { timeZone: NEPAL_TZ, hour12: true }) : "";
 
     const header = "Name,Email,Date,Clock In (NPT),Clock Out (NPT),Late,Hours Worked\r\n";
     const lines = rows.map((r) => {
