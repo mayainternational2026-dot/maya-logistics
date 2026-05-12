@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, ProtectedRoute } from "@/lib/auth";
+import { HelmetProvider } from "react-helmet-async";
 
 // Pages
 import Home from "@/pages/Home";
@@ -23,6 +24,13 @@ import CreateInvoice from "@/pages/admin/CreateInvoice";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
+// SEO Service Pages
+import AirFreight from "@/pages/services/AirFreight";
+import SeaFreight from "@/pages/services/SeaFreight";
+import RoadFreight from "@/pages/services/RoadFreight";
+import CustomsClearance from "@/pages/services/CustomsClearance";
+import Blog from "@/pages/Blog";
+
 import { AppShell } from "@/components/layout/AppShell";
 
 const queryClient = new QueryClient();
@@ -37,7 +45,14 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
-      
+
+      {/* SEO Service Pages */}
+      <Route path="/services/air-freight" component={AirFreight} />
+      <Route path="/services/sea-freight" component={SeaFreight} />
+      <Route path="/services/road-freight" component={RoadFreight} />
+      <Route path="/services/customs-clearance" component={CustomsClearance} />
+      <Route path="/blog" component={Blog} />
+
       {/* Protected Routes wrapped in AppShell */}
       <Route>
         <AppShell>
@@ -82,16 +97,18 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-        </AuthProvider>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+          </AuthProvider>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }
 

@@ -4,17 +4,40 @@ import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plane, Ship, Truck, Package, Search, Phone, Mail, MapPin as MapPinIcon, UserPlus, LogIn } from "lucide-react";
+import { Plane, Ship, Truck, Package, Search, Phone, Mail, MapPin as MapPinIcon, UserPlus, LogIn, ChevronDown, ChevronUp } from "lucide-react";
 import { useSendContactMessage } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { logoUrl } from "@/lib/assets";
 import { ChatBot } from "@/components/ui/ChatBot";
+import { SEOHead } from "@/components/SEOHead";
+
+const FAQ_ITEMS = [
+  { q: "What logistics services does Maya Import Export offer in Nepal?", a: "We offer air freight, sea freight, road freight, and customs clearance services from Kathmandu, Nepal. We handle door-to-door, port-to-door, and airport-to-airport shipments worldwide." },
+  { q: "How do I track my cargo shipment in Nepal?", a: "Visit our tracking page at mayaimportexport.com/track and enter your Tracking ID. You'll see real-time status updates from pickup through delivery." },
+  { q: "What documents are needed for customs clearance in Nepal?", a: "Typically you need a commercial invoice, packing list, bill of lading or airway bill, certificate of origin, and any applicable permits. Our team handles all customs documentation for you." },
+  { q: "How long does air freight from Nepal take?", a: "Air cargo from Kathmandu (TIA) reaches most Asian destinations in 1–3 days, Europe and the Middle East in 2–4 days, and the USA or Americas in 3–5 days." },
+  { q: "Do you handle sea freight from landlocked Nepal?", a: "Yes. We coordinate multi-modal transport from Kathmandu to Indian seaports (Kolkata, Haldia, Mundra) for container shipping worldwide. FCL and LCL options available." },
+  { q: "How can I contact Maya Import Export Logistic in Kathmandu?", a: "Call us at 014527999 or +977 9769686908, email mayaimportexportinternational@gmail.com, or WhatsApp us directly. Our office is at Anandamaya Marg, Dhumbarahi, Kathmandu." },
+];
+
+const homeSchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": FAQ_ITEMS.map(f => ({
+      "@type": "Question",
+      "name": f.q,
+      "acceptedAnswer": { "@type": "Answer", "text": f.a }
+    }))
+  }
+];
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const [trackingId, setTrackingId] = useState("");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,12 +75,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-gray-50 text-gray-900">
+      <SEOHead
+        title="Logistics Company in Nepal — Freight Forwarding &amp; Cargo Kathmandu"
+        description="Nepal's trusted cargo company. Air freight, sea freight, road freight &amp; customs clearance from Kathmandu. Track your shipment online. Call 014527999."
+        keywords="logistics company in Nepal, customs clearance Nepal, cargo service Kathmandu, freight forwarding Nepal, air cargo Nepal, sea freight Nepal, cargo company Kathmandu"
+        canonical="/"
+        schema={homeSchema}
+      />
       <Navbar />
 
       {/* Hero Section */}
       <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img src={`${import.meta.env.BASE_URL}hero-main.png`} alt="Maya Logistics" className="w-full h-full object-cover" />
+          <img src={`${import.meta.env.BASE_URL}hero-main.png`} alt="Maya Import Export Logistic — freight forwarding company in Nepal, Kathmandu" className="w-full h-full object-cover" fetchPriority="high" />
           <div className="absolute inset-0 bg-secondary/60"></div>
           <div className="absolute inset-0 bg-gradient-to-t from-secondary via-transparent to-transparent"></div>
         </div>
@@ -132,37 +162,32 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: "Air Freight", icon: Plane, desc: "Express global delivery via major international airlines from TIA.", img: "air-freight.png" },
-              { title: "Sea Freight", icon: Ship, desc: "Cost-effective container shipping routing through major transit ports.", img: "sea-freight.png" },
-              { title: "Road Freight", icon: Truck, desc: "Reliable cross-border trucking and domestic distribution network.", img: "road-freight.png" },
-              { title: "Customs Clearance", icon: Package, desc: "Expert handling of export/import documentation and compliance.", img: "customs-clearance.png" },
+              { title: "Air Freight", icon: Plane, desc: "Express global delivery via major international airlines from TIA.", img: "air-freight.png", href: "/services/air-freight", alt: "Air freight and air cargo services Nepal" },
+              { title: "Sea Freight", icon: Ship, desc: "Cost-effective container shipping routing through major transit ports.", img: "sea-freight.png", href: "/services/sea-freight", alt: "Sea freight and container shipping from Nepal" },
+              { title: "Road Freight", icon: Truck, desc: "Reliable cross-border trucking and domestic distribution network.", img: "road-freight.png", href: "/services/road-freight", alt: "Road freight and cross-border trucking Nepal" },
+              { title: "Customs Clearance", icon: Package, desc: "Expert handling of export/import documentation and compliance.", img: "customs-clearance.png", href: "/services/customs-clearance", alt: "Customs clearance and documentation services Nepal" },
             ].map((service, i) => (
-              <div key={i} className="group border border-gray-100 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden">
-                {service.img ? (
+              <Link key={i} href={service.href}>
+                <div className="group border border-gray-100 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden h-full">
                   <div className="h-44 overflow-hidden bg-white flex items-center justify-center">
                     <img
                       src={`${import.meta.env.BASE_URL}${service.img}`}
-                      alt={service.title}
+                      alt={service.alt}
+                      loading="lazy"
                       className="h-full w-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                ) : (
-                  <div className="h-44 bg-primary/5 flex items-center justify-center">
-                    <div className="h-20 w-20 bg-primary/10 text-primary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                      <service.icon className="h-10 w-10" />
+                  <div className="p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-9 w-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors flex-shrink-0">
+                        <service.icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="text-lg font-bold text-secondary">{service.title}</h3>
                     </div>
+                    <p className="text-gray-600 leading-relaxed text-sm">{service.desc}</p>
                   </div>
-                )}
-                <div className="p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-9 w-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors flex-shrink-0">
-                      <service.icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-lg font-bold text-secondary">{service.title}</h3>
-                  </div>
-                  <p className="text-gray-600 leading-relaxed text-sm">{service.desc}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -280,11 +305,52 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-secondary mb-4">Frequently Asked Questions</h2>
+            <p className="text-gray-600">Common questions about logistics, freight forwarding &amp; customs clearance in Nepal.</p>
+            <div className="w-24 h-1 bg-primary mx-auto mt-4"></div>
+          </div>
+          <div className="space-y-3">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
+                <button
+                  className="w-full flex items-center justify-between gap-4 p-5 text-left bg-gray-50 hover:bg-gray-100 transition-colors"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                >
+                  <span className="font-semibold text-secondary text-sm md:text-base">{item.q}</span>
+                  {openFaq === i ? <ChevronUp className="h-5 w-5 text-primary flex-shrink-0" /> : <ChevronDown className="h-5 w-5 text-gray-400 flex-shrink-0" />}
+                </button>
+                {openFaq === i && (
+                  <div className="p-5 bg-white text-gray-600 text-sm leading-relaxed border-t border-gray-100">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <p className="text-gray-500 mb-4">Have more questions? We're here to help.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/inquiry">
+                <Button className="bg-primary hover:bg-primary/90 text-white">Send an Inquiry</Button>
+              </Link>
+              <Link href="/blog">
+                <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/5">Read Our Logistics Blog</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-secondary text-gray-300 py-12 border-t border-secondary-border">
         <div className="container mx-auto px-4 text-center">
           <div className="mb-6 flex justify-center">
-            <img src={logoUrl} alt="Maya Logistics" className="h-16 w-auto opacity-90" />
+            <img src={logoUrl} alt="Maya Import Export Logistic — cargo company Kathmandu Nepal" className="h-16 w-auto opacity-90" loading="lazy" />
           </div>
           <p className="mb-4 text-sm max-w-md mx-auto">
             Your trusted logistics partner connecting Nepal with the global market through reliable air, sea, and road freight services.

@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -139,6 +140,12 @@ export default function InquiryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <SEOHead
+        title="Product Inquiry — Import from Overseas to Nepal"
+        description="Submit a product inquiry to Maya Import Export Logistic. We source and import products worldwide to Nepal. Share your product link, quantity, and estimated value for a quote."
+        keywords="product inquiry Nepal, import products Nepal, source products Nepal, international shopping Nepal, buy overseas products Nepal, import to Nepal"
+        canonical="/inquiry"
+      />
       <Navbar />
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-10">

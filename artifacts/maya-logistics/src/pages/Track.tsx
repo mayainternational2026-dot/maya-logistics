@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
+import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText, Warehouse, ShieldCheck, PlaneTakeoff, Building2 } from "lucide-react";
@@ -53,8 +54,14 @@ export default function Track() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <SEOHead
+        title="Track Your Shipment — Cargo Tracking Nepal"
+        description="Track your cargo shipment in real time. Enter your Maya Import Export Logistic tracking ID to see live status from Kathmandu to your destination."
+        keywords="track cargo Nepal, shipment tracking Nepal, cargo tracking Kathmandu, track my shipment Nepal, freight tracking Nepal"
+        canonical="/track"
+      />
       <Navbar />
-      
+
       <div className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-secondary mb-4">Track Your Shipment</h1>
