@@ -13,6 +13,7 @@ import {
   FilePlus,
   Menu,
   X,
+  Clock,
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -44,13 +45,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const canInvoice = isAdmin || (isStaff && (user.permissions?.canGenerateInvoice ?? false));
 
   const navItems = [
-    { name: "Dashboard",      href: "/dashboard",            icon: LayoutDashboard, show: true },
-    { name: "Create Invoice", href: "/admin/create-invoice", icon: FilePlus,        show: canInvoice },
-    { name: "Shipments",      href: "/shipments",            icon: Package,         show: true },
-    { name: "Inquiries",      href: "/admin/inquiries",      icon: ClipboardList,   show: isInternal },
-    { name: "Users",          href: "/admin/users",          icon: Users,           show: isAdmin },
-    { name: "Staff Activity", href: "/admin/staff-activity", icon: Activity,        show: isAdmin },
-    { name: "Track",          href: "/track",                icon: Map,             show: true },
+    { name: "Dashboard",        href: "/dashboard",            icon: LayoutDashboard, show: true },
+    { name: "Attendance",       href: "/attendance",           icon: Clock,           show: isInternal },
+    { name: "Create Invoice",   href: "/admin/create-invoice", icon: FilePlus,        show: canInvoice },
+    { name: "Shipments",        href: "/shipments",            icon: Package,         show: true },
+    { name: "Inquiries",        href: "/admin/inquiries",      icon: ClipboardList,   show: isInternal },
+    { name: "Staff Attendance", href: "/admin/attendance",     icon: Users,           show: isAdmin },
+    { name: "Users",            href: "/admin/users",          icon: Users,           show: isAdmin },
+    { name: "Staff Activity",   href: "/admin/staff-activity", icon: Activity,        show: isAdmin },
+    { name: "Track",            href: "/track",                icon: Map,             show: true },
   ].filter((item) => item.show);
 
   const NavLink = ({ item, onClick }: { item: typeof navItems[0]; onClick?: () => void }) => {

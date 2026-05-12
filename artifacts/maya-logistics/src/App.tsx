@@ -22,6 +22,8 @@ import Inquiries from "@/pages/admin/Inquiries";
 import StaffActivity from "@/pages/admin/StaffActivity";
 import CreateInvoice from "@/pages/admin/CreateInvoice";
 import Profile from "@/pages/Profile";
+import Attendance from "@/pages/attendance/Attendance";
+import AttendanceAdmin from "@/pages/admin/AttendanceAdmin";
 import NotFound from "@/pages/not-found";
 
 // SEO Service Pages
@@ -83,6 +85,12 @@ function Router() {
             </Route>
             <Route path="/admin/create-invoice">
               <ProtectedRoute allowedRoles={["admin", "staff"]}><CreateInvoice /></ProtectedRoute>
+            </Route>
+            <Route path="/attendance">
+              <ProtectedRoute allowedRoles={["admin", "staff"]}><Attendance /></ProtectedRoute>
+            </Route>
+            <Route path="/admin/attendance">
+              <ProtectedRoute allowedRoles={["admin"]}><AttendanceAdmin /></ProtectedRoute>
             </Route>
             <Route path="/profile">
               <ProtectedRoute><Profile /></ProtectedRoute>
