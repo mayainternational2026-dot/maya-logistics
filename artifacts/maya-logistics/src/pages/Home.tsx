@@ -12,7 +12,6 @@ import { logoUrl } from "@/lib/assets";
 import { ChatBot } from "@/components/ui/ChatBot";
 import { SEOHead } from "@/components/SEOHead";
 import { motion } from "framer-motion";
-import { StatsSection } from "@/components/home/StatsSection";
 import { RouteAnimation } from "@/components/home/RouteAnimation";
 import { ProofSection } from "@/components/home/ProofSection";
 
@@ -191,9 +190,6 @@ export default function Home() {
           <ChevronDown className="h-6 w-6" />
         </motion.div>
       </section>
-
-      {/* ── STATS ── */}
-      <StatsSection />
 
       {/* ── SERVICES ── */}
       <section className="py-24 bg-white">
