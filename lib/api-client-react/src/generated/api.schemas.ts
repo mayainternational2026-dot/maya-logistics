@@ -271,6 +271,38 @@ export interface CreateInquiryBody {
   estimatedCost?: number;
 }
 
+export interface ShippingRate {
+  id: number;
+  country: string;
+  countryCode: string;
+  rateUsd: number;
+  rateNpr: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateShippingRateBody {
+  /** @minLength 1 */
+  country: string;
+  /** @minLength 2 */
+  countryCode: string;
+  /** @minimum 0 */
+  rateUsd: number;
+  /** @minimum 0 */
+  rateNpr: number;
+}
+
+export interface UpdateShippingRateBody {
+  /** @minLength 1 */
+  country?: string;
+  /** @minLength 2 */
+  countryCode?: string;
+  /** @minimum 0 */
+  rateUsd?: number;
+  /** @minimum 0 */
+  rateNpr?: number;
+}
+
 export interface UpdateInquiryBody {
   status?: string;
   adminNotes?: string;

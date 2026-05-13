@@ -28,6 +28,7 @@ import Leave from "@/pages/leave/Leave";
 import LeaveAdmin from "@/pages/admin/LeaveAdmin";
 import WorkLog from "@/pages/worklog/WorkLog";
 import WorkLogAdmin from "@/pages/admin/WorkLogAdmin";
+import ShippingRates from "@/pages/admin/ShippingRates";
 import NotFound from "@/pages/not-found";
 import Calculator from "@/pages/Calculator";
 import Testimonials from "@/pages/Testimonials";
@@ -111,6 +112,9 @@ function Router() {
             </Route>
             <Route path="/admin/work-logs">
               <ProtectedRoute allowedRoles={["admin"]}><WorkLogAdmin /></ProtectedRoute>
+            </Route>
+            <Route path="/admin/shipping-rates">
+              <ProtectedRoute allowedRoles={["admin"]}><ShippingRates /></ProtectedRoute>
             </Route>
             <Route path="/profile">
               <ProtectedRoute><Profile /></ProtectedRoute>

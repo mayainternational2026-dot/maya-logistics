@@ -556,6 +556,83 @@ export const UpdateInquiryResponse = zod.object({
 });
 
 /**
+ * @summary List all shipping rates (public)
+ */
+export const ListShippingRatesResponseItem = zod.object({
+  id: zod.number(),
+  country: zod.string(),
+  countryCode: zod.string(),
+  rateUsd: zod.number(),
+  rateNpr: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListShippingRatesResponse = zod.array(
+  ListShippingRatesResponseItem,
+);
+
+/**
+ * @summary Create a shipping rate (admin)
+ */
+
+export const createShippingRateBodyCountryCodeMin = 2;
+
+export const createShippingRateBodyRateUsdMin = 0;
+
+export const createShippingRateBodyRateNprMin = 0;
+
+export const CreateShippingRateBody = zod.object({
+  country: zod.string().min(1),
+  countryCode: zod.string().min(createShippingRateBodyCountryCodeMin),
+  rateUsd: zod.number().min(createShippingRateBodyRateUsdMin),
+  rateNpr: zod.number().min(createShippingRateBodyRateNprMin),
+});
+
+/**
+ * @summary Update a shipping rate (admin)
+ */
+export const UpdateShippingRateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateShippingRateBodyCountryCodeMin = 2;
+
+export const updateShippingRateBodyRateUsdMin = 0;
+
+export const updateShippingRateBodyRateNprMin = 0;
+
+export const UpdateShippingRateBody = zod.object({
+  country: zod.string().min(1).optional(),
+  countryCode: zod
+    .string()
+    .min(updateShippingRateBodyCountryCodeMin)
+    .optional(),
+  rateUsd: zod.number().min(updateShippingRateBodyRateUsdMin).optional(),
+  rateNpr: zod.number().min(updateShippingRateBodyRateNprMin).optional(),
+});
+
+export const UpdateShippingRateResponse = zod.object({
+  id: zod.number(),
+  country: zod.string(),
+  countryCode: zod.string(),
+  rateUsd: zod.number(),
+  rateNpr: zod.number(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete a shipping rate (admin)
+ */
+export const DeleteShippingRateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteShippingRateResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary Submit a contact form message
  */
 

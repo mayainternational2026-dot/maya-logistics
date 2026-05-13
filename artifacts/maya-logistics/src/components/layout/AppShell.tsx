@@ -16,6 +16,7 @@ import {
   X,
   Clock,
   CalendarDays,
+  Calculator,
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -57,8 +58,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     { name: "Staff Attendance", href: "/admin/attendance",     icon: Users,           show: isAdmin },
     { name: "Leave Requests",   href: "/admin/leave",          icon: CalendarDays,    show: isAdmin },
     { name: "Team Work Logs",   href: "/admin/work-logs",      icon: ClipboardCheck,  show: isAdmin },
-    { name: "Users",            href: "/admin/users",          icon: Users,           show: isAdmin },
-    { name: "Staff Activity",   href: "/admin/staff-activity", icon: Activity,        show: isAdmin },
+    { name: "Users",            href: "/admin/users",           icon: Users,           show: isAdmin },
+    { name: "Staff Activity",   href: "/admin/staff-activity",  icon: Activity,        show: isAdmin },
+    { name: "Shipping Rates",   href: "/admin/shipping-rates",  icon: Calculator,      show: isAdmin },
     { name: "Track",            href: "/track",                icon: Map,             show: true },
   ].filter((item) => item.show);
 

@@ -22,6 +22,7 @@ import type {
   ContactBody,
   CreateInquiryBody,
   CreateShipmentBody,
+  CreateShippingRateBody,
   CreateUserBody,
   CurrentUserResponse,
   DashboardSummary,
@@ -41,9 +42,11 @@ import type {
   ResetPasswordBody,
   RevenuePoint,
   Shipment,
+  ShippingRate,
   StaffActivity,
   UpdateInquiryBody,
   UpdateShipmentBody,
+  UpdateShippingRateBody,
   UpdateUserBody,
   User,
 } from "./api.schemas";
@@ -2257,6 +2260,338 @@ export const useUpdateInquiry = <
   TContext
 > => {
   return useMutation(getUpdateInquiryMutationOptions(options));
+};
+
+/**
+ * @summary List all shipping rates (public)
+ */
+export const getListShippingRatesUrl = () => {
+  return `/api/shipping-rates`;
+};
+
+export const listShippingRates = async (
+  options?: RequestInit,
+): Promise<ShippingRate[]> => {
+  return customFetch<ShippingRate[]>(getListShippingRatesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListShippingRatesQueryKey = () => {
+  return [`/api/shipping-rates`] as const;
+};
+
+export const getListShippingRatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listShippingRates>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listShippingRates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListShippingRatesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listShippingRates>>
+  > = ({ signal }) => listShippingRates({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listShippingRates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListShippingRatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listShippingRates>>
+>;
+export type ListShippingRatesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all shipping rates (public)
+ */
+
+export function useListShippingRates<
+  TData = Awaited<ReturnType<typeof listShippingRates>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listShippingRates>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListShippingRatesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a shipping rate (admin)
+ */
+export const getCreateShippingRateUrl = () => {
+  return `/api/shipping-rates`;
+};
+
+export const createShippingRate = async (
+  createShippingRateBody: CreateShippingRateBody,
+  options?: RequestInit,
+): Promise<ShippingRate> => {
+  return customFetch<ShippingRate>(getCreateShippingRateUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createShippingRateBody),
+  });
+};
+
+export const getCreateShippingRateMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createShippingRate>>,
+    TError,
+    { data: BodyType<CreateShippingRateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createShippingRate>>,
+  TError,
+  { data: BodyType<CreateShippingRateBody> },
+  TContext
+> => {
+  const mutationKey = ["createShippingRate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createShippingRate>>,
+    { data: BodyType<CreateShippingRateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createShippingRate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateShippingRateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createShippingRate>>
+>;
+export type CreateShippingRateMutationBody = BodyType<CreateShippingRateBody>;
+export type CreateShippingRateMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create a shipping rate (admin)
+ */
+export const useCreateShippingRate = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createShippingRate>>,
+    TError,
+    { data: BodyType<CreateShippingRateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createShippingRate>>,
+  TError,
+  { data: BodyType<CreateShippingRateBody> },
+  TContext
+> => {
+  return useMutation(getCreateShippingRateMutationOptions(options));
+};
+
+/**
+ * @summary Update a shipping rate (admin)
+ */
+export const getUpdateShippingRateUrl = (id: number) => {
+  return `/api/shipping-rates/${id}`;
+};
+
+export const updateShippingRate = async (
+  id: number,
+  updateShippingRateBody: UpdateShippingRateBody,
+  options?: RequestInit,
+): Promise<ShippingRate> => {
+  return customFetch<ShippingRate>(getUpdateShippingRateUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateShippingRateBody),
+  });
+};
+
+export const getUpdateShippingRateMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateShippingRate>>,
+    TError,
+    { id: number; data: BodyType<UpdateShippingRateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateShippingRate>>,
+  TError,
+  { id: number; data: BodyType<UpdateShippingRateBody> },
+  TContext
+> => {
+  const mutationKey = ["updateShippingRate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateShippingRate>>,
+    { id: number; data: BodyType<UpdateShippingRateBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateShippingRate(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateShippingRateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateShippingRate>>
+>;
+export type UpdateShippingRateMutationBody = BodyType<UpdateShippingRateBody>;
+export type UpdateShippingRateMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update a shipping rate (admin)
+ */
+export const useUpdateShippingRate = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateShippingRate>>,
+    TError,
+    { id: number; data: BodyType<UpdateShippingRateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateShippingRate>>,
+  TError,
+  { id: number; data: BodyType<UpdateShippingRateBody> },
+  TContext
+> => {
+  return useMutation(getUpdateShippingRateMutationOptions(options));
+};
+
+/**
+ * @summary Delete a shipping rate (admin)
+ */
+export const getDeleteShippingRateUrl = (id: number) => {
+  return `/api/shipping-rates/${id}`;
+};
+
+export const deleteShippingRate = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getDeleteShippingRateUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteShippingRateMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteShippingRate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteShippingRate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteShippingRate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteShippingRate>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteShippingRate(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteShippingRateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteShippingRate>>
+>;
+
+export type DeleteShippingRateMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a shipping rate (admin)
+ */
+export const useDeleteShippingRate = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteShippingRate>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteShippingRate>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteShippingRateMutationOptions(options));
 };
 
 /**
