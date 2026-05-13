@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Clock,
+  CalendarDays,
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -47,10 +48,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navItems = [
     { name: "Dashboard",        href: "/dashboard",            icon: LayoutDashboard, show: true },
     { name: "Attendance",       href: "/attendance",           icon: Clock,           show: isInternal },
+    { name: "My Leave",         href: "/leave",                icon: CalendarDays,    show: isInternal },
     { name: "Create Invoice",   href: "/admin/create-invoice", icon: FilePlus,        show: canInvoice },
     { name: "Shipments",        href: "/shipments",            icon: Package,         show: true },
     { name: "Inquiries",        href: "/admin/inquiries",      icon: ClipboardList,   show: isInternal },
     { name: "Staff Attendance", href: "/admin/attendance",     icon: Users,           show: isAdmin },
+    { name: "Leave Requests",   href: "/admin/leave",          icon: CalendarDays,    show: isAdmin },
     { name: "Users",            href: "/admin/users",          icon: Users,           show: isAdmin },
     { name: "Staff Activity",   href: "/admin/staff-activity", icon: Activity,        show: isAdmin },
     { name: "Track",            href: "/track",                icon: Map,             show: true },

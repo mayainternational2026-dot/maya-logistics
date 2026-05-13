@@ -7,6 +7,7 @@ import dashboardRouter from "./dashboard";
 import contactRouter from "./contact";
 import inquiriesRouter from "./inquiries";
 import attendanceRouter from "./attendance";
+import leaveRouter from "./leave";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(dashboardRouter);
 router.use(contactRouter);
 router.use(inquiriesRouter);
 router.use(attendanceRouter);
+router.use(leaveRouter);
 
 export default router;

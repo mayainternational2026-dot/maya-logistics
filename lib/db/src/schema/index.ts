@@ -7,3 +7,4 @@ export * from "./contactMessages";
 export * from "./sessions";
 export * from "./inquiries";
 export * from "./attendance";
+export * from "./leaveRequests";

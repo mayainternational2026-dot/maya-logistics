@@ -24,7 +24,11 @@ import CreateInvoice from "@/pages/admin/CreateInvoice";
 import Profile from "@/pages/Profile";
 import Attendance from "@/pages/attendance/Attendance";
 import AttendanceAdmin from "@/pages/admin/AttendanceAdmin";
+import Leave from "@/pages/leave/Leave";
+import LeaveAdmin from "@/pages/admin/LeaveAdmin";
 import NotFound from "@/pages/not-found";
+import Calculator from "@/pages/Calculator";
+import Testimonials from "@/pages/Testimonials";
 
 // SEO Service Pages
 import AirFreight from "@/pages/services/AirFreight";
@@ -44,6 +48,8 @@ function Router() {
       <Route path="/track" component={Track} />
       <Route path="/track/:trackingId" component={Track} />
       <Route path="/inquiry" component={InquiryPage} />
+      <Route path="/calculator" component={Calculator} />
+      <Route path="/testimonials" component={Testimonials} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
@@ -91,6 +97,12 @@ function Router() {
             </Route>
             <Route path="/admin/attendance">
               <ProtectedRoute allowedRoles={["admin"]}><AttendanceAdmin /></ProtectedRoute>
+            </Route>
+            <Route path="/leave">
+              <ProtectedRoute allowedRoles={["admin", "staff"]}><Leave /></ProtectedRoute>
+            </Route>
+            <Route path="/admin/leave">
+              <ProtectedRoute allowedRoles={["admin"]}><LeaveAdmin /></ProtectedRoute>
             </Route>
             <Route path="/profile">
               <ProtectedRoute><Profile /></ProtectedRoute>
