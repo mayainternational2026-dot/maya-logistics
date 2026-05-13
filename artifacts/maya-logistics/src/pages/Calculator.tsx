@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plane, Ship, Truck, Calculator as CalcIcon, MessageCircle, Phone, Clock, Info } from "lucide-react";
+import { Plane, Ship, Truck, Calculator as CalcIcon, MessageCircle, Phone, Info } from "lucide-react";
 
 const FREIGHT_TYPES = [
   {
@@ -13,8 +12,6 @@ const FREIGHT_TYPES = [
     label: "Air Freight",
     icon: Plane,
     color: "bg-blue-600",
-    transitMin: 1,
-    transitMax: 5,
     description: "Fastest option — ideal for urgent or high-value cargo",
     via: "TIA (Tribhuvan International Airport)",
   },
@@ -23,8 +20,6 @@ const FREIGHT_TYPES = [
     label: "Sea Freight",
     icon: Ship,
     color: "bg-teal-600",
-    transitMin: 20,
-    transitMax: 45,
     description: "Most economical for heavy or bulk shipments",
     via: "Kolkata / Haldia / Mundra port via India",
   },
@@ -33,8 +28,6 @@ const FREIGHT_TYPES = [
     label: "Road Freight",
     icon: Truck,
     color: "bg-orange-600",
-    transitMin: 3,
-    transitMax: 10,
     description: "Best for regional destinations — India, China, Bangladesh",
     via: "Birgunj / Banbasa border crossing",
   },
@@ -62,47 +55,9 @@ const NEPAL_ORIGINS = [
   "Other location in Nepal",
 ];
 
-const DESTINATIONS: Record<string, string[]> = {
-  "Popular": ["China", "India"],
-  "Middle East": ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman"],
-  "Southeast Asia": ["Singapore", "Malaysia", "Thailand", "Hong Kong", "Japan", "South Korea", "Indonesia", "Vietnam"],
-  "Europe": ["United Kingdom", "Germany", "France", "Netherlands", "Italy", "Spain", "Switzerland", "Belgium", "Portugal", "Sweden", "Denmark"],
-  "Americas & Oceania": ["United States", "Canada", "Australia", "New Zealand"],
-  "South Asia": ["Bangladesh", "Sri Lanka", "Pakistan", "Maldives"],
-  "Africa": ["South Africa", "Kenya", "Egypt"],
-};
-
-const TRANSIT_BY_REGION: Record<string, { air: string; sea: string; road: string }> = {
-  "China":          { air: "1–3 days",   sea: "15–25 days", road: "5–10 days" },
-  "India":          { air: "1–2 days",   sea: "10–18 days", road: "2–5 days" },
-  "UAE":            { air: "2–4 days",   sea: "18–28 days", road: "—" },
-  "Saudi Arabia":   { air: "3–5 days",   sea: "20–30 days", road: "—" },
-  "Qatar":          { air: "3–5 days",   sea: "20–30 days", road: "—" },
-  "Kuwait":         { air: "3–5 days",   sea: "20–30 days", road: "—" },
-  "Bahrain":        { air: "3–5 days",   sea: "20–30 days", road: "—" },
-  "Oman":           { air: "3–5 days",   sea: "22–32 days", road: "—" },
-  "Singapore":      { air: "2–4 days",   sea: "18–28 days", road: "—" },
-  "Malaysia":       { air: "2–4 days",   sea: "20–30 days", road: "—" },
-  "Thailand":       { air: "2–4 days",   sea: "18–28 days", road: "—" },
-  "Hong Kong":      { air: "2–4 days",   sea: "15–22 days", road: "—" },
-  "Japan":          { air: "3–5 days",   sea: "20–30 days", road: "—" },
-  "South Korea":    { air: "3–5 days",   sea: "20–30 days", road: "—" },
-  "United Kingdom": { air: "4–7 days",   sea: "30–45 days", road: "—" },
-  "Germany":        { air: "4–7 days",   sea: "30–45 days", road: "—" },
-  "France":         { air: "4–7 days",   sea: "30–45 days", road: "—" },
-  "United States":  { air: "5–8 days",   sea: "35–50 days", road: "—" },
-  "Canada":         { air: "5–8 days",   sea: "35–50 days", road: "—" },
-  "Australia":      { air: "4–7 days",   sea: "28–40 days", road: "—" },
-};
-
-function getTransit(destination: string, freightId: string): string {
-  const entry = TRANSIT_BY_REGION[destination];
-  if (!entry) return freightId === "air" ? "5–10 days" : freightId === "sea" ? "25–45 days" : "7–15 days";
-  return entry[freightId as keyof typeof entry] ?? "Contact us";
-}
+const DESTINATIONS = ["India", "China"];
 
 export default function Calculator() {
-  const [, setLocation] = useLocation();
   const [freightType, setFreightType] = useState("air");
   const [weight, setWeight] = useState("");
   const [destination, setDestination] = useState("");
@@ -135,8 +90,6 @@ Please confirm pricing and transit time. Thank you.`;
     setDestination("");
     setOrigin("");
   };
-
-  const transit = destination ? getTransit(destination, freightType) : null;
 
   return (
     <>
@@ -225,29 +178,17 @@ Please confirm pricing and transit time. Thank you.`;
                       </label>
                       <select
                         value={destination}
-                        onChange={(e) => { setDestination(e.target.value); }}
+                        onChange={(e) => setDestination(e.target.value)}
                         className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
                         required
                       >
                         <option value="">— Select country —</option>
-                        {Object.entries(DESTINATIONS).map(([region, countries]) => (
-                          <optgroup key={region} label={region}>
-                            {countries.map((c) => (
-                              <option key={c} value={c}>{c}</option>
-                            ))}
-                          </optgroup>
+                        {DESTINATIONS.map((c) => (
+                          <option key={c} value={c}>{c}</option>
                         ))}
                       </select>
                     </div>
                   </div>
-
-                  {/* Transit time hint */}
-                  {transit && (
-                    <div className="flex items-center gap-2 text-sm bg-secondary/5 border border-secondary/20 rounded-md px-3 py-2 text-secondary">
-                      <Clock className="h-4 w-4 flex-shrink-0" />
-                      <span>Estimated transit time to <strong>{destination}</strong> via {selected.label}: <strong>{transit}</strong></span>
-                    </div>
-                  )}
 
                   {/* Weight */}
                   <div>
@@ -290,7 +231,6 @@ Please confirm pricing and transit time. Thank you.`;
                     { label: "Origin",          value: `${origin}, Nepal` },
                     { label: "Destination",     value: destination },
                     { label: "Weight",          value: `${weight} kg` },
-                    { label: "Est. Transit",    value: transit ?? "—" },
                     { label: "Pricing",         value: "Confirmed by team" },
                   ].map(({ label, value }) => (
                     <div key={label} className="bg-white rounded-lg p-3 border">
@@ -327,54 +267,6 @@ Please confirm pricing and transit time. Thank you.`;
               </CardContent>
             </Card>
           )}
-
-          {/* Service info — transit times only, no fake rates */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Typical Transit Times from Nepal</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Destination</th>
-                      <th className="px-4 py-3 text-center font-medium text-blue-600">
-                        <Plane className="h-3.5 w-3.5 inline mr-1" />Air
-                      </th>
-                      <th className="px-4 py-3 text-center font-medium text-teal-600">
-                        <Ship className="h-3.5 w-3.5 inline mr-1" />Sea
-                      </th>
-                      <th className="px-4 py-3 text-center font-medium text-orange-600">
-                        <Truck className="h-3.5 w-3.5 inline mr-1" />Road
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      ["China",          "1–3 days",  "15–25 days", "5–10 days"],
-                      ["India",          "1–2 days",  "10–18 days", "2–5 days"],
-                      ["UAE",            "2–4 days",  "18–28 days", "—"],
-                      ["United Kingdom", "4–7 days",  "30–45 days", "—"],
-                      ["United States",  "5–8 days",  "35–50 days", "—"],
-                      ["Australia",      "4–7 days",  "28–40 days", "—"],
-                      ["Singapore",      "2–4 days",  "18–28 days", "—"],
-                    ].map(([dest, air, sea, road]) => (
-                      <tr key={dest} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-900">{dest}</td>
-                        <td className="px-4 py-3 text-center text-gray-600">{air}</td>
-                        <td className="px-4 py-3 text-center text-gray-600">{sea}</td>
-                        <td className="px-4 py-3 text-center text-gray-500">{road}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-gray-400 px-4 py-3">
-                Transit times are estimates from pickup. Customs clearance, public holidays, and weather may affect delivery. Contact us for precise timelines.
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </div>
       <WhatsAppButton />
