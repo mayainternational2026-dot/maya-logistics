@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
-import { Star, MessageCircle, Mail, Send, CheckCircle2, Quote } from "lucide-react";
+import { Star, MessageCircle, Mail, CheckCircle2, Quote, Lock, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/use-auth";
+import { Link } from "wouter";
 
 const SERVICES = ["Air Freight", "Sea Freight", "Road Freight", "Customs Clearance", "Other"];
 
@@ -42,6 +44,8 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 }
 
 export default function Testimonials() {
+  const { user, isLoading } = useAuth();
+
   const [form, setForm] = useState({
     name: "",
     company: "",
@@ -49,8 +53,14 @@ export default function Testimonials() {
     rating: 5,
     review: "",
   });
+  const [formInitialised, setFormInitialised] = useState(false);
   const [sent, setSent] = useState(false);
   const [method, setMethod] = useState<"whatsapp" | "email" | null>(null);
+
+  if (!formInitialised && user?.role === "customer") {
+    setForm((f) => ({ ...f, name: user.name }));
+    setFormInitialised(true);
+  }
 
   const setField = (field: string, value: string | number) =>
     setForm((f) => ({ ...f, [field]: value }));
@@ -58,7 +68,7 @@ export default function Testimonials() {
   const isValid = form.name.trim() && form.service && form.review.trim().length >= 10;
 
   const buildMessage = () =>
-    `⭐ New Review for Maya Import Export\n\nName: ${form.name}${form.company ? `\nCompany: ${form.company}` : ""}\nService Used: ${form.service}\nRating: ${"★".repeat(form.rating)}${"☆".repeat(5 - form.rating)} (${form.rating}/5)\n\nReview:\n${form.review}`;
+    `⭐ Verified Customer Review — Maya Import Export\n\nName: ${form.name}${form.company ? `\nCompany: ${form.company}` : ""}\nEmail: ${user?.email ?? ""}\nService Used: ${form.service}\nRating: ${"★".repeat(form.rating)}${"☆".repeat(5 - form.rating)} (${form.rating}/5)\n\nReview:\n${form.review}`;
 
   const handleWhatsApp = () => {
     setMethod("whatsapp");
@@ -69,7 +79,7 @@ export default function Testimonials() {
   const handleEmail = () => {
     setMethod("email");
     setSent(true);
-    const subject = encodeURIComponent(`Review from ${form.name} — ${form.service} (${form.rating}/5 stars)`);
+    const subject = encodeURIComponent(`Verified Review: ${form.name} — ${form.service} (${form.rating}/5 stars)`);
     const body = encodeURIComponent(buildMessage());
     window.open(`mailto:mayaimportexportinternational@gmail.com?subject=${subject}&body=${body}`);
   };
@@ -87,7 +97,7 @@ export default function Testimonials() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold mb-3">What Our Clients Say</h1>
             <p className="text-white/70 text-base max-w-xl mx-auto">
-              We are building our verified review collection. If you've shipped with us, share your honest experience — your words help other Nepali businesses find a reliable logistics partner.
+              Reviews on this page come exclusively from verified customers who have shipped with Maya. Your honest experience helps other Nepali businesses find a reliable logistics partner.
             </p>
           </div>
         </section>
@@ -127,17 +137,65 @@ export default function Testimonials() {
             </a>
           </div>
 
-          {/* Review Form */}
-          {!sent ? (
+          {/* Review Form — gated by verified customer login */}
+          {isLoading ? (
+            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Checking your account…</div>
+          ) : !user ? (
+            /* Guest: not logged in */
+            <Card className="border-2 border-secondary/20">
+              <CardContent className="pt-8 pb-8 flex flex-col items-center text-center gap-4">
+                <div className="h-14 w-14 rounded-full bg-secondary/10 flex items-center justify-center">
+                  <Lock className="h-6 w-6 text-secondary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">Log in to Leave a Review</h2>
+                  <p className="text-gray-500 text-sm max-w-sm">
+                    Reviews are reserved for verified customers who have shipped with Maya. Please log in to your customer account to share your experience.
+                  </p>
+                </div>
+                <div className="flex gap-3 flex-wrap justify-center">
+                  <Link href="/login">
+                    <Button className="bg-secondary hover:bg-secondary/90 text-white px-6">Log In</Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary/5 px-6">
+                      Register
+                    </Button>
+                  </Link>
+                </div>
+                <p className="text-xs text-gray-400">Don't have an account? Register and book your first shipment with us.</p>
+              </CardContent>
+            </Card>
+          ) : user.role !== "customer" ? (
+            /* Staff / Admin: logged in but not a customer */
+            <Card className="border-2 border-amber-200 bg-amber-50/40">
+              <CardContent className="pt-8 pb-8 flex flex-col items-center text-center gap-4">
+                <div className="h-14 w-14 rounded-full bg-amber-100 flex items-center justify-center">
+                  <ShieldCheck className="h-6 w-6 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">Customer Reviews Only</h2>
+                  <p className="text-gray-500 text-sm max-w-sm">
+                    This review form is available exclusively for verified customers. Staff and admin accounts cannot submit public reviews.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : !sent ? (
+            /* Verified customer: show the form */
             <Card className="border-2 border-secondary/20">
               <CardContent className="pt-6 space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="h-10 w-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
                     <Quote className="h-5 w-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h2 className="text-lg font-bold text-gray-900">Share Your Experience</h2>
                     <p className="text-sm text-gray-500">Help other businesses find a reliable logistics partner</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Verified Customer
                   </div>
                 </div>
 
@@ -265,7 +323,7 @@ export default function Testimonials() {
                 )}
                 <Button
                   variant="outline"
-                  onClick={() => { setSent(false); setMethod(null); setForm({ name: "", company: "", service: "", rating: 5, review: "" }); }}
+                  onClick={() => { setSent(false); setMethod(null); setForm({ name: user?.name ?? "", company: "", service: "", rating: 5, review: "" }); }}
                   className="mt-2"
                 >
                   Submit Another Review
