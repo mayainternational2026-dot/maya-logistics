@@ -8,6 +8,7 @@ import contactRouter from "./contact";
 import inquiriesRouter from "./inquiries";
 import attendanceRouter from "./attendance";
 import leaveRouter from "./leave";
+import workLogRouter from "./workLog";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(contactRouter);
 router.use(inquiriesRouter);
 router.use(attendanceRouter);
 router.use(leaveRouter);
+router.use(workLogRouter);
 
 export default router;
