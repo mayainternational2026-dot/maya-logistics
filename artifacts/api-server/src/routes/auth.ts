@@ -293,9 +293,11 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
 
   req.log.info({ email, hasUser: !!user }, "Password reset OTP generated");
 
+  const isDev = process.env["NODE_ENV"] !== "production";
   res.json({
     message:
       "If that email is registered, a one-time code has been sent to your inbox.",
+    ...(isDev && user ? { otp } : {}),
   });
 });
 

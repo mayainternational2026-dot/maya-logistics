@@ -4,7 +4,7 @@ import { useForgotPassword, useResetPassword } from "@workspace/api-client-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, KeyRound, Lock, CheckCircle } from "lucide-react";
+import { Mail, KeyRound, Lock, CheckCircle, FlaskConical } from "lucide-react";
 import { logoUrl } from "@/lib/assets";
 
 type Step = "email" | "otp";
@@ -19,14 +19,16 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
 
   const handleRequest = (e: React.FormEvent) => {
     e.preventDefault();
     forgot.mutate(
       { data: { email } },
       {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           setStep("otp");
+          if (data?.otp) setDemoOtp(data.otp);
           toast({
             title: "Code sent!",
             description: `A 6-digit OTP has been sent to ${email}. Check your inbox.`,
@@ -126,6 +128,22 @@ export default function ForgotPassword() {
                 </p>
               </div>
             </div>
+
+            {/* Demo OTP banner — only shown in development when SMTP is not configured */}
+            {demoOtp && (
+              <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <FlaskConical className="h-5 w-5 mt-0.5 shrink-0 text-amber-600" />
+                <div>
+                  <p className="font-semibold">Demo OTP (development only)</p>
+                  <p className="text-xs text-amber-800 mt-0.5">
+                    Email delivery is not configured. Your one-time code is:
+                  </p>
+                  <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-amber-900">
+                    {demoOtp}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

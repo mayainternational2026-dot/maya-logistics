@@ -34,12 +34,12 @@ Three roles enforced server-side:
 
 | Email | Password | Role |
 | --- | --- | --- |
-| admin@maya.com | admin123 | admin |
+| chapagainsirish@gmail.com | Sirish@@2054 | admin |
 | sangita@maya.com | staff123 | staff (full perms) |
 | bikash@maya.com | staff123 | staff (no customer mgmt) |
 | aarati@example.com / rohan@example.com / pemba@example.com | customer123 | customer |
 
-12 demo shipments are seeded across all customers spanning the last 12 months.
+3 demo shipments per customer are seeded in the dev database.
 
 ## Key features
 
