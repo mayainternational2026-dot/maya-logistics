@@ -15,11 +15,23 @@ import {
   CheckCircle2,
   Timer,
   X,
+  Ban,
 } from "lucide-react";
 
 const NEPAL_TZ = "Asia/Kathmandu";
-const LATE_HOUR = 10;       // 10:00 AM
-const EARLY_OUT_HOUR = 17;  // 5:00 PM
+const OFFICE_OPEN_HOUR = 10;   // 10:00 AM — clock-in allowed from here
+const OFFICE_CLOSE_HOUR = 17;  // 5:00 PM  — clock-out required by here
+
+function getNepalTimeParts(): { hours: number; minutes: number } {
+  const str = new Date().toLocaleTimeString("en-US", {
+    timeZone: NEPAL_TZ,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const [h, m] = str.split(":").map(Number);
+  return { hours: h, minutes: m };
+}
 
 function nepalNow() {
   return new Date().toLocaleString("en-US", {
@@ -35,19 +47,23 @@ function nepalDate() {
   return new Date().toLocaleDateString("en-CA", { timeZone: NEPAL_TZ });
 }
 
-function getNepalHour(): number {
-  return parseInt(
-    new Date().toLocaleString("en-US", { timeZone: NEPAL_TZ, hour: "numeric", hour12: false }),
-    10
-  );
+/** Returns: "before" | "open" | "after" */
+function getOfficeStatus(): "before" | "open" | "after" {
+  const { hours } = getNepalTimeParts();
+  if (hours < OFFICE_OPEN_HOUR) return "before";
+  if (hours >= OFFICE_CLOSE_HOUR) return "after";
+  return "open";
 }
 
 function isLateNow(): boolean {
-  return getNepalHour() >= LATE_HOUR;
+  const { hours } = getNepalTimeParts();
+  return hours >= OFFICE_OPEN_HOUR; // any time you clock in during office hours = late by definition? No — only if > 10:00
+  // Actually late is already handled server-side; here we just show the label
 }
 
 function isEarlyLeaveNow(): boolean {
-  return getNepalHour() < EARLY_OUT_HOUR;
+  const { hours } = getNepalTimeParts();
+  return hours < OFFICE_CLOSE_HOUR;
 }
 
 function fmtTime(iso: string | null) {
@@ -89,46 +105,29 @@ async function apiFetch(path: string, opts?: RequestInit) {
   return data;
 }
 
-function AlertBanner({
-  type,
-  message,
-  onClose,
-}: {
-  type: "late" | "early";
-  message: string;
-  onClose: () => void;
-}) {
+/* ─── Alert Banner ─── */
+function AlertBanner({ type, message, onClose }: { type: "late" | "early" | "info"; message: string; onClose: () => void }) {
+  const styles = {
+    late:  "bg-red-100 text-red-800 border border-red-300",
+    early: "bg-orange-100 text-orange-800 border border-orange-300",
+    info:  "bg-blue-100 text-blue-800 border border-blue-300",
+  };
   return (
-    <div
-      className={`relative flex items-start gap-3 rounded-lg px-4 py-3 text-sm font-medium animate-in slide-in-from-top-2 ${
-        type === "late"
-          ? "bg-red-100 text-red-800 border border-red-300"
-          : "bg-orange-100 text-orange-800 border border-orange-300"
-      }`}
-    >
+    <div className={`relative flex items-start gap-3 rounded-lg px-4 py-3 text-sm font-medium ${styles[type]}`}>
       <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
       <span className="flex-1">{message}</span>
-      <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100">
-        <X className="h-4 w-4" />
-      </button>
+      <button onClick={onClose} className="ml-2 opacity-60 hover:opacity-100"><X className="h-4 w-4" /></button>
     </div>
   );
 }
 
-function EarlyLeaveDialog({
-  currentTime,
-  onConfirm,
-  onCancel,
-  loading,
-}: {
-  currentTime: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading: boolean;
+/* ─── Early Leave Confirmation Dialog ─── */
+function EarlyLeaveDialog({ currentTime, onConfirm, onCancel, loading }: {
+  currentTime: string; onConfirm: () => void; onCancel: () => void; loading: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95">
+      <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 space-y-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-orange-100 rounded-full">
             <AlertTriangle className="h-6 w-6 text-orange-600" />
@@ -139,23 +138,14 @@ function EarlyLeaveDialog({
           It is currently <strong>{currentTime} NPT</strong>. Office hours end at{" "}
           <strong>5:00 PM</strong>. It is not time to leave yet.
         </p>
-        <p className="text-gray-600 text-sm">
-          Please stay until <strong>5:00 PM</strong> and come on time tomorrow.
+        <p className="text-gray-500 text-xs">
+          Early departures are recorded and visible to your manager.
         </p>
         <div className="flex gap-3 pt-1">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={onCancel}
-            disabled={loading}
-          >
+          <Button variant="outline" className="flex-1" onClick={onCancel} disabled={loading}>
             Stay & Cancel
           </Button>
-          <Button
-            className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
-            onClick={onConfirm}
-            disabled={loading}
-          >
+          <Button className="flex-1 bg-orange-600 hover:bg-orange-700 text-white" onClick={onConfirm} disabled={loading}>
             {loading ? "Recording…" : "Clock Out Anyway"}
           </Button>
         </div>
@@ -164,18 +154,47 @@ function EarlyLeaveDialog({
   );
 }
 
+/* ─── Office Status Banner (before / after hours) ─── */
+function OfficeStatusBanner({ status }: { status: "before" | "after" }) {
+  if (status === "before") {
+    return (
+      <div className="flex items-center gap-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+        <Clock className="h-5 w-5 flex-shrink-0" />
+        <div>
+          <p className="font-semibold">Office hasn't opened yet</p>
+          <p className="text-xs mt-0.5">Clock-in is available from <strong>10:00 AM NPT</strong>. Please wait until office hours begin.</p>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-3 rounded-lg bg-gray-100 border border-gray-300 px-4 py-3 text-sm text-gray-700">
+      <Ban className="h-5 w-5 flex-shrink-0" />
+      <div>
+        <p className="font-semibold">Office is closed for today</p>
+        <p className="text-xs mt-0.5">Clock-in is no longer available. Office hours are <strong>10:00 AM – 5:00 PM NPT</strong>.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════ */
 export default function Attendance() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [nowStr, setNowStr] = useState(nepalNow());
+  const [officeStatus, setOfficeStatus] = useState(getOfficeStatus());
   const [month, setMonth] = useState(nepalDate().slice(0, 7));
   const [lateAlert, setLateAlert] = useState<string | null>(null);
   const [earlyAlert, setEarlyAlert] = useState<string | null>(null);
   const [showEarlyDialog, setShowEarlyDialog] = useState(false);
 
   useEffect(() => {
-    const t = setInterval(() => setNowStr(nepalNow()), 1000);
+    const t = setInterval(() => {
+      setNowStr(nepalNow());
+      setOfficeStatus(getOfficeStatus());
+    }, 1000);
     return () => clearInterval(t);
   }, []);
 
@@ -202,18 +221,12 @@ export default function Attendance() {
 
   const doClockIn = async () => {
     const loc = await getLocation();
-    return apiFetch("/attendance/clock-in", {
-      method: "POST",
-      body: JSON.stringify(loc ?? {}),
-    });
+    return apiFetch("/attendance/clock-in", { method: "POST", body: JSON.stringify(loc ?? {}) });
   };
 
   const doClockOut = async () => {
     const loc = await getLocation();
-    return apiFetch("/attendance/clock-out", {
-      method: "POST",
-      body: JSON.stringify(loc ?? {}),
-    });
+    return apiFetch("/attendance/clock-out", { method: "POST", body: JSON.stringify(loc ?? {}) });
   };
 
   const clockIn = useMutation({
@@ -222,11 +235,7 @@ export default function Attendance() {
       qc.invalidateQueries({ queryKey: ["attendance"] });
       if (data.late && data.lateMessage) {
         setLateAlert(data.lateMessage);
-        toast({
-          title: "⚠️ You Are Late!",
-          description: data.lateMessage,
-          variant: "destructive",
-        });
+        toast({ title: "⚠️ You Are Late!", description: data.lateMessage, variant: "destructive" });
       } else {
         toast({ title: "✅ Clocked In!", description: `Recorded at ${nepalNow()} (NPT)` });
       }
@@ -243,16 +252,9 @@ export default function Attendance() {
       setShowEarlyDialog(false);
       if (data.earlyLeave && data.earlyLeaveMessage) {
         setEarlyAlert(data.earlyLeaveMessage);
-        toast({
-          title: "⚠️ Left Early!",
-          description: data.earlyLeaveMessage,
-          variant: "destructive",
-        });
+        toast({ title: "⚠️ Left Early!", description: data.earlyLeaveMessage, variant: "destructive" });
       } else {
-        toast({
-          title: "✅ Clocked Out!",
-          description: `Total time: ${data.duration ?? "—"} (NPT)`,
-        });
+        toast({ title: "✅ Clocked Out!", description: `Total time: ${data.duration ?? "—"}` });
       }
     },
     onError: (e: Error) => {
@@ -269,15 +271,15 @@ export default function Attendance() {
     }
   };
 
-  const hasClockedIn = !!today?.clockIn;
+  const hasClockedIn  = !!today?.clockIn;
   const hasClockedOut = !!today?.clockOut;
-  const presentDays = records.filter((r) => r.clockIn).length;
-  const lateDays = records.filter((r) => r.isLate).length;
-  const totalMins = records.reduce((s, r) => s + (r.totalMinutes ?? 0), 0);
+  const presentDays   = records.filter((r) => r.clockIn).length;
+  const lateDays      = records.filter((r) => r.isLate).length;
+  const totalMins     = records.reduce((s, r) => s + (r.totalMinutes ?? 0), 0);
 
-  const clockInLabel = isLateNow() && !hasClockedIn
-    ? "Clock In (You Are Late!)"
-    : "Clock In";
+  // Determine disable states
+  const clockInDisabled  = hasClockedIn || clockIn.isPending || officeStatus !== "open";
+  const clockOutDisabled = !hasClockedIn || hasClockedOut || clockOut.isPending;
 
   return (
     <div className="space-y-5">
@@ -295,12 +297,8 @@ export default function Attendance() {
         <p className="text-sm text-gray-500 mt-1">Welcome, {user?.name}</p>
       </div>
 
-      {lateAlert && (
-        <AlertBanner type="late" message={lateAlert} onClose={() => setLateAlert(null)} />
-      )}
-      {earlyAlert && (
-        <AlertBanner type="early" message={earlyAlert} onClose={() => setEarlyAlert(null)} />
-      )}
+      {lateAlert  && <AlertBanner type="late"  message={lateAlert}  onClose={() => setLateAlert(null)} />}
+      {earlyAlert && <AlertBanner type="early" message={earlyAlert} onClose={() => setEarlyAlert(null)} />}
 
       {/* Live Clock */}
       <Card className="bg-secondary text-white border-0">
@@ -311,15 +309,21 @@ export default function Attendance() {
           </div>
           <div className="text-4xl font-mono font-bold tracking-widest">{nowStr}</div>
           <div className="text-sm opacity-60 mt-1">{nepalDate()}</div>
-          <div className="flex justify-center gap-4 mt-3 text-xs opacity-60">
-            <span>Office In: 10:00 AM</span>
-            <span>•</span>
-            <span>Office Out: 5:00 PM</span>
+          <div className="flex justify-center gap-6 mt-3 text-xs">
+            <span className={`px-2 py-0.5 rounded-full ${officeStatus === "open" ? "bg-green-500/30 text-green-100" : "bg-white/20 text-white/60"}`}>
+              {officeStatus === "before" ? "⏳ Opens 10:00 AM" : officeStatus === "open" ? "✅ Office Open" : "🔒 Office Closed"}
+            </span>
+            <span className="opacity-50">Clock-out: 5:00 PM</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Today card */}
+      {/* Office hours warning */}
+      {officeStatus !== "open" && !hasClockedIn && (
+        <OfficeStatusBanner status={officeStatus} />
+      )}
+
+      {/* Today Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Today's Attendance</CardTitle>
@@ -345,54 +349,73 @@ export default function Attendance() {
                     {hasClockedOut ? fmtTime(today!.clockOut!) : "—"}
                   </div>
                   {hasClockedOut && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      {fmtDuration(today!.totalMinutes)}
-                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{fmtDuration(today!.totalMinutes)}</div>
                   )}
                 </div>
               </div>
 
               {today?.clockInLat && (
                 <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <MapPin className="h-3 w-3" />
-                  Location recorded
+                  <MapPin className="h-3 w-3" />Location recorded
                 </div>
               )}
 
               <div className="flex gap-3">
+                {/* Clock In */}
+                <Button
+                  className={`flex-1 h-14 text-sm font-semibold transition-colors ${
+                    hasClockedIn
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : officeStatus === "open"
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                  onClick={() => !clockInDisabled && clockIn.mutate()}
+                  disabled={clockInDisabled}
+                  title={
+                    officeStatus === "before"
+                      ? "Office hasn't started yet — available at 10:00 AM"
+                      : officeStatus === "after"
+                      ? "Office is closed for today"
+                      : undefined
+                  }
+                >
+                  {officeStatus !== "open" && !hasClockedIn ? (
+                    <Ban className="h-5 w-5 mr-2" />
+                  ) : (
+                    <LogIn className="h-5 w-5 mr-2" />
+                  )}
+                  {clockIn.isPending
+                    ? "Recording…"
+                    : hasClockedIn
+                    ? "Clocked In ✓"
+                    : officeStatus === "before"
+                    ? "Not Open Yet"
+                    : officeStatus === "after"
+                    ? "Office Closed"
+                    : "Clock In"}
+                </Button>
+
+                {/* Clock Out */}
                 <Button
                   className={`flex-1 h-14 text-sm font-semibold ${
-                    isLateNow() && !hasClockedIn
-                      ? "bg-red-600 hover:bg-red-700"
-                      : "bg-green-600 hover:bg-green-700"
+                    clockOutDisabled
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-800 hover:bg-gray-900 text-white"
                   }`}
-                  onClick={() => clockIn.mutate()}
-                  disabled={hasClockedIn || clockIn.isPending}
-                >
-                  <LogIn className="h-5 w-5 mr-2" />
-                  {clockIn.isPending ? "Recording…" : clockInLabel}
-                </Button>
-                <Button
-                  className="flex-1 h-14 text-sm font-semibold bg-gray-800 hover:bg-gray-900"
                   onClick={handleClockOutClick}
-                  disabled={!hasClockedIn || hasClockedOut || clockOut.isPending}
+                  disabled={clockOutDisabled}
                 >
                   <LogOut className="h-5 w-5 mr-2" />
-                  {clockOut.isPending ? "Recording…" : "Clock Out"}
+                  {clockOut.isPending ? "Recording…" : hasClockedOut ? "Clocked Out ✓" : "Clock Out"}
                 </Button>
               </div>
 
-              {/* Status messages */}
-              {!hasClockedIn && isLateNow() && (
-                <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-                  <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                  You are late! Office starts at 10:00 AM. Please clock in now.
-                </div>
-              )}
+              {/* Status hint */}
               {hasClockedIn && !hasClockedOut && (
                 <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 rounded-md px-3 py-2">
                   <Timer className="h-4 w-4" />
-                  You are clocked in. Clock out at 5:00 PM or later.
+                  You are clocked in. Clock out at or after <strong>5:00 PM NPT</strong>.
                 </div>
               )}
               {hasClockedOut && (
@@ -422,15 +445,13 @@ export default function Attendance() {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {(totalMins / 60).toFixed(1)}h
-            </div>
+            <div className="text-2xl font-bold text-blue-600">{(totalMins / 60).toFixed(1)}h</div>
             <div className="text-xs text-gray-500 mt-1">Total Hours</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* History table */}
+      {/* History */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">Attendance History</CardTitle>
@@ -459,9 +480,7 @@ export default function Attendance() {
               <tbody>
                 {records.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                      No records for this month
-                    </td>
+                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">No records for this month</td>
                   </tr>
                 ) : (
                   records.map((r) => (
@@ -494,7 +513,7 @@ export default function Attendance() {
         <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
         <span>
           Office hours: <strong>10:00 AM – 5:00 PM Nepal Time (NPT, UTC+5:45)</strong>.
-          Late arrivals and early departures are recorded and visible to admin.
+          Clock-in is only available during office hours. Late arrivals and early departures are recorded.
         </span>
       </div>
     </div>

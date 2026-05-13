@@ -71,6 +71,17 @@ router.post(
     const now = new Date();
     const today = getNepalDate(now);
 
+    // Server-side office hours check: clock-in only allowed 10:00 AM – 5:00 PM NPT
+    const { hours: nowHours } = getNepalTime(now);
+    if (nowHours < LATE_HOUR) {
+      res.status(400).json({ error: "Office hasn't started yet. Clock-in is available from 10:00 AM NPT." });
+      return;
+    }
+    if (nowHours >= EARLY_OUT_HOUR) {
+      res.status(400).json({ error: "Office is closed for today. Clock-in is available 10:00 AM – 5:00 PM NPT." });
+      return;
+    }
+
     const existing = await db
       .select()
       .from(attendanceTable)
