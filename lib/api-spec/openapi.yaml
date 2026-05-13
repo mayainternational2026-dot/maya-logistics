@@ -643,6 +643,123 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  # ----- Expenses -----
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses (admin sees all, staff sees own)
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Add a new expense entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseBody"
+      responses:
+        "201":
+          description: Expense created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /expenses/{id}:
+    put:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update an expense (admin any, staff own)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpenseBody"
+      responses:
+        "200":
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Delete an expense (admin any, staff own)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   # ----- Contact -----
   /contact:
     post:
@@ -1205,3 +1322,83 @@ components:
           type: string
         adminNotes:
           type: string
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        productName:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+        total:
+          type: number
+        photoUrl:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdBy:
+          type: integer
+        createdByName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, date, productName, price, quantity, total, createdBy, createdAt, updatedAt]
+
+    CreateExpenseBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        productName:
+          type: string
+          minLength: 1
+        price:
+          type: number
+          minimum: 0
+        quantity:
+          type: integer
+          minimum: 1
+        photoUrl:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required: [date, productName, price, quantity]
+
+    UpdateExpenseBody:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        productName:
+          type: string
+          minLength: 1
+        price:
+          type: number
+          minimum: 0
+        quantity:
+          type: integer
+          minimum: 1
+        photoUrl:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true

@@ -633,6 +633,84 @@ export const DeleteShippingRateResponse = zod.object({
 });
 
 /**
+ * @summary List expenses (admin sees all, staff sees own)
+ */
+export const ListExpensesResponseItem = zod.object({
+  id: zod.number(),
+  date: zod.coerce.date(),
+  productName: zod.string(),
+  price: zod.number(),
+  quantity: zod.number(),
+  total: zod.number(),
+  photoUrl: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdBy: zod.number(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListExpensesResponse = zod.array(ListExpensesResponseItem);
+
+/**
+ * @summary Add a new expense entry
+ */
+
+export const createExpenseBodyPriceMin = 0;
+
+export const CreateExpenseBody = zod.object({
+  date: zod.coerce.date(),
+  productName: zod.string().min(1),
+  price: zod.number().min(createExpenseBodyPriceMin),
+  quantity: zod.number().min(1),
+  photoUrl: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update an expense (admin any, staff own)
+ */
+export const UpdateExpenseParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updateExpenseBodyPriceMin = 0;
+
+export const UpdateExpenseBody = zod.object({
+  date: zod.coerce.date().optional(),
+  productName: zod.string().min(1).optional(),
+  price: zod.number().min(updateExpenseBodyPriceMin).optional(),
+  quantity: zod.number().min(1).optional(),
+  photoUrl: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateExpenseResponse = zod.object({
+  id: zod.number(),
+  date: zod.coerce.date(),
+  productName: zod.string(),
+  price: zod.number(),
+  quantity: zod.number(),
+  total: zod.number(),
+  photoUrl: zod.string().nullish(),
+  notes: zod.string().nullish(),
+  createdBy: zod.number(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Delete an expense (admin any, staff own)
+ */
+export const DeleteExpenseParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteExpenseResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary Submit a contact form message
  */
 

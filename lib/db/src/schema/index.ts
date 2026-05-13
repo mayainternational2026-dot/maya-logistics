@@ -10,3 +10,4 @@ export * from "./attendance";
 export * from "./leaveRequests";
 export * from "./workLogs";
 export * from "./shippingRates";
+export * from "./expenses";

@@ -6,14 +6,19 @@ import { requireAuth } from "../lib/auth";
 const router: IRouter = Router();
 
 router.get("/shipping-rates", async (req, res): Promise<void> => {
-  const rates = await db.select().from(shippingRatesTable).orderBy(shippingRatesTable.country);
-  res.json(
-    rates.map((r) => ({
-      ...r,
-      rateUsd: Number(r.rateUsd),
-      rateNpr: Number(r.rateNpr),
-    })),
-  );
+  try {
+    const rates = await db.select().from(shippingRatesTable).orderBy(shippingRatesTable.country);
+    res.json(
+      rates.map((r) => ({
+        ...r,
+        rateUsd: Number(r.rateUsd),
+        rateNpr: Number(r.rateNpr),
+      })),
+    );
+  } catch (err) {
+    req.log.error({ err }, "Failed to list shipping rates");
+    res.status(500).json({ error: "Failed to fetch shipping rates" });
+  }
 });
 
 router.post("/shipping-rates", requireAuth("admin"), async (req, res): Promise<void> => {

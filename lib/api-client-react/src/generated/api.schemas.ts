@@ -308,6 +308,45 @@ export interface UpdateInquiryBody {
   adminNotes?: string;
 }
 
+export interface Expense {
+  id: number;
+  date: string;
+  productName: string;
+  price: number;
+  quantity: number;
+  total: number;
+  photoUrl?: string | null;
+  notes?: string | null;
+  createdBy: number;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExpenseBody {
+  date: string;
+  /** @minLength 1 */
+  productName: string;
+  /** @minimum 0 */
+  price: number;
+  /** @minimum 1 */
+  quantity: number;
+  photoUrl?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdateExpenseBody {
+  date?: string;
+  /** @minLength 1 */
+  productName?: string;
+  /** @minimum 0 */
+  price?: number;
+  /** @minimum 1 */
+  quantity?: number;
+  photoUrl?: string | null;
+  notes?: string | null;
+}
+
 export type ListUsersParams = {
   role?: ListUsersRole;
 };
