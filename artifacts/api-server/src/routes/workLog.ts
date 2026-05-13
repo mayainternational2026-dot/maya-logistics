@@ -15,7 +15,7 @@ router.post(
   requireAuth("admin", "staff"),
   async (req, res): Promise<void> => {
     const userId = req.currentUser!.id;
-    const { tasks, summary, mood, date } = req.body ?? {};
+    const { tasks, summary, mood, date, screenshots } = req.body ?? {};
     const logDate = date ?? todayNPT();
 
     if (!Array.isArray(tasks) || tasks.length === 0) {
@@ -28,6 +28,12 @@ router.post(
       return;
     }
 
+    const cleanScreenshots: string[] = Array.isArray(screenshots)
+      ? (screenshots as unknown[])
+          .filter((s): s is string => typeof s === "string" && s.startsWith("data:image/"))
+          .slice(0, 3)
+      : [];
+
     const existing = await db
       .select({ id: workLogsTable.id })
       .from(workLogsTable)
@@ -38,13 +44,13 @@ router.post(
     if (existing[0]) {
       [row] = await db
         .update(workLogsTable)
-        .set({ tasks: cleanTasks, summary: summary ?? null, mood: mood ?? null, updatedAt: new Date() })
+        .set({ tasks: cleanTasks, summary: summary ?? null, mood: mood ?? null, screenshots: cleanScreenshots, updatedAt: new Date() })
         .where(eq(workLogsTable.id, existing[0].id))
         .returning();
     } else {
       [row] = await db
         .insert(workLogsTable)
-        .values({ userId, date: logDate, tasks: cleanTasks, summary: summary ?? null, mood: mood ?? null })
+        .values({ userId, date: logDate, tasks: cleanTasks, summary: summary ?? null, mood: mood ?? null, screenshots: cleanScreenshots })
         .returning();
     }
 

@@ -21,6 +21,7 @@ export const workLogsTable = pgTable(
     tasks: jsonb("tasks").$type<string[]>().notNull().default([]),
     summary: text("summary"),
     mood: integer("mood"),
+    screenshots: jsonb("screenshots").$type<string[]>().notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
