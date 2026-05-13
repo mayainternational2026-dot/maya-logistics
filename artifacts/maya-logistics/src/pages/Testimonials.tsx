@@ -1,114 +1,78 @@
+import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
-import { Star, Quote, MessageCircle } from "lucide-react";
+import { Star, MessageCircle, Mail, Send, CheckCircle2, Quote } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const TESTIMONIALS = [
-  {
-    name: "Rajesh Shrestha",
-    role: "Business Owner",
-    company: "Shrestha Handicrafts, Kathmandu",
-    text: "Maya Import Export has been shipping our handicrafts to Europe for 3 years now. Their customs clearance team is excellent — zero delays, zero stress. Highly recommended for any exporter in Nepal.",
-    rating: 5,
-    service: "Air Freight",
-    avatar: "RS",
-  },
-  {
-    name: "Priya Tamang",
-    role: "Import Manager",
-    company: "Himalayan Goods Pvt. Ltd.",
-    text: "We import raw materials from China via sea freight every month. Maya's team handles all the documentation at Kolkata port seamlessly. Their pricing is transparent and staff is always available on WhatsApp.",
-    rating: 5,
-    service: "Sea Freight",
-    avatar: "PT",
-  },
-  {
-    name: "Sunil Gurung",
-    role: "E-commerce Seller",
-    company: "Kathmandu Online Store",
-    text: "As an online seller shipping packages internationally, I needed a reliable freight partner. Maya Import Export gave me the best rates and their tracking system keeps me and my customers updated at every step.",
-    rating: 5,
-    service: "Air Freight",
-    avatar: "SG",
-  },
-  {
-    name: "Anita Poudel",
-    role: "Procurement Officer",
-    company: "Poudel Construction Ltd.",
-    text: "We use Maya for road freight from India — heavy construction equipment. Their team coordinates pickups from Indian suppliers and delivers to our sites on time. Professional and trustworthy company.",
-    rating: 5,
-    service: "Road Freight",
-    avatar: "AP",
-  },
-  {
-    name: "Bikash Rai",
-    role: "Garment Exporter",
-    company: "Rai Garments, Bhaktapur",
-    text: "Maya Import Export helped us ship our garments to the UK and US market. Their knowledge of customs regulations saved us from costly mistakes. Customer service is top notch — they respond even on holidays.",
-    rating: 5,
-    service: "Air Freight",
-    avatar: "BR",
-  },
-  {
-    name: "Kamala Thapa",
-    role: "Director",
-    company: "Himalayan Tea Exports",
-    text: "Shipping Nepali tea to Japan and South Korea requires careful handling. Maya's team understands food-grade cargo requirements and ensures proper documentation every time. Our international clients are always satisfied.",
-    rating: 5,
-    service: "Air Freight",
-    avatar: "KT",
-  },
-  {
-    name: "Deepak Maharjan",
-    role: "Logistics Coordinator",
-    company: "Pashupatinath Arts & Crafts",
-    text: "We've tried several freight companies in Kathmandu. Maya Import Export stands out for their honest pricing and on-time delivery. Their staff is knowledgeable and guides you through every step of the shipping process.",
-    rating: 5,
-    service: "Sea Freight",
-    avatar: "DM",
-  },
-  {
-    name: "Sushila Karki",
-    role: "Shop Owner",
-    company: "Karki Jewellery, Thamel",
-    text: "I send silver jewellery to clients in the USA regularly. Maya handles all the paperwork, insurance, and customs declarations for precious items. Very reliable — my packages always arrive safely and on time.",
-    rating: 5,
-    service: "Air Freight",
-    avatar: "SK",
-  },
-];
+const SERVICES = ["Air Freight", "Sea Freight", "Road Freight", "Customs Clearance", "Other"];
 
 const SERVICE_COLORS: Record<string, string> = {
-  "Air Freight":  "bg-blue-100 text-blue-700",
-  "Sea Freight":  "bg-teal-100 text-teal-700",
-  "Road Freight": "bg-orange-100 text-orange-700",
+  "Air Freight":        "bg-blue-100 text-blue-700",
+  "Sea Freight":        "bg-teal-100 text-teal-700",
+  "Road Freight":       "bg-orange-100 text-orange-700",
+  "Customs Clearance":  "bg-purple-100 text-purple-700",
+  "Other":              "bg-gray-100 text-gray-700",
 };
 
-function StarRating({ rating }: { rating: number }) {
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
   return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className={`h-4 w-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
-        />
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(0)}
+          onClick={() => onChange(n)}
+          className="focus:outline-none"
+        >
+          <Star
+            className={`h-7 w-7 transition-colors ${
+              n <= (hover || value) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+            }`}
+          />
+        </button>
       ))}
     </div>
   );
 }
 
-function Avatar({ initials }: { initials: string }) {
-  return (
-    <div className="h-11 w-11 rounded-full bg-secondary text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-      {initials}
-    </div>
-  );
-}
-
 export default function Testimonials() {
-  const avgRating = (TESTIMONIALS.reduce((s, t) => s + t.rating, 0) / TESTIMONIALS.length).toFixed(1);
+  const [form, setForm] = useState({
+    name: "",
+    company: "",
+    service: "",
+    rating: 5,
+    review: "",
+  });
+  const [sent, setSent] = useState(false);
+  const [method, setMethod] = useState<"whatsapp" | "email" | null>(null);
+
+  const setField = (field: string, value: string | number) =>
+    setForm((f) => ({ ...f, [field]: value }));
+
+  const isValid = form.name.trim() && form.service && form.review.trim().length >= 10;
+
+  const buildMessage = () =>
+    `⭐ New Review for Maya Import Export\n\nName: ${form.name}${form.company ? `\nCompany: ${form.company}` : ""}\nService Used: ${form.service}\nRating: ${"★".repeat(form.rating)}${"☆".repeat(5 - form.rating)} (${form.rating}/5)\n\nReview:\n${form.review}`;
+
+  const handleWhatsApp = () => {
+    setMethod("whatsapp");
+    setSent(true);
+    window.open(`https://wa.me/9779769686908?text=${encodeURIComponent(buildMessage())}`, "_blank");
+  };
+
+  const handleEmail = () => {
+    setMethod("email");
+    setSent(true);
+    const subject = encodeURIComponent(`Review from ${form.name} — ${form.service} (${form.rating}/5 stars)`);
+    const body = encodeURIComponent(buildMessage());
+    window.open(`mailto:mayaimportexportinternational@gmail.com?subject=${subject}&body=${body}`);
+  };
 
   return (
     <>
@@ -119,65 +83,202 @@ export default function Testimonials() {
           <div className="max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm mb-4">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span>Trusted by businesses across Nepal</span>
+              <span>Client Reviews</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">
-              What Our Clients Say
-            </h1>
-            <p className="text-white/70 text-lg">
-              Real feedback from businesses that trust Maya Import Export Logistic for their cargo needs.
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">What Our Clients Say</h1>
+            <p className="text-white/70 text-base max-w-xl mx-auto">
+              We are building our verified review collection. If you've shipped with us, share your honest experience — your words help other Nepali businesses find a reliable logistics partner.
             </p>
-            <div className="flex items-center justify-center gap-6 mt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold">{avgRating}</p>
-                <StarRating rating={5} />
-                <p className="text-xs text-white/60 mt-1">Average Rating</p>
-              </div>
-              <div className="w-px h-12 bg-white/20" />
-              <div className="text-center">
-                <p className="text-3xl font-bold">{TESTIMONIALS.length}+</p>
-                <p className="text-xs text-white/60 mt-1">Happy Clients</p>
-              </div>
-              <div className="w-px h-12 bg-white/20" />
-              <div className="text-center">
-                <p className="text-3xl font-bold">3+</p>
-                <p className="text-xs text-white/60 mt-1">Years in Business</p>
-              </div>
-            </div>
           </div>
         </section>
 
-        {/* Testimonials Grid */}
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {TESTIMONIALS.map((t, i) => (
-              <Card key={i} className="relative hover:shadow-md transition-shadow">
-                <CardContent className="p-5 space-y-3">
-                  <Quote className="h-8 w-8 text-secondary/20 absolute top-4 right-4" />
-                  <StarRating rating={t.rating} />
-                  <p className="text-gray-700 text-sm leading-relaxed">"{t.text}"</p>
-                  <div className="flex items-center gap-3 pt-2 border-t">
-                    <Avatar initials={t.avatar} />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 truncate">{t.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{t.role}</p>
-                      <p className="text-xs text-gray-400 truncate">{t.company}</p>
-                    </div>
-                    <Badge className={`text-xs shrink-0 ${SERVICE_COLORS[t.service] ?? ""}`}>
-                      {t.service}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="max-w-4xl mx-auto px-4 py-12 space-y-10">
+
+          {/* Social Proof Links */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a
+              href="https://www.facebook.com/profile.php?id=61589211686064"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-5 bg-white rounded-2xl border hover:shadow-md hover:-translate-y-0.5 transition-all"
+            >
+              <div className="h-12 w-12 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+                <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">Facebook Reviews</p>
+                <p className="text-sm text-blue-600">View &amp; leave reviews on our page →</p>
+              </div>
+            </a>
+
+            <a
+              href="https://www.instagram.com/mayainternational2026"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-5 bg-white rounded-2xl border hover:shadow-md hover:-translate-y-0.5 transition-all"
+            >
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center flex-shrink-0">
+                <svg className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900">Instagram</p>
+                <p className="text-sm text-pink-500">@mayainternational2026 →</p>
+              </div>
+            </a>
           </div>
 
+          {/* Review Form */}
+          {!sent ? (
+            <Card className="border-2 border-secondary/20">
+              <CardContent className="pt-6 space-y-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+                    <Quote className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Share Your Experience</h2>
+                    <p className="text-sm text-gray-500">Help other businesses find a reliable logistics partner</p>
+                  </div>
+                </div>
+
+                {/* Rating */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Your Rating *</label>
+                  <StarPicker value={form.rating} onChange={(v) => setField("rating", v)} />
+                  <p className="text-xs text-gray-400 mt-1">
+                    {["", "Poor", "Below Average", "Average", "Good", "Excellent"][form.rating]}
+                  </p>
+                </div>
+
+                {/* Name + Company */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Name *</label>
+                    <input
+                      type="text"
+                      value={form.name}
+                      onChange={(e) => setField("name", e.target.value)}
+                      placeholder="e.g. Ramesh Shrestha"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Company / Business <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={form.company}
+                      onChange={(e) => setField("company", e.target.value)}
+                      placeholder="e.g. My Export Co., Kathmandu"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Service Used */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Service Used *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {SERVICES.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setField("service", s)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                          form.service === s
+                            ? "bg-secondary text-white border-secondary shadow-sm"
+                            : "bg-white text-gray-600 border-gray-300 hover:border-secondary hover:text-secondary"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Review Text */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Review * <span className="text-gray-400 font-normal">(minimum 10 characters)</span>
+                  </label>
+                  <textarea
+                    value={form.review}
+                    onChange={(e) => setField("review", e.target.value)}
+                    placeholder="Tell us about your shipment experience — what went well, how was the communication, would you recommend us?"
+                    rows={4}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none focus:ring-2 focus:ring-secondary focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">{form.review.length} characters</p>
+                </div>
+
+                {/* Submit Options */}
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500 text-center">Choose how to send your review:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button
+                      onClick={handleWhatsApp}
+                      disabled={!isValid}
+                      className="bg-green-600 hover:bg-green-700 text-white gap-2 h-11 w-full"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Send via WhatsApp
+                    </Button>
+                    <Button
+                      onClick={handleEmail}
+                      disabled={!isValid}
+                      variant="outline"
+                      className="gap-2 h-11 w-full border-secondary text-secondary hover:bg-secondary/5"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Send via Email
+                    </Button>
+                  </div>
+                  {!isValid && (
+                    <p className="text-xs text-center text-gray-400">
+                      Please fill in your name, service used, and a review of at least 10 characters.
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Thank you */
+            <Card className="border-2 border-green-200 bg-green-50/50">
+              <CardContent className="pt-8 pb-6 text-center space-y-4">
+                <CheckCircle2 className="h-14 w-14 text-green-500 mx-auto" />
+                <h2 className="text-xl font-bold text-gray-900">Thank You, {form.name}!</h2>
+                <p className="text-gray-600 max-w-sm mx-auto text-sm">
+                  {method === "whatsapp"
+                    ? "Your review has been sent to our WhatsApp. We truly appreciate your feedback!"
+                    : "Your review email has been prepared. Thank you for taking the time to share your experience!"}
+                </p>
+                <div className="flex justify-center gap-1 py-1">
+                  {[1,2,3,4,5].map((n) => (
+                    <Star key={n} className={`h-5 w-5 ${n <= form.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />
+                  ))}
+                </div>
+                {form.service && (
+                  <Badge className={`${SERVICE_COLORS[form.service] ?? "bg-gray-100 text-gray-700"}`}>
+                    {form.service}
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => { setSent(false); setMethod(null); setForm({ name: "", company: "", service: "", rating: 5, review: "" }); }}
+                  className="mt-2"
+                >
+                  Submit Another Review
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* CTA */}
-          <div className="mt-12 text-center bg-white rounded-2xl border p-8 max-w-xl mx-auto">
+          <div className="text-center bg-white rounded-2xl border p-8 max-w-xl mx-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-2">Ready to Ship with Maya?</h2>
             <p className="text-gray-500 text-sm mb-5">
-              Join hundreds of Nepali businesses who trust us with their cargo.
-              Get a free quote today.
+              Get a free, confirmed quote for your next shipment from Nepal.
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <a

@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plane, Ship, Truck, Calculator as CalcIcon, Phone, MessageCircle } from "lucide-react";
+import { Plane, Ship, Truck, Calculator as CalcIcon, MessageCircle, Phone, Clock, Info } from "lucide-react";
 
 const FREIGHT_TYPES = [
   {
@@ -13,87 +13,130 @@ const FREIGHT_TYPES = [
     label: "Air Freight",
     icon: Plane,
     color: "bg-blue-600",
-    rateMin: 180,
-    rateMax: 280,
-    minWeight: 1,
     transitMin: 1,
     transitMax: 5,
-    unit: "days",
     description: "Fastest option — ideal for urgent or high-value cargo",
+    via: "TIA (Tribhuvan International Airport)",
   },
   {
     id: "sea",
     label: "Sea Freight",
     icon: Ship,
     color: "bg-teal-600",
-    rateMin: 45,
-    rateMax: 90,
-    minWeight: 100,
     transitMin: 20,
     transitMax: 45,
-    unit: "days",
     description: "Most economical for heavy or bulk shipments",
+    via: "Kolkata / Haldia / Mundra port via India",
   },
   {
     id: "road",
     label: "Road Freight",
     icon: Truck,
     color: "bg-orange-600",
-    rateMin: 30,
-    rateMax: 65,
-    minWeight: 20,
     transitMin: 3,
     transitMax: 10,
-    unit: "days",
     description: "Best for regional destinations — India, China, Bangladesh",
+    via: "Birgunj / Banbasa border crossing",
   },
 ];
 
-const ORIGINS = ["Kathmandu, Nepal", "Pokhara, Nepal", "Biratnagar, Nepal", "Birgunj, Nepal"];
+const NEPAL_ORIGINS = [
+  "Kathmandu",
+  "Lalitpur (Patan)",
+  "Bhaktapur",
+  "Pokhara",
+  "Biratnagar",
+  "Birgunj",
+  "Butwal",
+  "Dharan",
+  "Dhangadhi",
+  "Hetauda",
+  "Janakpur",
+  "Nepalgunj",
+  "Bharatpur (Chitwan)",
+  "Itahari",
+  "Damak",
+  "Tulsipur",
+  "Ghorahi",
+  "Inaruwa",
+  "Other location in Nepal",
+];
 
 const DESTINATIONS: Record<string, string[]> = {
-  Asia: ["China", "India", "Japan", "South Korea", "Singapore", "UAE", "Hong Kong", "Thailand", "Malaysia"],
-  Europe: ["United Kingdom", "Germany", "France", "Netherlands", "Italy", "Spain", "Switzerland"],
-  Americas: ["United States", "Canada", "Australia", "New Zealand"],
-  Other: ["Saudi Arabia", "Qatar", "Bahrain", "South Africa"],
+  "Popular": ["China", "India"],
+  "Middle East": ["UAE", "Saudi Arabia", "Qatar", "Kuwait", "Bahrain", "Oman"],
+  "Southeast Asia": ["Singapore", "Malaysia", "Thailand", "Hong Kong", "Japan", "South Korea", "Indonesia", "Vietnam"],
+  "Europe": ["United Kingdom", "Germany", "France", "Netherlands", "Italy", "Spain", "Switzerland", "Belgium", "Portugal", "Sweden", "Denmark"],
+  "Americas & Oceania": ["United States", "Canada", "Australia", "New Zealand"],
+  "South Asia": ["Bangladesh", "Sri Lanka", "Pakistan", "Maldives"],
+  "Africa": ["South Africa", "Kenya", "Egypt"],
 };
 
-const REGION_MULTIPLIERS: Record<string, number> = {
-  "India": 0.6, "China": 0.8, "Bangladesh": 0.7, "UAE": 1.0, "Saudi Arabia": 1.0,
-  "Qatar": 1.0, "Bahrain": 1.0, "Singapore": 1.0, "Thailand": 1.0, "Malaysia": 1.0,
-  "Hong Kong": 1.0, "South Korea": 1.1, "Japan": 1.2,
-  "United Kingdom": 1.5, "Germany": 1.5, "France": 1.5, "Netherlands": 1.4,
-  "Italy": 1.5, "Spain": 1.4, "Switzerland": 1.6,
-  "United States": 1.8, "Canada": 1.8, "Australia": 1.6, "New Zealand": 1.7,
-  "South Africa": 1.5,
+const TRANSIT_BY_REGION: Record<string, { air: string; sea: string; road: string }> = {
+  "China":          { air: "1–3 days",   sea: "15–25 days", road: "5–10 days" },
+  "India":          { air: "1–2 days",   sea: "10–18 days", road: "2–5 days" },
+  "UAE":            { air: "2–4 days",   sea: "18–28 days", road: "—" },
+  "Saudi Arabia":   { air: "3–5 days",   sea: "20–30 days", road: "—" },
+  "Qatar":          { air: "3–5 days",   sea: "20–30 days", road: "—" },
+  "Kuwait":         { air: "3–5 days",   sea: "20–30 days", road: "—" },
+  "Bahrain":        { air: "3–5 days",   sea: "20–30 days", road: "—" },
+  "Oman":           { air: "3–5 days",   sea: "22–32 days", road: "—" },
+  "Singapore":      { air: "2–4 days",   sea: "18–28 days", road: "—" },
+  "Malaysia":       { air: "2–4 days",   sea: "20–30 days", road: "—" },
+  "Thailand":       { air: "2–4 days",   sea: "18–28 days", road: "—" },
+  "Hong Kong":      { air: "2–4 days",   sea: "15–22 days", road: "—" },
+  "Japan":          { air: "3–5 days",   sea: "20–30 days", road: "—" },
+  "South Korea":    { air: "3–5 days",   sea: "20–30 days", road: "—" },
+  "United Kingdom": { air: "4–7 days",   sea: "30–45 days", road: "—" },
+  "Germany":        { air: "4–7 days",   sea: "30–45 days", road: "—" },
+  "France":         { air: "4–7 days",   sea: "30–45 days", road: "—" },
+  "United States":  { air: "5–8 days",   sea: "35–50 days", road: "—" },
+  "Canada":         { air: "5–8 days",   sea: "35–50 days", road: "—" },
+  "Australia":      { air: "4–7 days",   sea: "28–40 days", road: "—" },
 };
 
-function formatNPR(n: number) {
-  return "NPR " + Math.round(n).toLocaleString("en-IN");
+function getTransit(destination: string, freightId: string): string {
+  const entry = TRANSIT_BY_REGION[destination];
+  if (!entry) return freightId === "air" ? "5–10 days" : freightId === "sea" ? "25–45 days" : "7–15 days";
+  return entry[freightId as keyof typeof entry] ?? "Contact us";
 }
 
 export default function Calculator() {
+  const [, setLocation] = useLocation();
   const [freightType, setFreightType] = useState("air");
   const [weight, setWeight] = useState("");
   const [destination, setDestination] = useState("");
-  const [origin, setOrigin] = useState("Kathmandu, Nepal");
-  const [result, setResult] = useState<null | { low: number; high: number; freight: typeof FREIGHT_TYPES[0] }>(null);
+  const [origin, setOrigin] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   const selected = FREIGHT_TYPES.find((f) => f.id === freightType)!;
 
-  const handleCalculate = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const w = parseFloat(weight);
-    if (!w || w <= 0 || !destination) return;
-
-    const effectiveWeight = Math.max(w, selected.minWeight);
-    const multiplier = REGION_MULTIPLIERS[destination] ?? 1.2;
-
-    const low  = effectiveWeight * selected.rateMin * multiplier;
-    const high = effectiveWeight * selected.rateMax * multiplier;
-
-    setResult({ low, high, freight: selected });
+    if (!origin || !destination || !weight) return;
+    setSubmitted(true);
   };
+
+  const handleWhatsApp = () => {
+    const msg = `Hi Maya Logistics, I'd like a freight quote:
+
+📦 Freight Type: ${selected.label}
+📍 Origin: ${origin}, Nepal
+🌍 Destination: ${destination}
+⚖️ Weight: ${weight} kg
+
+Please confirm pricing and transit time. Thank you.`;
+    window.open(`https://wa.me/9779769686908?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  const resetForm = () => {
+    setSubmitted(false);
+    setWeight("");
+    setDestination("");
+    setOrigin("");
+  };
+
+  const transit = destination ? getTransit(destination, freightType) : null;
 
   return (
     <>
@@ -104,27 +147,25 @@ export default function Calculator() {
           <div className="max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm mb-4">
               <CalcIcon className="h-4 w-4" />
-              <span>Instant Freight Estimate</span>
+              <span>Get a Freight Quote</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">
-              Freight Cost Calculator
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">Freight Quote Request</h1>
             <p className="text-white/70">
-              Get an instant estimate for air, sea, or road freight from Nepal.
-              <br />Final price confirmed by our team after shipment details are reviewed.
+              Tell us your shipment details and we'll get back with a confirmed price — usually within the hour on WhatsApp.
             </p>
           </div>
         </section>
 
         <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
-          {/* Freight Type Selection */}
+
+          {/* Freight Type */}
           <div>
             <p className="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">Select Freight Type</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {FREIGHT_TYPES.map((ft) => (
                 <button
                   key={ft.id}
-                  onClick={() => { setFreightType(ft.id); setResult(null); }}
+                  onClick={() => { setFreightType(ft.id); setSubmitted(false); }}
                   className={`rounded-xl border-2 p-4 text-left transition-all ${
                     freightType === ft.id
                       ? "border-secondary bg-secondary/5 shadow"
@@ -141,160 +182,196 @@ export default function Calculator() {
             </div>
           </div>
 
-          {/* Calculator Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <selected.icon className="h-5 w-5 text-secondary" />
-                {selected.label} Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCalculate} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-                    <select
-                      value={origin}
-                      onChange={(e) => setOrigin(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
-                    >
-                      {ORIGINS.map((o) => <option key={o}>{o}</option>)}
-                    </select>
+          {/* Transit via badge */}
+          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+            <Info className="h-3.5 w-3.5 text-secondary" />
+            {selected.label} routes via: <span className="font-medium text-gray-600">{selected.via}</span>
+          </p>
+
+          {/* Form */}
+          {!submitted ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <selected.icon className="h-5 w-5 text-secondary" />
+                  Shipment Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Origin */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Origin <span className="text-gray-400 font-normal">(within Nepal)</span>
+                      </label>
+                      <select
+                        value={origin}
+                        onChange={(e) => setOrigin(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
+                        required
+                      >
+                        <option value="">— Select city / district —</option>
+                        {NEPAL_ORIGINS.map((o) => (
+                          <option key={o} value={o}>{o}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Destination */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Destination Country
+                      </label>
+                      <select
+                        value={destination}
+                        onChange={(e) => { setDestination(e.target.value); }}
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
+                        required
+                      >
+                        <option value="">— Select country —</option>
+                        {Object.entries(DESTINATIONS).map(([region, countries]) => (
+                          <optgroup key={region} label={region}>
+                            {countries.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+
+                  {/* Transit time hint */}
+                  {transit && (
+                    <div className="flex items-center gap-2 text-sm bg-secondary/5 border border-secondary/20 rounded-md px-3 py-2 text-secondary">
+                      <Clock className="h-4 w-4 flex-shrink-0" />
+                      <span>Estimated transit time to <strong>{destination}</strong> via {selected.label}: <strong>{transit}</strong></span>
+                    </div>
+                  )}
+
+                  {/* Weight */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Destination Country</label>
-                    <select
-                      value={destination}
-                      onChange={(e) => { setDestination(e.target.value); setResult(null); }}
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Approximate Weight (kg)
+                    </label>
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      placeholder="Enter weight in kg"
                       className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
                       required
-                    >
-                      <option value="">— Select destination —</option>
-                      {Object.entries(DESTINATIONS).map(([region, countries]) => (
-                        <optgroup key={region} label={region}>
-                          {countries.map((c) => <option key={c}>{c}</option>)}
-                        </optgroup>
-                      ))}
-                    </select>
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Total Weight (kg)
-                    {selected.minWeight > 1 && (
-                      <span className="text-gray-400 font-normal ml-1">— minimum {selected.minWeight} kg</span>
-                    )}
-                  </label>
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    value={weight}
-                    onChange={(e) => { setWeight(e.target.value); setResult(null); }}
-                    placeholder={`e.g. ${selected.minWeight}`}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 text-white h-11">
-                  <CalcIcon className="h-4 w-4 mr-2" />
-                  Calculate Estimate
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Result */}
-          {result && (
+                  <Button type="submit" className="w-full bg-secondary hover:bg-secondary/90 text-white h-11">
+                    <CalcIcon className="h-4 w-4 mr-2" />
+                    Get Quote Details
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Result — no fake price, just details + CTA */
             <Card className="border-2 border-secondary/30 bg-secondary/5">
-              <CardContent className="pt-6 pb-4 text-center space-y-4">
-                <Badge className="bg-secondary text-white text-xs px-3 py-1">
-                  Estimated Cost
-                </Badge>
-                <div>
-                  <p className="text-3xl font-bold text-secondary">
-                    {formatNPR(result.low)} – {formatNPR(result.high)}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Based on {weight} kg via {result.freight.label} to {destination}
-                  </p>
-                </div>
-                <div className="flex justify-center gap-6 text-sm text-gray-600">
-                  <div>
-                    <span className="font-semibold">Transit Time</span>
-                    <p className="text-gray-500">{result.freight.transitMin}–{result.freight.transitMax} {result.freight.unit}</p>
+              <CardContent className="pt-6 pb-5 space-y-5">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-secondary text-white mb-3">
+                    <selected.icon className="h-6 w-6" />
                   </div>
-                  <div className="w-px bg-gray-200" />
-                  <div>
-                    <span className="font-semibold">Rate Range</span>
-                    <p className="text-gray-500">NPR {result.freight.rateMin}–{result.freight.rateMax}/kg</p>
-                  </div>
+                  <h3 className="text-lg font-bold text-secondary">Your Shipment Summary</h3>
                 </div>
-                <p className="text-xs text-gray-400 border-t pt-3">
-                  * This is an indicative estimate only. Final price depends on actual dimensions, packaging, customs duties, and route. Contact us for a confirmed quote.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <a
-                    href="https://wa.me/9779769686908"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {[
+                    { label: "Freight Type",    value: selected.label },
+                    { label: "Origin",          value: `${origin}, Nepal` },
+                    { label: "Destination",     value: destination },
+                    { label: "Weight",          value: `${weight} kg` },
+                    { label: "Est. Transit",    value: transit ?? "—" },
+                    { label: "Pricing",         value: "Confirmed by team" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="bg-white rounded-lg p-3 border">
+                      <p className="text-xs text-gray-400 font-medium">{label}</p>
+                      <p className="font-semibold text-gray-900 mt-0.5">{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
+                  Pricing for {selected.label} depends on actual dimensions (volumetric weight), cargo type, packaging, and customs duties. Our team will confirm the exact cost.
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={handleWhatsApp}
+                    className="flex-1 inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-3 rounded-lg transition-colors text-sm"
                   >
                     <MessageCircle className="h-4 w-4" />
-                    Get Confirmed Quote on WhatsApp
-                  </a>
+                    Send to WhatsApp — Get Confirmed Price
+                  </button>
                   <a
                     href="tel:+97714527999"
-                    className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 text-sm font-medium px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <Phone className="h-4 w-4" />
-                    Call Us
+                    Call Us Now
                   </a>
                 </div>
+
+                <button onClick={resetForm} className="w-full text-center text-sm text-gray-400 hover:text-secondary transition-colors">
+                  ← Start a new calculation
+                </button>
               </CardContent>
             </Card>
           )}
 
-          {/* Info table */}
+          {/* Service info — transit times only, no fake rates */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Service Overview</CardTitle>
+              <CardTitle className="text-base">Typical Transit Times from Nepal</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Type</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Rate (NPR/kg)</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Min Weight</th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-600">Transit Time</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-600">Destination</th>
+                      <th className="px-4 py-3 text-center font-medium text-blue-600">
+                        <Plane className="h-3.5 w-3.5 inline mr-1" />Air
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium text-teal-600">
+                        <Ship className="h-3.5 w-3.5 inline mr-1" />Sea
+                      </th>
+                      <th className="px-4 py-3 text-center font-medium text-orange-600">
+                        <Truck className="h-3.5 w-3.5 inline mr-1" />Road
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {FREIGHT_TYPES.map((ft) => (
-                      <tr key={ft.id} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1.5 rounded-md ${ft.color} text-white`}>
-                              <ft.icon className="h-3.5 w-3.5" />
-                            </div>
-                            <span className="font-medium">{ft.label}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">{ft.rateMin}–{ft.rateMax}</td>
-                        <td className="px-4 py-3 text-gray-600">{ft.minWeight} kg</td>
-                        <td className="px-4 py-3 text-gray-600">{ft.transitMin}–{ft.transitMax} days</td>
+                    {[
+                      ["China",          "1–3 days",  "15–25 days", "5–10 days"],
+                      ["India",          "1–2 days",  "10–18 days", "2–5 days"],
+                      ["UAE",            "2–4 days",  "18–28 days", "—"],
+                      ["United Kingdom", "4–7 days",  "30–45 days", "—"],
+                      ["United States",  "5–8 days",  "35–50 days", "—"],
+                      ["Australia",      "4–7 days",  "28–40 days", "—"],
+                      ["Singapore",      "2–4 days",  "18–28 days", "—"],
+                    ].map(([dest, air, sea, road]) => (
+                      <tr key={dest} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{dest}</td>
+                        <td className="px-4 py-3 text-center text-gray-600">{air}</td>
+                        <td className="px-4 py-3 text-center text-gray-600">{sea}</td>
+                        <td className="px-4 py-3 text-center text-gray-500">{road}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <p className="text-xs text-gray-400 px-4 py-3">
-                Rates are indicative and vary by destination, dimensions (volumetric weight), and market conditions.
+                Transit times are estimates from pickup. Customs clearance, public holidays, and weather may affect delivery. Contact us for precise timelines.
               </p>
             </CardContent>
           </Card>
