@@ -83,7 +83,6 @@ export default function Home() {
         schema={homeSchema}
       />
       <Navbar />
-
       {/* Hero Section */}
       <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -151,7 +150,6 @@ export default function Home() {
           )}
         </div>
       </section>
-
       {/* Services Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4">
@@ -192,7 +190,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Logistics Image Banner */}
       <section className="relative overflow-hidden h-80 md:h-96">
         <img
@@ -209,7 +206,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Contact & Location */}
       <section className="py-24 bg-gray-50">
         <div className="container mx-auto px-4">
@@ -304,7 +300,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* FAQ Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4 max-w-3xl">
@@ -345,7 +340,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Footer */}
       <footer className="bg-secondary text-gray-300 py-12 border-t border-secondary-border">
         <div className="container mx-auto px-4 text-center">
@@ -364,7 +358,7 @@ export default function Home() {
           </p>
 
           <div className="mt-8 pt-8 border-t border-gray-700">
-            <p className="text-sm text-gray-500 mb-4 tracking-wide uppercase font-medium">Developed &amp; Designed by</p>
+            <p className="text-sm text-gray-500 mb-4 tracking-wide uppercase font-medium">Developed & Designed by doko digital</p>
             <a
               href="https://www.facebook.com/share/16dd3aJ8BF/"
               target="_blank"
@@ -386,7 +380,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-
       <WhatsAppButton />
       <ChatBot onOpenInquiry={() => setLocation("/inquiry")} />
     </div>
