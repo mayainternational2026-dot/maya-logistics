@@ -73,6 +73,15 @@ export function Navbar() {
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
               </a>
+              <a
+                href="https://www.tiktok.com/@mayaimportexport"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="TikTok"
+                className="p-1.5 text-gray-400 hover:text-black transition-colors"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.36 6.36 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.75a8.27 8.27 0 0 0 4.84 1.54V6.84a4.85 4.85 0 0 1-1.07-.15z"/></svg>
+              </a>
             </div>
 
             <div className="flex items-center gap-3 border-l border-gray-200 pl-5">
@@ -111,6 +120,7 @@ export function Navbar() {
             <div className="flex gap-4 py-2">
               <a href="https://www.instagram.com/mayainternational2026" target="_blank" rel="noopener noreferrer" className="text-pink-500 text-sm font-medium">📸 Instagram</a>
               <a href="https://www.facebook.com/profile.php?id=61589211686064" target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm font-medium">👍 Facebook</a>
+              <a href="https://www.tiktok.com/@mayaimportexport" target="_blank" rel="noopener noreferrer" className="text-gray-900 text-sm font-medium">🎵 TikTok</a>
             </div>
             <div className="h-px bg-gray-100 my-4" />
             {user ? (

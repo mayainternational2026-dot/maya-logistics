@@ -31,7 +31,7 @@ export function ProofSection() {
         </motion.div>
 
         {/* Social Proof CTAs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-14">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-14">
           <motion.a
             href="https://www.instagram.com/mayainternational2026"
             target="_blank"
@@ -70,6 +70,29 @@ export function ProofSection() {
               <p className="text-sm text-gray-500 mt-0.5">Maya Import Export</p>
               <p className="text-xs text-blue-500 mt-1 font-medium flex items-center gap-1">
                 Read client reviews &amp; updates <ExternalLink className="h-3 w-3" />
+              </p>
+            </div>
+          </motion.a>
+
+          <motion.a
+            href="https://www.tiktok.com/@mayaimportexport"
+            target="_blank"
+            rel="noopener noreferrer"
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="group flex items-center gap-5 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+          >
+            <div className="h-14 w-14 rounded-2xl bg-black flex items-center justify-center flex-shrink-0">
+              <svg className="h-7 w-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.36 6.36 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.75a8.27 8.27 0 0 0 4.84 1.54V6.84a4.85 4.85 0 0 1-1.07-.15z"/>
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900 text-base">TikTok</p>
+              <p className="text-sm text-gray-500 mt-0.5">@mayaimportexport</p>
+              <p className="text-xs text-gray-700 mt-1 font-medium flex items-center gap-1">
+                Watch our cargo in action <ExternalLink className="h-3 w-3" />
               </p>
             </div>
           </motion.a>
