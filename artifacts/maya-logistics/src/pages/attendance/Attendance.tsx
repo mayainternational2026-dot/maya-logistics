@@ -293,7 +293,7 @@ export default function Attendance() {
 
   // Determine disable states
   const clockInDisabled  = hasClockedIn || clockIn.isPending || officeStatus !== "open";
-  const clockOutDisabled = !hasClockedIn || hasClockedOut || clockOut.isPending;
+  const clockOutDisabled = !hasClockedIn || hasClockedOut || clockOut.isPending || officeStatus !== "open";
 
   return (
     <div className="space-y-5">

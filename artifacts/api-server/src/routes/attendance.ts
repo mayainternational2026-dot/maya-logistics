@@ -167,6 +167,20 @@ router.post(
     }
 
     const now = new Date();
+
+    // Clock-out only allowed Sunday–Friday, 9:30 AM – 5:30 PM NPT
+    if (isSaturday(now)) {
+      res.status(400).json({ error: "Saturday is a day off. Clock-out is not available today." });
+      return;
+    }
+    if (isTooEarlyToClockIn(now)) {
+      res.status(400).json({ error: "Office hasn't started yet. Clock-out is available from 9:30 AM NPT." });
+      return;
+    }
+    if (isTooLateToClockIn(now)) {
+      res.status(400).json({ error: "Office hours are over. Clock-out was available until 5:30 PM NPT." });
+      return;
+    }
     const { lat, lng } = req.body ?? {};
     const minutes = calcMinutes(record.clockIn, now);
     const earlyLeave = isEarlyLeave(now);
