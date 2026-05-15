@@ -49,8 +49,13 @@ function nepalDate() {
   return new Date().toLocaleDateString("en-CA", { timeZone: NEPAL_TZ });
 }
 
-/** Returns: "before" | "open" | "after" */
-function getOfficeStatus(): "before" | "open" | "after" {
+function isNepalSaturday(): boolean {
+  return new Date().toLocaleDateString("en-US", { timeZone: NEPAL_TZ, weekday: "long" }) === "Saturday";
+}
+
+/** Returns: "weekend" | "before" | "open" | "after" */
+function getOfficeStatus(): "weekend" | "before" | "open" | "after" {
+  if (isNepalSaturday()) return "weekend";
   const { hours, minutes } = getNepalTimeParts();
   const beforeOpen = hours < OFFICE_OPEN_HOUR || (hours === OFFICE_OPEN_HOUR && minutes < OFFICE_OPEN_MINUTE);
   const afterClose = hours > OFFICE_CLOSE_HOUR || (hours === OFFICE_CLOSE_HOUR && minutes >= OFFICE_CLOSE_MINUTE);
@@ -152,8 +157,19 @@ function EarlyLeaveDialog({ currentTime, onConfirm, onCancel, loading }: {
   );
 }
 
-/* ─── Office Status Banner (before / after hours) ─── */
-function OfficeStatusBanner({ status }: { status: "before" | "after" }) {
+/* ─── Office Status Banner (before / after / weekend hours) ─── */
+function OfficeStatusBanner({ status }: { status: "before" | "after" | "weekend" }) {
+  if (status === "weekend") {
+    return (
+      <div className="flex items-center gap-3 rounded-lg bg-purple-50 border border-purple-200 px-4 py-3 text-sm text-purple-800">
+        <Ban className="h-5 w-5 flex-shrink-0" />
+        <div>
+          <p className="font-semibold">Saturday — Day Off</p>
+          <p className="text-xs mt-0.5">The office is closed on Saturdays. Office days are <strong>Sunday to Friday</strong>.</p>
+        </div>
+      </div>
+    );
+  }
   if (status === "before") {
     return (
       <div className="flex items-center gap-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
@@ -309,7 +325,7 @@ export default function Attendance() {
           <div className="text-sm opacity-60 mt-1">{nepalDate()}</div>
           <div className="flex justify-center gap-6 mt-3 text-xs">
             <span className={`px-2 py-0.5 rounded-full ${officeStatus === "open" ? "bg-green-500/30 text-green-100" : "bg-white/20 text-white/60"}`}>
-              {officeStatus === "before" ? "⏳ Opens 9:30 AM" : officeStatus === "open" ? "✅ Office Open" : "🔒 Office Closed"}
+              {officeStatus === "weekend" ? "🗓️ Saturday — Day Off" : officeStatus === "before" ? "⏳ Opens 9:30 AM" : officeStatus === "open" ? "✅ Office Open" : "🔒 Office Closed"}
             </span>
             <span className="opacity-50">Clock-out: 5:30 PM</span>
           </div>
@@ -371,7 +387,9 @@ export default function Attendance() {
                   onClick={() => !clockInDisabled && clockIn.mutate()}
                   disabled={clockInDisabled}
                   title={
-                    officeStatus === "before"
+                    officeStatus === "weekend"
+                      ? "Saturday is a day off — office days are Sunday to Friday"
+                      : officeStatus === "before"
                       ? "Office hasn't started yet — available at 9:30 AM"
                       : officeStatus === "after"
                       ? "Office is closed for today"
@@ -387,6 +405,8 @@ export default function Attendance() {
                     ? "Recording…"
                     : hasClockedIn
                     ? "Clocked In ✓"
+                    : officeStatus === "weekend"
+                    ? "Day Off"
                     : officeStatus === "before"
                     ? "Not Open Yet"
                     : officeStatus === "after"
@@ -510,7 +530,7 @@ export default function Attendance() {
       <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
         <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
         <span>
-          Office hours: <strong>9:30 AM – 5:30 PM Nepal Time (NPT, UTC+5:45), Sunday to Saturday</strong>.
+          Office hours: <strong>9:30 AM – 5:30 PM Nepal Time (NPT, UTC+5:45), Sunday to Friday</strong>. Saturday is a day off.
           Clock-in is only available during office hours. Late arrivals and early departures are recorded.
         </span>
       </div>

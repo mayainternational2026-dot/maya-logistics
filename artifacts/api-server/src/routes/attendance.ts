@@ -46,6 +46,12 @@ function isTooLateToClockIn(now: Date): boolean {
   return hours > EARLY_OUT_HOUR || (hours === EARLY_OUT_HOUR && minutes >= EARLY_OUT_MINUTE);
 }
 
+/** Returns true if the Nepal date falls on Saturday (weekend). */
+function isSaturday(now: Date): boolean {
+  const dayName = now.toLocaleDateString("en-US", { timeZone: NEPAL_TZ, weekday: "long" });
+  return dayName === "Saturday";
+}
+
 function calcMinutes(clockIn: Date, clockOut: Date): number {
   return Math.floor((clockOut.getTime() - clockIn.getTime()) / 60000);
 }
@@ -81,7 +87,11 @@ router.post(
     const now = new Date();
     const today = getNepalDate(now);
 
-    // Server-side office hours check: clock-in only allowed 9:30 AM – 5:30 PM NPT
+    // Server-side office hours check: clock-in only allowed Sunday–Friday, 9:30 AM – 5:30 PM NPT
+    if (isSaturday(now)) {
+      res.status(400).json({ error: "Saturday is a day off. Clock-in is available Sunday to Friday, 9:30 AM – 5:30 PM NPT." });
+      return;
+    }
     if (isTooEarlyToClockIn(now)) {
       res.status(400).json({ error: "Office hasn't started yet. Clock-in is available from 9:30 AM NPT." });
       return;
