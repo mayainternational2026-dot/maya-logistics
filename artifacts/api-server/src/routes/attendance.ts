@@ -6,10 +6,10 @@ import { requireAuth } from "../lib/auth";
 const router: IRouter = Router();
 
 const NEPAL_TZ = "Asia/Kathmandu";
-const LATE_HOUR = 10;      // Late if clock-in after 10:00 AM NPT
-const LATE_MINUTE = 0;
-const EARLY_OUT_HOUR = 17; // Early leave if clock-out before 5:00 PM NPT
-const EARLY_OUT_MINUTE = 0;
+const LATE_HOUR = 9;       // Late if clock-in after 9:30 AM NPT
+const LATE_MINUTE = 30;
+const EARLY_OUT_HOUR = 17; // Early leave if clock-out before 5:30 PM NPT
+const EARLY_OUT_MINUTE = 30;
 
 function getNepalDate(d: Date = new Date()): string {
   return d.toLocaleDateString("en-CA", { timeZone: NEPAL_TZ });
@@ -34,6 +34,16 @@ function isLateArrival(clockIn: Date): boolean {
 function isEarlyLeave(clockOut: Date): boolean {
   const { hours, minutes } = getNepalTime(clockOut);
   return hours < EARLY_OUT_HOUR || (hours === EARLY_OUT_HOUR && minutes < EARLY_OUT_MINUTE);
+}
+
+function isTooEarlyToClockIn(now: Date): boolean {
+  const { hours, minutes } = getNepalTime(now);
+  return hours < LATE_HOUR || (hours === LATE_HOUR && minutes < LATE_MINUTE);
+}
+
+function isTooLateToClockIn(now: Date): boolean {
+  const { hours, minutes } = getNepalTime(now);
+  return hours > EARLY_OUT_HOUR || (hours === EARLY_OUT_HOUR && minutes >= EARLY_OUT_MINUTE);
 }
 
 function calcMinutes(clockIn: Date, clockOut: Date): number {
@@ -71,14 +81,13 @@ router.post(
     const now = new Date();
     const today = getNepalDate(now);
 
-    // Server-side office hours check: clock-in only allowed 10:00 AM – 5:00 PM NPT
-    const { hours: nowHours } = getNepalTime(now);
-    if (nowHours < LATE_HOUR) {
-      res.status(400).json({ error: "Office hasn't started yet. Clock-in is available from 10:00 AM NPT." });
+    // Server-side office hours check: clock-in only allowed 9:30 AM – 5:30 PM NPT
+    if (isTooEarlyToClockIn(now)) {
+      res.status(400).json({ error: "Office hasn't started yet. Clock-in is available from 9:30 AM NPT." });
       return;
     }
-    if (nowHours >= EARLY_OUT_HOUR) {
-      res.status(400).json({ error: "Office is closed for today. Clock-in is available 10:00 AM – 5:00 PM NPT." });
+    if (isTooLateToClockIn(now)) {
+      res.status(400).json({ error: "Office is closed for today. Clock-in is available 9:30 AM – 5:30 PM NPT." });
       return;
     }
 
@@ -116,7 +125,7 @@ router.post(
       ...row,
       late,
       lateMessage: late
-        ? `You arrived late at ${hours}:${String(minutes).padStart(2, "0")} AM NPT. Office starts at 10:00 AM. Please come on time.`
+        ? `You arrived late at ${hours}:${String(minutes).padStart(2, "0")} NPT. Office starts at 9:30 AM. Please come on time.`
         : null,
     });
   }
@@ -173,7 +182,7 @@ router.post(
       duration: formatDuration(minutes),
       earlyLeave,
       earlyLeaveMessage: earlyLeave
-        ? `You left early at ${hours}:${String(outMins).padStart(2, "0")} PM NPT. Office ends at 5:00 PM. Please stay until end of office hours.`
+        ? `You left early at ${hours}:${String(outMins).padStart(2, "0")} NPT. Office ends at 5:30 PM. Please stay until end of office hours.`
         : null,
     });
   }

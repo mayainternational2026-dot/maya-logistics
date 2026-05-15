@@ -19,8 +19,10 @@ import {
 } from "lucide-react";
 
 const NEPAL_TZ = "Asia/Kathmandu";
-const OFFICE_OPEN_HOUR = 10;   // 10:00 AM — clock-in allowed from here
-const OFFICE_CLOSE_HOUR = 17;  // 5:00 PM  — clock-out required by here
+const OFFICE_OPEN_HOUR = 9;    // 9:30 AM — clock-in allowed from here
+const OFFICE_OPEN_MINUTE = 30;
+const OFFICE_CLOSE_HOUR = 17;  // 5:30 PM  — clock-out required by here
+const OFFICE_CLOSE_MINUTE = 30;
 
 function getNepalTimeParts(): { hours: number; minutes: number } {
   const str = new Date().toLocaleTimeString("en-US", {
@@ -49,21 +51,17 @@ function nepalDate() {
 
 /** Returns: "before" | "open" | "after" */
 function getOfficeStatus(): "before" | "open" | "after" {
-  const { hours } = getNepalTimeParts();
-  if (hours < OFFICE_OPEN_HOUR) return "before";
-  if (hours >= OFFICE_CLOSE_HOUR) return "after";
+  const { hours, minutes } = getNepalTimeParts();
+  const beforeOpen = hours < OFFICE_OPEN_HOUR || (hours === OFFICE_OPEN_HOUR && minutes < OFFICE_OPEN_MINUTE);
+  const afterClose = hours > OFFICE_CLOSE_HOUR || (hours === OFFICE_CLOSE_HOUR && minutes >= OFFICE_CLOSE_MINUTE);
+  if (beforeOpen) return "before";
+  if (afterClose) return "after";
   return "open";
 }
 
-function isLateNow(): boolean {
-  const { hours } = getNepalTimeParts();
-  return hours >= OFFICE_OPEN_HOUR; // any time you clock in during office hours = late by definition? No — only if > 10:00
-  // Actually late is already handled server-side; here we just show the label
-}
-
 function isEarlyLeaveNow(): boolean {
-  const { hours } = getNepalTimeParts();
-  return hours < OFFICE_CLOSE_HOUR;
+  const { hours, minutes } = getNepalTimeParts();
+  return hours < OFFICE_CLOSE_HOUR || (hours === OFFICE_CLOSE_HOUR && minutes < OFFICE_CLOSE_MINUTE);
 }
 
 function fmtTime(iso: string | null) {
@@ -136,7 +134,7 @@ function EarlyLeaveDialog({ currentTime, onConfirm, onCancel, loading }: {
         </div>
         <p className="text-gray-600 text-sm">
           It is currently <strong>{currentTime} NPT</strong>. Office hours end at{" "}
-          <strong>5:00 PM</strong>. It is not time to leave yet.
+          <strong>5:30 PM</strong>. It is not time to leave yet.
         </p>
         <p className="text-gray-500 text-xs">
           Early departures are recorded and visible to your manager.
@@ -162,7 +160,7 @@ function OfficeStatusBanner({ status }: { status: "before" | "after" }) {
         <Clock className="h-5 w-5 flex-shrink-0" />
         <div>
           <p className="font-semibold">Office hasn't opened yet</p>
-          <p className="text-xs mt-0.5">Clock-in is available from <strong>10:00 AM NPT</strong>. Please wait until office hours begin.</p>
+          <p className="text-xs mt-0.5">Clock-in is available from <strong>9:30 AM NPT</strong>. Please wait until office hours begin.</p>
         </div>
       </div>
     );
@@ -172,7 +170,7 @@ function OfficeStatusBanner({ status }: { status: "before" | "after" }) {
       <Ban className="h-5 w-5 flex-shrink-0" />
       <div>
         <p className="font-semibold">Office is closed for today</p>
-        <p className="text-xs mt-0.5">Clock-in is no longer available. Office hours are <strong>10:00 AM – 5:00 PM NPT</strong>.</p>
+        <p className="text-xs mt-0.5">Clock-in is no longer available. Office hours are <strong>9:30 AM – 5:30 PM NPT</strong>.</p>
       </div>
     </div>
   );
@@ -311,9 +309,9 @@ export default function Attendance() {
           <div className="text-sm opacity-60 mt-1">{nepalDate()}</div>
           <div className="flex justify-center gap-6 mt-3 text-xs">
             <span className={`px-2 py-0.5 rounded-full ${officeStatus === "open" ? "bg-green-500/30 text-green-100" : "bg-white/20 text-white/60"}`}>
-              {officeStatus === "before" ? "⏳ Opens 10:00 AM" : officeStatus === "open" ? "✅ Office Open" : "🔒 Office Closed"}
+              {officeStatus === "before" ? "⏳ Opens 9:30 AM" : officeStatus === "open" ? "✅ Office Open" : "🔒 Office Closed"}
             </span>
-            <span className="opacity-50">Clock-out: 5:00 PM</span>
+            <span className="opacity-50">Clock-out: 5:30 PM</span>
           </div>
         </CardContent>
       </Card>
@@ -374,7 +372,7 @@ export default function Attendance() {
                   disabled={clockInDisabled}
                   title={
                     officeStatus === "before"
-                      ? "Office hasn't started yet — available at 10:00 AM"
+                      ? "Office hasn't started yet — available at 9:30 AM"
                       : officeStatus === "after"
                       ? "Office is closed for today"
                       : undefined
@@ -415,7 +413,7 @@ export default function Attendance() {
               {hasClockedIn && !hasClockedOut && (
                 <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 rounded-md px-3 py-2">
                   <Timer className="h-4 w-4" />
-                  You are clocked in. Clock out at or after <strong>5:00 PM NPT</strong>.
+                  You are clocked in. Clock out at or after <strong>5:30 PM NPT</strong>.
                 </div>
               )}
               {hasClockedOut && (
@@ -512,7 +510,7 @@ export default function Attendance() {
       <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
         <Clock className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
         <span>
-          Office hours: <strong>10:00 AM – 5:00 PM Nepal Time (NPT, UTC+5:45)</strong>.
+          Office hours: <strong>9:30 AM – 5:30 PM Nepal Time (NPT, UTC+5:45), Sunday to Saturday</strong>.
           Clock-in is only available during office hours. Late arrivals and early departures are recorded.
         </span>
       </div>
