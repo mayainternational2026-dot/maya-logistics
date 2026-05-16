@@ -58,7 +58,8 @@ function getOfficeStatus(): "weekend" | "before" | "open" | "after" {
   if (isNepalSaturday()) return "weekend";
   const { hours, minutes } = getNepalTimeParts();
   const beforeOpen = hours < OFFICE_OPEN_HOUR || (hours === OFFICE_OPEN_HOUR && minutes < OFFICE_OPEN_MINUTE);
-  const afterClose = hours > OFFICE_CLOSE_HOUR || (hours === OFFICE_CLOSE_HOUR && minutes >= OFFICE_CLOSE_MINUTE);
+  // Strictly after 5:30 PM — office is still "open" at exactly 5:30 so staff can clock out
+  const afterClose = hours > OFFICE_CLOSE_HOUR || (hours === OFFICE_CLOSE_HOUR && minutes > OFFICE_CLOSE_MINUTE);
   if (beforeOpen) return "before";
   if (afterClose) return "after";
   return "open";

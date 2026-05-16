@@ -43,7 +43,8 @@ function isTooEarlyToClockIn(now: Date): boolean {
 
 function isTooLateToClockIn(now: Date): boolean {
   const { hours, minutes } = getNepalTime(now);
-  return hours > EARLY_OUT_HOUR || (hours === EARLY_OUT_HOUR && minutes >= EARLY_OUT_MINUTE);
+  // Strictly after 5:30 PM — staff can still act at exactly 5:30
+  return hours > EARLY_OUT_HOUR || (hours === EARLY_OUT_HOUR && minutes > EARLY_OUT_MINUTE);
 }
 
 /** Returns true if the Nepal date falls on Saturday (weekend). */
