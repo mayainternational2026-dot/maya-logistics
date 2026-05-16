@@ -29,11 +29,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const logout = useLogout();
 
   if (!user) return <>{children}</>;
 
-  const handleLogout = () => {
+  const isInternal = user.role === "admin" || user.role === "staff";
+
+  const doLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
         setLocation("/login");
@@ -42,9 +45,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     });
   };
 
+  const handleLogout = () => {
+    if (isInternal) {
+      setShowLogoutConfirm(true);
+    } else {
+      doLogout();
+    }
+  };
+
   const isAdmin = user.role === "admin";
   const isStaff = user.role === "staff";
-  const isInternal = isAdmin || isStaff;
 
   const canInvoice = isAdmin || (isStaff && (user.permissions?.canGenerateInvoice ?? false));
 
@@ -222,6 +232,42 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <WhatsAppButton />
       <ChatBot onOpenInquiry={() => setLocation("/inquiry")} />
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <LogOut className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">Log out of your account?</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Logging out does <span className="font-semibold text-red-600">not</span> clock you out.
+                  Your attendance record stays saved — you can log back in later to clock out.
+                </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  If you share this computer with other staff, each person must clock in and out individually.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setShowLogoutConfirm(false); doLogout(); }}
+                className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
