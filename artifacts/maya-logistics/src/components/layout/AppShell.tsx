@@ -33,9 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const logout = useLogout();
 
-  if (!user) return <>{children}</>;
-
-  const isInternal = user.role === "admin" || user.role === "staff";
+  // Derived values — safe to compute before the early return because they
+  // don't affect hook call order.
+  const isInternal = user?.role === "admin" || user?.role === "staff";
 
   const doLogout = () => {
     logout.mutate(undefined, {
@@ -54,9 +54,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   };
 
-  // Auto-logout staff/admin after 2 hours of inactivity
+  // Auto-logout staff/admin after 2 hours of inactivity.
+  // MUST be called unconditionally before any early return (Rules of Hooks).
   useEffect(() => {
-    if (!isInternal) return;
+    if (!user || !isInternal) return;
     const INACTIVITY_MS = 2 * 60 * 60 * 1000;
     let timer: ReturnType<typeof setTimeout>;
     const reset = () => {
@@ -70,7 +71,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       clearTimeout(timer);
       events.forEach((e) => window.removeEventListener(e, reset));
     };
-  }, [isInternal]);
+  }, [user, isInternal]);
+
+  // Early return AFTER all hooks have been called
+  if (!user) return <>{children}</>;
 
   const isAdmin = user.role === "admin";
   const isStaff = user.role === "staff";
