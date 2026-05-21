@@ -53,96 +53,98 @@ function PageLoader() {
   );
 }
 
+function ProtectedShell() {
+  return (
+    <AppShell>
+      <Switch>
+        <Route path="/dashboard">
+          <ProtectedRoute><Dashboard /></ProtectedRoute>
+        </Route>
+        <Route path="/shipments/new">
+          <ProtectedRoute><NewShipment /></ProtectedRoute>
+        </Route>
+        <Route path="/shipments/:id/invoice">
+          <ProtectedRoute><Invoice /></ProtectedRoute>
+        </Route>
+        <Route path="/shipments/:id">
+          <ProtectedRoute><ShipmentDetails /></ProtectedRoute>
+        </Route>
+        <Route path="/shipments">
+          <ProtectedRoute><Shipments /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/users">
+          <ProtectedRoute allowedRoles={["admin"]}><Users /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/staff-activity">
+          <ProtectedRoute allowedRoles={["admin"]}><StaffActivity /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/inquiries">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><Inquiries /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/create-invoice">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><CreateInvoice /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/add-booking">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><AddBooking /></ProtectedRoute>
+        </Route>
+        <Route path="/attendance">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><Attendance /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/attendance">
+          <ProtectedRoute allowedRoles={["admin"]}><AttendanceAdmin /></ProtectedRoute>
+        </Route>
+        <Route path="/leave">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><Leave /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/leave">
+          <ProtectedRoute allowedRoles={["admin"]}><LeaveAdmin /></ProtectedRoute>
+        </Route>
+        <Route path="/work-log">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><WorkLog /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/work-logs">
+          <ProtectedRoute allowedRoles={["admin"]}><WorkLogAdmin /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/shipping-rates">
+          <ProtectedRoute allowedRoles={["admin"]}><ShippingRates /></ProtectedRoute>
+        </Route>
+        <Route path="/expenses">
+          <ProtectedRoute allowedRoles={["admin", "staff"]}><Expenses /></ProtectedRoute>
+        </Route>
+        <Route path="/admin/expenses">
+          <ProtectedRoute allowedRoles={["admin"]}><AdminExpenses /></ProtectedRoute>
+        </Route>
+        <Route path="/profile">
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        </Route>
+        <Route>
+          <NotFound />
+        </Route>
+      </Switch>
+    </AppShell>
+  );
+}
+
 function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/track" component={Track} />
-      <Route path="/track/:trackingId" component={Track} />
-      <Route path="/inquiry" component={InquiryPage} />
-      <Route path="/calculator" component={Calculator} />
-      <Route path="/testimonials" component={Testimonials} />
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/forgot-password" component={ForgotPassword} />
-
-      {/* SEO Service Pages */}
-      <Route path="/services/air-freight" component={AirFreight} />
-      <Route path="/services/sea-freight" component={SeaFreight} />
-      <Route path="/services/road-freight" component={RoadFreight} />
-      <Route path="/services/customs-clearance" component={CustomsClearance} />
-      <Route path="/blog" component={Blog} />
-
-      {/* Protected Routes wrapped in AppShell */}
-      <Route>
-        <AppShell>
-          <Switch>
-            <Route path="/dashboard">
-              <ProtectedRoute><Dashboard /></ProtectedRoute>
-            </Route>
-            <Route path="/shipments">
-              <ProtectedRoute><Shipments /></ProtectedRoute>
-            </Route>
-            <Route path="/shipments/new">
-              <ProtectedRoute><NewShipment /></ProtectedRoute>
-            </Route>
-            <Route path="/shipments/:id/invoice">
-              <ProtectedRoute><Invoice /></ProtectedRoute>
-            </Route>
-            <Route path="/shipments/:id">
-              <ProtectedRoute><ShipmentDetails /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/users">
-              <ProtectedRoute allowedRoles={["admin"]}><Users /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/staff-activity">
-              <ProtectedRoute allowedRoles={["admin"]}><StaffActivity /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/inquiries">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><Inquiries /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/create-invoice">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><CreateInvoice /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/add-booking">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><AddBooking /></ProtectedRoute>
-            </Route>
-            <Route path="/attendance">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><Attendance /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/attendance">
-              <ProtectedRoute allowedRoles={["admin"]}><AttendanceAdmin /></ProtectedRoute>
-            </Route>
-            <Route path="/leave">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><Leave /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/leave">
-              <ProtectedRoute allowedRoles={["admin"]}><LeaveAdmin /></ProtectedRoute>
-            </Route>
-            <Route path="/work-log">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><WorkLog /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/work-logs">
-              <ProtectedRoute allowedRoles={["admin"]}><WorkLogAdmin /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/shipping-rates">
-              <ProtectedRoute allowedRoles={["admin"]}><ShippingRates /></ProtectedRoute>
-            </Route>
-            <Route path="/expenses">
-              <ProtectedRoute allowedRoles={["admin", "staff"]}><Expenses /></ProtectedRoute>
-            </Route>
-            <Route path="/admin/expenses">
-              <ProtectedRoute allowedRoles={["admin"]}><AdminExpenses /></ProtectedRoute>
-            </Route>
-            <Route path="/profile">
-              <ProtectedRoute><Profile /></ProtectedRoute>
-            </Route>
-            <Route component={NotFound} />
-          </Switch>
-        </AppShell>
-      </Route>
-    </Switch>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/track/:trackingId" component={Track} />
+        <Route path="/track" component={Track} />
+        <Route path="/inquiry" component={InquiryPage} />
+        <Route path="/calculator" component={Calculator} />
+        <Route path="/testimonials" component={Testimonials} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/services/air-freight" component={AirFreight} />
+        <Route path="/services/sea-freight" component={SeaFreight} />
+        <Route path="/services/road-freight" component={RoadFreight} />
+        <Route path="/services/customs-clearance" component={CustomsClearance} />
+        <Route path="/blog" component={Blog} />
+        <Route component={ProtectedShell} />
+      </Switch>
     </Suspense>
   );
 }
