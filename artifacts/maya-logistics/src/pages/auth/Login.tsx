@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -51,8 +50,6 @@ const BANNER_COLORS: Record<LoginMode, string> = {
 export default function Login() {
   const { toast } = useToast();
   const loginMutation = useLogin();
-  const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
 
   const [mode, setMode] = useState<LoginMode>("customer");
   const [email, setEmail] = useState("");
@@ -63,11 +60,11 @@ export default function Login() {
     loginMutation.mutate(
       { data: { email, password } },
       {
-        onSuccess: async () => {
+        onSuccess: () => {
           toast({ title: "Welcome back!" });
-          // Invalidate the auth cache so AuthProvider re-fetches with the new session cookie
-          await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-          setLocation("/dashboard");
+          // Hard redirect so the browser sends the fresh session cookie on the
+          // next request to /api/auth/me — avoids all SPA caching edge-cases.
+          window.location.href = "/dashboard";
         },
         onError: (err: any) => {
           toast({
