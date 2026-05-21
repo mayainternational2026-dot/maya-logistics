@@ -248,6 +248,8 @@ router.post("/auth/logout", (req, res): void => {
 });
 
 router.get("/auth/me", async (req, res): Promise<void> => {
+  // Never cache — the session state can change at any time (login/logout)
+  res.set("Cache-Control", "no-store");
   const id = req.session?.userId;
   if (!id) {
     res.json({ user: null });
