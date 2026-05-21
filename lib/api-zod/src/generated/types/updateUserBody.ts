@@ -11,5 +11,6 @@ export interface UpdateUserBody {
   name?: string;
   email?: string;
   phone?: string;
+  whatsappNumber?: string;
   role?: Role;
 }

@@ -6,13 +6,17 @@ type ShipmentRow = typeof shipmentsTable.$inferSelect;
 export interface SerializedShipment {
   id: number;
   trackingId: string;
+  shipmentType: "import" | "export";
   senderName: string;
   senderPhone: string | null;
   receiverName: string;
   receiverPhone: string | null;
   origin: string;
   destination: string;
+  productName: string | null;
+  quantity: number | null;
   weight: number;
+  dimensions: string | null;
   cost: number;
   status: "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
   paid: boolean;
@@ -55,13 +59,17 @@ export async function serializeShipments(
     return {
       id: row.id,
       trackingId: row.trackingId,
+      shipmentType: (row.shipmentType ?? "export") as "import" | "export",
       senderName: row.senderName,
       senderPhone: row.senderPhone ?? null,
       receiverName: row.receiverName,
       receiverPhone: row.receiverPhone ?? null,
       origin: row.origin,
       destination: row.destination,
+      productName: row.productName ?? null,
+      quantity: row.quantity ?? null,
       weight: Number(row.weight),
+      dimensions: row.dimensions ?? null,
       cost: Number(row.cost),
       status: row.status as SerializedShipment["status"],
       paid: row.paid,

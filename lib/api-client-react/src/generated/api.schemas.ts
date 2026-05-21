@@ -49,6 +49,8 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  /** @nullable */
+  whatsappNumber?: string | null;
   role: Role;
   createdAt: string;
   permissions: Permissions;
@@ -102,6 +104,7 @@ export interface CreateUserBody {
   email: string;
   /** @minLength 1 */
   phone: string;
+  whatsappNumber?: string;
   /** @minLength 6 */
   password: string;
   role: Role;
@@ -112,6 +115,7 @@ export interface UpdateUserBody {
   name?: string;
   email?: string;
   phone?: string;
+  whatsappNumber?: string;
   role?: Role;
 }
 
@@ -126,9 +130,17 @@ export interface AdminResetPasswordBody {
   newPassword: string;
 }
 
+export type ShipmentType = (typeof ShipmentType)[keyof typeof ShipmentType];
+
+export const ShipmentType = {
+  import: "import",
+  export: "export",
+} as const;
+
 export interface Shipment {
   id: number;
   trackingId: string;
+  shipmentType: ShipmentType;
   senderName: string;
   /** @nullable */
   senderPhone?: string | null;
@@ -137,7 +149,13 @@ export interface Shipment {
   receiverPhone?: string | null;
   origin: string;
   destination: string;
+  /** @nullable */
+  productName?: string | null;
+  /** @nullable */
+  quantity?: number | null;
   weight: number;
+  /** @nullable */
+  dimensions?: string | null;
   cost: number;
   status: ShipmentStatus;
   paid: boolean;
@@ -172,6 +190,7 @@ export interface PublicShipment {
 }
 
 export interface CreateShipmentBody {
+  shipmentType?: ShipmentType;
   /** @minLength 1 */
   senderName: string;
   senderPhone?: string;
@@ -182,8 +201,12 @@ export interface CreateShipmentBody {
   origin: string;
   /** @minLength 1 */
   destination: string;
+  productName?: string;
+  /** @minimum 1 */
+  quantity?: number;
   /** @minimum 0 */
   weight: number;
+  dimensions?: string;
   /** @minimum 0 */
   cost: number;
   notes?: string;
@@ -191,13 +214,17 @@ export interface CreateShipmentBody {
 }
 
 export interface UpdateShipmentBody {
+  shipmentType?: ShipmentType;
   senderName?: string;
   senderPhone?: string;
   receiverName?: string;
   receiverPhone?: string;
   origin?: string;
   destination?: string;
+  productName?: string;
+  quantity?: number;
   weight?: number;
+  dimensions?: string;
   cost?: number;
   status?: ShipmentStatus;
   paid?: boolean;

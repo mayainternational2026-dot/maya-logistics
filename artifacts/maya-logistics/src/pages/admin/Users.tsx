@@ -215,6 +215,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
     name: "",
     email: "",
     phone: "",
+    whatsappNumber: "",
     password: "",
     role: "staff" as "staff" | "customer",
     canManageShipments: false,
@@ -230,6 +231,7 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
           name: form.name,
           email: form.email,
           phone: form.phone,
+          whatsappNumber: form.whatsappNumber || undefined,
           password: form.password,
           role: form.role,
           permissions: {
@@ -300,6 +302,12 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
             value={form.phone}
             onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
             placeholder="Phone"
+            className="h-11"
+          />
+          <Input
+            value={form.whatsappNumber}
+            onChange={(e) => setForm((s) => ({ ...s, whatsappNumber: e.target.value }))}
+            placeholder="WhatsApp number (optional)"
             className="h-11"
           />
           <Input

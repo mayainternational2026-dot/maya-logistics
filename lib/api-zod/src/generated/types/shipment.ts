@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ShipmentStatus } from "./shipmentStatus";
+import type { ShipmentType } from "./shipmentType";
 
 export interface Shipment {
   id: number;
   trackingId: string;
+  shipmentType: ShipmentType;
   senderName: string;
   /** @nullable */
   senderPhone?: string | null;
@@ -18,7 +20,13 @@ export interface Shipment {
   receiverPhone?: string | null;
   origin: string;
   destination: string;
+  /** @nullable */
+  productName?: string | null;
+  /** @nullable */
+  quantity?: number | null;
   weight: number;
+  /** @nullable */
+  dimensions?: string | null;
   cost: number;
   status: ShipmentStatus;
   paid: boolean;

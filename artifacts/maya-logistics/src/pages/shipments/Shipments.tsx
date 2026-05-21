@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, FileText, MapPin, Package } from "lucide-react";
+import { Search, Plus, FileText, MapPin, Package, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatNPR, statusBadgeClass, statusLabel } from "@/lib/utils";
 
@@ -66,6 +66,36 @@ export default function Shipments() {
   const isStaff = user?.role === "staff";
   const isCustomer = user?.role === "customer";
   const isInternal = isAdmin || isStaff;
+
+  const exportCSV = () => {
+    const rows = data ?? [];
+    const headers = [
+      "Tracking ID", "Type", "Sender", "Sender Phone", "Receiver", "Receiver Phone",
+      "Origin", "Destination", "Product", "Quantity", "Weight (kg)", "Dimensions",
+      "Cost (NPR)", "Status", "Paid", "Created",
+    ];
+    const escape = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) =>
+        [
+          r.trackingId, (r as any).shipmentType ?? "export",
+          r.senderName, r.senderPhone ?? "", r.receiverName, r.receiverPhone ?? "",
+          r.origin, r.destination,
+          (r as any).productName ?? "", (r as any).quantity ?? "", r.weight, (r as any).dimensions ?? "",
+          r.cost, r.status, r.paid ? "Yes" : "No",
+          format(new Date(r.createdAt), "yyyy-MM-dd"),
+        ].map(escape).join(",")
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `maya-shipments-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const params: { search?: string; status?: "pending" | "in_transit" | "delivered" } = {};
   if (search.trim()) params.search = search.trim();
@@ -137,9 +167,16 @@ export default function Shipments() {
             {isCustomer ? "Your bookings, status, and invoices." : "Every shipment moving through the Maya network."}
           </p>
         </div>
-        <Button onClick={openSheet} className="bg-primary hover:bg-primary/90 gap-2">
-          <Plus className="h-4 w-4" /> New Shipment
-        </Button>
+        <div className="flex items-center gap-2">
+          {isInternal && (data ?? []).length > 0 && (
+            <Button variant="outline" onClick={exportCSV} className="gap-2">
+              <Download className="h-4 w-4" /> Export CSV
+            </Button>
+          )}
+          <Button onClick={openSheet} className="bg-primary hover:bg-primary/90 gap-2">
+            <Plus className="h-4 w-4" /> New Shipment
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

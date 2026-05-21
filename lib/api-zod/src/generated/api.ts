@@ -42,6 +42,7 @@ export const LoginResponse = zod.object({
     name: zod.string(),
     email: zod.string(),
     phone: zod.string(),
+    whatsappNumber: zod.string().nullish(),
     role: zod.enum(["admin", "staff", "customer"]),
     createdAt: zod.coerce.date(),
     permissions: zod.object({
@@ -62,6 +63,7 @@ export const GetCurrentUserResponse = zod.object({
       name: zod.string(),
       email: zod.string(),
       phone: zod.string(),
+      whatsappNumber: zod.string().nullish(),
       role: zod.enum(["admin", "staff", "customer"]),
       createdAt: zod.coerce.date(),
       permissions: zod.object({
@@ -116,6 +118,7 @@ export const ListUsersResponseItem = zod.object({
   name: zod.string(),
   email: zod.string(),
   phone: zod.string(),
+  whatsappNumber: zod.string().nullish(),
   role: zod.enum(["admin", "staff", "customer"]),
   createdAt: zod.coerce.date(),
   permissions: zod.object({
@@ -136,6 +139,7 @@ export const CreateUserBody = zod.object({
   name: zod.string().min(1),
   email: zod.string(),
   phone: zod.string().min(1),
+  whatsappNumber: zod.string().optional(),
   password: zod.string().min(createUserBodyPasswordMin),
   role: zod.enum(["admin", "staff", "customer"]),
   permissions: zod
@@ -156,6 +160,7 @@ export const GetUserResponse = zod.object({
   name: zod.string(),
   email: zod.string(),
   phone: zod.string(),
+  whatsappNumber: zod.string().nullish(),
   role: zod.enum(["admin", "staff", "customer"]),
   createdAt: zod.coerce.date(),
   permissions: zod.object({
@@ -173,6 +178,7 @@ export const UpdateUserBody = zod.object({
   name: zod.string().optional(),
   email: zod.string().optional(),
   phone: zod.string().optional(),
+  whatsappNumber: zod.string().optional(),
   role: zod.enum(["admin", "staff", "customer"]).optional(),
 });
 
@@ -181,6 +187,7 @@ export const UpdateUserResponse = zod.object({
   name: zod.string(),
   email: zod.string(),
   phone: zod.string(),
+  whatsappNumber: zod.string().nullish(),
   role: zod.enum(["admin", "staff", "customer"]),
   createdAt: zod.coerce.date(),
   permissions: zod.object({
@@ -235,13 +242,17 @@ export const ListShipmentsQueryParams = zod.object({
 export const ListShipmentsResponseItem = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
+  shipmentType: zod.enum(["import", "export"]),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
+  productName: zod.string().nullish(),
+  quantity: zod.number().nullish(),
   weight: zod.number(),
+  dimensions: zod.string().nullish(),
   cost: zod.number(),
   status: zod.enum([
     "pending",
@@ -274,13 +285,17 @@ export const createShipmentBodyWeightMin = 0;
 export const createShipmentBodyCostMin = 0;
 
 export const CreateShipmentBody = zod.object({
+  shipmentType: zod.enum(["import", "export"]).optional(),
   senderName: zod.string().min(1),
   senderPhone: zod.string().optional(),
   receiverName: zod.string().min(1),
   receiverPhone: zod.string().optional(),
   origin: zod.string().min(1),
   destination: zod.string().min(1),
+  productName: zod.string().optional(),
+  quantity: zod.number().min(1).optional(),
   weight: zod.number().min(createShipmentBodyWeightMin),
+  dimensions: zod.string().optional(),
   cost: zod.number().min(createShipmentBodyCostMin),
   notes: zod.string().optional(),
   customerId: zod.number().optional(),
@@ -293,13 +308,17 @@ export const GetShipmentParams = zod.object({
 export const GetShipmentResponse = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
+  shipmentType: zod.enum(["import", "export"]),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
+  productName: zod.string().nullish(),
+  quantity: zod.number().nullish(),
   weight: zod.number(),
+  dimensions: zod.string().nullish(),
   cost: zod.number(),
   status: zod.enum([
     "pending",
@@ -327,13 +346,17 @@ export const UpdateShipmentParams = zod.object({
 });
 
 export const UpdateShipmentBody = zod.object({
+  shipmentType: zod.enum(["import", "export"]).optional(),
   senderName: zod.string().optional(),
   senderPhone: zod.string().optional(),
   receiverName: zod.string().optional(),
   receiverPhone: zod.string().optional(),
   origin: zod.string().optional(),
   destination: zod.string().optional(),
+  productName: zod.string().optional(),
+  quantity: zod.number().optional(),
   weight: zod.number().optional(),
+  dimensions: zod.string().optional(),
   cost: zod.number().optional(),
   status: zod
     .enum([
@@ -353,13 +376,17 @@ export const UpdateShipmentBody = zod.object({
 export const UpdateShipmentResponse = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
+  shipmentType: zod.enum(["import", "export"]),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
+  productName: zod.string().nullish(),
+  quantity: zod.number().nullish(),
   weight: zod.number(),
+  dimensions: zod.string().nullish(),
   cost: zod.number(),
   status: zod.enum([
     "pending",
@@ -436,13 +463,17 @@ export const GetDashboardSummaryResponse = zod.object({
 export const GetRecentShipmentsResponseItem = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
+  shipmentType: zod.enum(["import", "export"]),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
+  productName: zod.string().nullish(),
+  quantity: zod.number().nullish(),
   weight: zod.number(),
+  dimensions: zod.string().nullish(),
   cost: zod.number(),
   status: zod.enum([
     "pending",

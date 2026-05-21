@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, Download } from "lucide-react";
 
 export default function NewShipment() {
   const [, setLocation] = useLocation();
@@ -44,13 +44,17 @@ export default function NewShipment() {
   );
 
   const [form, setForm] = useState({
+    shipmentType: "export" as "export" | "import",
     senderName: user?.name ?? "",
     senderPhone: user?.phone ?? "",
     receiverName: "",
     receiverPhone: "",
     origin: "Kathmandu, Nepal",
     destination: "",
+    productName: "",
+    quantity: "",
     weight: "",
+    dimensions: "",
     cost: "",
     notes: "",
     customerId: "",
@@ -62,13 +66,17 @@ export default function NewShipment() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: any = {
+      shipmentType: form.shipmentType,
       senderName: form.senderName,
       senderPhone: form.senderPhone || undefined,
       receiverName: form.receiverName,
       receiverPhone: form.receiverPhone || undefined,
       origin: form.origin,
       destination: form.destination,
+      productName: form.productName || undefined,
+      quantity: form.quantity ? Number(form.quantity) : undefined,
       weight: Number(form.weight),
+      dimensions: form.dimensions || undefined,
       cost: Number(form.cost),
       notes: form.notes || undefined,
     };
@@ -152,6 +160,33 @@ export default function NewShipment() {
           </div>
         )}
 
+        {/* Shipment Type */}
+        <div>
+          <label className="block text-sm font-semibold text-secondary mb-2">
+            Shipment type
+          </label>
+          <div className="flex gap-3">
+            {(["export", "import"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => set("shipmentType", t)}
+                className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  form.shipmentType === t
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                {t === "export" ? <Download className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Export = sending from Nepal · Import = bringing goods into Nepal
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
@@ -220,6 +255,30 @@ export default function NewShipment() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
+              Product name
+            </label>
+            <Input
+              value={form.productName}
+              onChange={(e) => set("productName", e.target.value)}
+              placeholder="e.g. Electronic goods"
+              className="h-11 bg-gray-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-secondary mb-2">
+              Quantity
+            </label>
+            <Input
+              type="number"
+              min="1"
+              value={form.quantity}
+              onChange={(e) => set("quantity", e.target.value)}
+              placeholder="e.g. 10"
+              className="h-11 bg-gray-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-secondary mb-2">
               Weight (kg)
             </label>
             <Input
@@ -229,6 +288,17 @@ export default function NewShipment() {
               min="0"
               value={form.weight}
               onChange={(e) => set("weight", e.target.value)}
+              className="h-11 bg-gray-50"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-secondary mb-2">
+              Dimensions (L×W×H cm)
+            </label>
+            <Input
+              value={form.dimensions}
+              onChange={(e) => set("dimensions", e.target.value)}
+              placeholder="e.g. 40×30×20"
               className="h-11 bg-gray-50"
             />
           </div>

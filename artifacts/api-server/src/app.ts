@@ -104,9 +104,14 @@ if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const frontendDist = path.resolve(__dirname, "../../maya-logistics/dist/public");
   if (fs.existsSync(frontendDist)) {
-    // Disable CDN caching so stale error pages are never served
-    app.use((_, res, next) => {
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    // Hashed assets (Vite fingerprints filenames) can be cached forever.
+    // index.html and un-hashed files stay no-store so deploys are instant.
+    app.use((req, res, next) => {
+      if (/\/assets\/[^/]+\.[a-f0-9]{6,}\.[a-z]+(\?.*)?$/.test(req.path)) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      } else {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+      }
       next();
     });
     app.use(express.static(frontendDist));

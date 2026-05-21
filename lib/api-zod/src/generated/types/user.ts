@@ -13,6 +13,8 @@ export interface User {
   name: string;
   email: string;
   phone: string;
+  /** @nullable */
+  whatsappNumber?: string | null;
   role: Role;
   createdAt: Date;
   permissions: Permissions;

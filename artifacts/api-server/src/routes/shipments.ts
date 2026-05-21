@@ -91,13 +91,17 @@ router.post(
       .insert(shipmentsTable)
       .values({
         trackingId,
+        shipmentType: parsed.data.shipmentType ?? "export",
         senderName: parsed.data.senderName.trim(),
         senderPhone: parsed.data.senderPhone?.trim() || null,
         receiverName: parsed.data.receiverName.trim(),
         receiverPhone: parsed.data.receiverPhone?.trim() || null,
         origin: parsed.data.origin.trim(),
         destination: parsed.data.destination.trim(),
+        productName: parsed.data.productName?.trim() || null,
+        quantity: parsed.data.quantity ?? null,
         weight: String(parsed.data.weight),
+        dimensions: parsed.data.dimensions?.trim() || null,
         cost: String(parsed.data.cost),
         status: "pending",
         notes: parsed.data.notes?.trim() || null,
@@ -198,13 +202,17 @@ router.patch(
     }
 
     const updates: Record<string, unknown> = {};
+    if (body.data.shipmentType != null) updates.shipmentType = body.data.shipmentType;
     if (body.data.senderName != null) updates.senderName = body.data.senderName.trim();
     if (body.data.senderPhone != null) updates.senderPhone = body.data.senderPhone.trim() || null;
     if (body.data.receiverName != null) updates.receiverName = body.data.receiverName.trim();
     if (body.data.receiverPhone != null) updates.receiverPhone = body.data.receiverPhone.trim() || null;
     if (body.data.origin != null) updates.origin = body.data.origin.trim();
     if (body.data.destination != null) updates.destination = body.data.destination.trim();
+    if (body.data.productName != null) updates.productName = body.data.productName.trim() || null;
+    if (body.data.quantity != null) updates.quantity = body.data.quantity;
     if (body.data.weight != null) updates.weight = String(body.data.weight);
+    if (body.data.dimensions != null) updates.dimensions = body.data.dimensions.trim() || null;
     if (body.data.cost != null) updates.cost = String(body.data.cost);
     if (body.data.status != null) updates.status = body.data.status;
     if (body.data.paid != null) {

@@ -833,6 +833,8 @@ components:
           type: string
         phone:
           type: string
+        whatsappNumber:
+          type: ["string", "null"]
         role:
           $ref: "#/components/schemas/Role"
         createdAt:
@@ -928,6 +930,8 @@ components:
         phone:
           type: string
           minLength: 1
+        whatsappNumber:
+          type: string
         password:
           type: string
           minLength: 6
@@ -945,6 +949,8 @@ components:
         email:
           type: string
         phone:
+          type: string
+        whatsappNumber:
           type: string
         role:
           $ref: "#/components/schemas/Role"
@@ -968,6 +974,10 @@ components:
           minLength: 6
       required: [newPassword]
 
+    ShipmentType:
+      type: string
+      enum: [import, export]
+
     Shipment:
       type: object
       properties:
@@ -975,6 +985,8 @@ components:
           type: integer
         trackingId:
           type: string
+        shipmentType:
+          $ref: "#/components/schemas/ShipmentType"
         senderName:
           type: string
         senderPhone:
@@ -987,8 +999,14 @@ components:
           type: string
         destination:
           type: string
+        productName:
+          type: ["string", "null"]
+        quantity:
+          type: ["integer", "null"]
         weight:
           type: number
+        dimensions:
+          type: ["string", "null"]
         cost:
           type: number
         status:
@@ -1019,6 +1037,7 @@ components:
       required:
         - id
         - trackingId
+        - shipmentType
         - senderName
         - receiverName
         - origin
@@ -1067,6 +1086,8 @@ components:
     CreateShipmentBody:
       type: object
       properties:
+        shipmentType:
+          $ref: "#/components/schemas/ShipmentType"
         senderName:
           type: string
           minLength: 1
@@ -1083,9 +1104,16 @@ components:
         destination:
           type: string
           minLength: 1
+        productName:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
         weight:
           type: number
           minimum: 0
+        dimensions:
+          type: string
         cost:
           type: number
           minimum: 0
@@ -1098,6 +1126,8 @@ components:
     UpdateShipmentBody:
       type: object
       properties:
+        shipmentType:
+          $ref: "#/components/schemas/ShipmentType"
         senderName:
           type: string
         senderPhone:
@@ -1110,8 +1140,14 @@ components:
           type: string
         destination:
           type: string
+        productName:
+          type: string
+        quantity:
+          type: integer
         weight:
           type: number
+        dimensions:
+          type: string
         cost:
           type: number
         status:

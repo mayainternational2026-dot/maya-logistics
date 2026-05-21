@@ -95,6 +95,7 @@ router.post(
         name: parsed.data.name.trim(),
         email,
         phone: parsed.data.phone.trim(),
+        whatsappNumber: parsed.data.whatsappNumber?.trim() || null,
         passwordHash,
         role: parsed.data.role,
       })
@@ -145,6 +146,7 @@ router.patch(
     if (body.data.email != null)
       updates.email = body.data.email.toLowerCase().trim();
     if (body.data.phone != null) updates.phone = body.data.phone.trim();
+    if (body.data.whatsappNumber != null) updates.whatsappNumber = body.data.whatsappNumber.trim() || null;
     if (body.data.role != null) updates.role = body.data.role;
 
     if (Object.keys(updates).length > 0) {

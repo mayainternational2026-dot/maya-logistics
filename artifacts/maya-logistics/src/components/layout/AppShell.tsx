@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/use-auth";
 import {
@@ -18,6 +18,7 @@ import {
   CalendarDays,
   Calculator,
   Receipt,
+  BookPlus,
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
@@ -53,16 +54,37 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   };
 
+  // Auto-logout staff/admin after 2 hours of inactivity
+  useEffect(() => {
+    if (!isInternal) return;
+    const INACTIVITY_MS = 2 * 60 * 60 * 1000;
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => doLogout(), INACTIVITY_MS);
+    };
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [isInternal]);
+
   const isAdmin = user.role === "admin";
   const isStaff = user.role === "staff";
 
   const canInvoice = isAdmin || (isStaff && (user.permissions?.canGenerateInvoice ?? false));
+
+  const canAddBooking = isAdmin || (isStaff && (user.permissions?.canManageShipments ?? false));
 
   const navItems = [
     { name: "Dashboard",        href: "/dashboard",            icon: LayoutDashboard, show: true },
     { name: "Attendance",       href: "/attendance",           icon: Clock,           show: isInternal },
     { name: "My Leave",         href: "/leave",                icon: CalendarDays,    show: isInternal },
     { name: "Work Report",      href: "/work-log",             icon: ClipboardCheck,  show: isInternal },
+    { name: "Add Booking",      href: "/admin/add-booking",    icon: BookPlus,        show: canAddBooking },
     { name: "Create Invoice",   href: "/admin/create-invoice", icon: FilePlus,        show: canInvoice },
     { name: "Shipments",        href: "/shipments",            icon: Package,         show: true },
     { name: "Inquiries",        href: "/admin/inquiries",      icon: ClipboardList,   show: isInternal },

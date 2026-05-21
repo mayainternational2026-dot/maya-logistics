@@ -14,6 +14,7 @@ export interface CreateUserBody {
   email: string;
   /** @minLength 1 */
   phone: string;
+  whatsappNumber?: string;
   /** @minLength 6 */
   password: string;
   role: Role;

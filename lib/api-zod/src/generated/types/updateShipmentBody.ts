@@ -6,15 +6,20 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ShipmentStatus } from "./shipmentStatus";
+import type { ShipmentType } from "./shipmentType";
 
 export interface UpdateShipmentBody {
+  shipmentType?: ShipmentType;
   senderName?: string;
   senderPhone?: string;
   receiverName?: string;
   receiverPhone?: string;
   origin?: string;
   destination?: string;
+  productName?: string;
+  quantity?: number;
   weight?: number;
+  dimensions?: string;
   cost?: number;
   status?: ShipmentStatus;
   paid?: boolean;

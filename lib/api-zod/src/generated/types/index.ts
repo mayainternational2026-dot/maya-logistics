@@ -37,6 +37,7 @@ export * from "./revenuePoint";
 export * from "./role";
 export * from "./shipment";
 export * from "./shipmentStatus";
+export * from "./shipmentType";
 export * from "./shippingRate";
 export * from "./staffActivity";
 export * from "./updateExpenseBody";
