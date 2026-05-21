@@ -1,54 +1,61 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, ProtectedRoute } from "@/lib/auth";
 import { HelmetProvider } from "react-helmet-async";
-
-// Pages
-import Home from "@/pages/Home";
-import Track from "@/pages/Track";
-import Login from "@/pages/auth/Login";
-import Register from "@/pages/auth/Register";
-import ForgotPassword from "@/pages/auth/ForgotPassword";
-import Dashboard from "@/pages/Dashboard";
-import Shipments from "@/pages/shipments/Shipments";
-import NewShipment from "@/pages/shipments/NewShipment";
-import ShipmentDetails from "@/pages/shipments/ShipmentDetails";
-import Invoice from "@/pages/shipments/Invoice";
-import InquiryPage from "@/pages/Inquiry";
-import Users from "@/pages/admin/Users";
-import Inquiries from "@/pages/admin/Inquiries";
-import StaffActivity from "@/pages/admin/StaffActivity";
-import CreateInvoice from "@/pages/admin/CreateInvoice";
-import AddBooking from "@/pages/admin/AddBooking";
-import Profile from "@/pages/Profile";
-import Attendance from "@/pages/attendance/Attendance";
-import AttendanceAdmin from "@/pages/admin/AttendanceAdmin";
-import Leave from "@/pages/leave/Leave";
-import LeaveAdmin from "@/pages/admin/LeaveAdmin";
-import WorkLog from "@/pages/worklog/WorkLog";
-import WorkLogAdmin from "@/pages/admin/WorkLogAdmin";
-import ShippingRates from "@/pages/admin/ShippingRates";
-import Expenses from "@/pages/Expenses";
-import AdminExpenses from "@/pages/admin/AdminExpenses";
-import NotFound from "@/pages/not-found";
-import Calculator from "@/pages/Calculator";
-import Testimonials from "@/pages/Testimonials";
-
-// SEO Service Pages
-import AirFreight from "@/pages/services/AirFreight";
-import SeaFreight from "@/pages/services/SeaFreight";
-import RoadFreight from "@/pages/services/RoadFreight";
-import CustomsClearance from "@/pages/services/CustomsClearance";
-import Blog from "@/pages/Blog";
-
 import { AppShell } from "@/components/layout/AppShell";
+
+// Lazy-loaded pages — each becomes its own JS chunk for faster initial load
+const Home            = lazy(() => import("@/pages/Home"));
+const Track           = lazy(() => import("@/pages/Track"));
+const Login           = lazy(() => import("@/pages/auth/Login"));
+const Register        = lazy(() => import("@/pages/auth/Register"));
+const ForgotPassword  = lazy(() => import("@/pages/auth/ForgotPassword"));
+const Dashboard       = lazy(() => import("@/pages/Dashboard"));
+const Shipments       = lazy(() => import("@/pages/shipments/Shipments"));
+const NewShipment     = lazy(() => import("@/pages/shipments/NewShipment"));
+const ShipmentDetails = lazy(() => import("@/pages/shipments/ShipmentDetails"));
+const Invoice         = lazy(() => import("@/pages/shipments/Invoice"));
+const InquiryPage     = lazy(() => import("@/pages/Inquiry"));
+const Users           = lazy(() => import("@/pages/admin/Users"));
+const Inquiries       = lazy(() => import("@/pages/admin/Inquiries"));
+const StaffActivity   = lazy(() => import("@/pages/admin/StaffActivity"));
+const CreateInvoice   = lazy(() => import("@/pages/admin/CreateInvoice"));
+const AddBooking      = lazy(() => import("@/pages/admin/AddBooking"));
+const Profile         = lazy(() => import("@/pages/Profile"));
+const Attendance      = lazy(() => import("@/pages/attendance/Attendance"));
+const AttendanceAdmin = lazy(() => import("@/pages/admin/AttendanceAdmin"));
+const Leave           = lazy(() => import("@/pages/leave/Leave"));
+const LeaveAdmin      = lazy(() => import("@/pages/admin/LeaveAdmin"));
+const WorkLog         = lazy(() => import("@/pages/worklog/WorkLog"));
+const WorkLogAdmin    = lazy(() => import("@/pages/admin/WorkLogAdmin"));
+const ShippingRates   = lazy(() => import("@/pages/admin/ShippingRates"));
+const Expenses        = lazy(() => import("@/pages/Expenses"));
+const AdminExpenses   = lazy(() => import("@/pages/admin/AdminExpenses"));
+const NotFound        = lazy(() => import("@/pages/not-found"));
+const Calculator      = lazy(() => import("@/pages/Calculator"));
+const Testimonials    = lazy(() => import("@/pages/Testimonials"));
+const AirFreight      = lazy(() => import("@/pages/services/AirFreight"));
+const SeaFreight      = lazy(() => import("@/pages/services/SeaFreight"));
+const RoadFreight     = lazy(() => import("@/pages/services/RoadFreight"));
+const CustomsClearance = lazy(() => import("@/pages/services/CustomsClearance"));
+const Blog            = lazy(() => import("@/pages/Blog"));
 
 const queryClient = new QueryClient();
 
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+    </div>
+  );
+}
+
 function Router() {
   return (
+    <Suspense fallback={<PageLoader />}>
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/track" component={Track} />
@@ -136,6 +143,7 @@ function Router() {
         </AppShell>
       </Route>
     </Switch>
+    </Suspense>
   );
 }
 

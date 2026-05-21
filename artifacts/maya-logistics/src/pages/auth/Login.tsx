@@ -125,7 +125,7 @@ export default function Login() {
           </div>
         )}
 
-        <form className="space-y-5" onSubmit={handleSubmit} autoComplete="off">
+        <form className="space-y-5" onSubmit={handleSubmit} autoComplete="on">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email address
@@ -141,7 +141,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10 h-12 bg-gray-50"
                 placeholder="Enter your email"
-                autoComplete="off"
+                autoComplete="email"
               />
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 h-12 bg-gray-50"
                 placeholder="••••••••"
-                autoComplete="new-password"
+                autoComplete="current-password"
               />
             </div>
           </div>
