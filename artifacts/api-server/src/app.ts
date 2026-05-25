@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import compression from "compression";
 import cors from "cors";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
@@ -16,6 +17,9 @@ const app: Express = express();
 
 // Trust Replit's reverse proxy so req.secure and cookies work correctly in production
 app.set("trust proxy", 1);
+
+// Gzip all responses — reduces payload ~70 % for JSON and HTML
+app.use(compression());
 
 app.use(
   pinoHttp({

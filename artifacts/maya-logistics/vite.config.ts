@@ -58,12 +58,15 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
-          router: ["wouter"],
-          query: ["@tanstack/react-query"],
-          ui: ["lucide-react", "framer-motion"],
-          charts: ["recharts"],
+        manualChunks(id) {
+          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory-")) return "charts";
+          if (id.includes("@radix-ui") || id.includes("cmdk") || id.includes("vaul")) return "radix";
+          if (id.includes("lucide-react")) return "icons";
+          if (id.includes("framer-motion")) return "motion";
+          if (id.includes("@tanstack/react-query")) return "query";
+          if (id.includes("wouter")) return "router";
+          if (id.includes("react-dom")) return "react-dom";
+          if (id.includes("react") && !id.includes("react-dom") && id.includes("node_modules")) return "react";
         },
       },
     },

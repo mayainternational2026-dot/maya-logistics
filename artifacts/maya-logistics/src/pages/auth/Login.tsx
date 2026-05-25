@@ -4,29 +4,9 @@ import { useLogin } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Lock, Mail, ShieldCheck, User, UserCog, XCircle } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, XCircle } from "lucide-react";
 import { logoUrl } from "@/lib/assets";
 import { cn } from "@/lib/utils";
-
-type LoginMode = "customer" | "staff" | "admin";
-
-const TABS: { mode: LoginMode; label: string; icon: React.ReactNode }[] = [
-  { mode: "customer", label: "Customer", icon: <User className="h-4 w-4" /> },
-  { mode: "staff",    label: "Staff",    icon: <UserCog className="h-4 w-4" /> },
-  { mode: "admin",    label: "Admin",    icon: <ShieldCheck className="h-4 w-4" /> },
-];
-
-const TAB_COLORS: Record<LoginMode, string> = {
-  customer: "bg-secondary text-white",
-  staff:    "bg-blue-600 text-white",
-  admin:    "bg-primary text-white",
-};
-
-const BTN_COLORS: Record<LoginMode, string> = {
-  customer: "bg-secondary hover:bg-secondary/90",
-  staff:    "bg-blue-600 hover:bg-blue-700",
-  admin:    "bg-primary hover:bg-primary/90",
-};
 
 type FieldErrors = { email?: string; password?: string };
 
@@ -42,13 +22,10 @@ export default function Login() {
   const { toast } = useToast();
   const loginMutation = useLogin();
 
-  const [mode, setMode] = useState<LoginMode>("customer");
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>({});
-
-  const activeTab = TABS.find((t) => t.mode === mode)!;
+  const [errors, setErrors]     = useState<FieldErrors>({});
 
   function validate(): boolean {
     const errs: FieldErrors = {};
@@ -57,9 +34,7 @@ export default function Login() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       errs.email = "Enter a valid email address";
     }
-    if (!password) {
-      errs.password = "Password is required";
-    }
+    if (!password) errs.password = "Password is required";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -76,7 +51,7 @@ export default function Login() {
         },
         onError: (err: any) => {
           toast({
-            title: "Login Failed",
+            title: "Login failed",
             description: err?.data?.error || "Invalid email or password.",
             variant: "destructive",
           });
@@ -92,26 +67,8 @@ export default function Login() {
           <Link href="/" className="inline-flex justify-center mb-4">
             <img src={logoUrl} alt="Maya Logistics" className="h-16 w-auto" />
           </Link>
-          <h2 className="text-3xl font-extrabold text-secondary">Sign in to your account</h2>
-          <p className="mt-1 text-sm text-gray-500">Manage your global shipments</p>
-        </div>
-
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden">
-          {TABS.map((tab) => (
-            <button
-              key={tab.mode}
-              type="button"
-              onClick={() => { setMode(tab.mode); setErrors({}); }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-semibold transition-colors ${
-                mode === tab.mode
-                  ? TAB_COLORS[tab.mode]
-                  : "bg-white text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+          <h2 className="text-3xl font-extrabold text-secondary">Sign in</h2>
+          <p className="mt-1 text-sm text-gray-500">Maya Import Export Logistic</p>
         </div>
 
         <form className="space-y-5" onSubmit={handleSubmit} autoComplete="on" noValidate>
@@ -148,17 +105,20 @@ export default function Login() {
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
                 className={cn("pl-10 pr-12 h-12 bg-gray-50", errors.password && "border-red-400 focus-visible:ring-red-400")}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 autoComplete="current-password"
               />
-              <button
-                type="button"
-                onClick={() => setShowPass((v) => !v)}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
-                tabIndex={-1}
-              >
-                {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
+              {password.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowPass((v) => !v)}
+                  className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                  aria-label={showPass ? "Hide password" : "Show password"}
+                >
+                  {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              )}
             </div>
             <FieldError msg={errors.password} />
           </div>
@@ -172,9 +132,9 @@ export default function Login() {
           <Button
             type="submit"
             disabled={loginMutation.isPending}
-            className={`w-full h-12 text-base font-bold text-white ${BTN_COLORS[mode]}`}
+            className="w-full h-12 text-base font-bold text-white bg-primary hover:bg-primary/90"
           >
-            {loginMutation.isPending ? "Signing in…" : `Sign in as ${activeTab.label}`}
+            {loginMutation.isPending ? "Signing in…" : "Sign in"}
           </Button>
         </form>
 

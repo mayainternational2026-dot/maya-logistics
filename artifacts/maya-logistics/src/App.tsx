@@ -43,7 +43,16 @@ const RoadFreight     = lazy(() => import("@/pages/services/RoadFreight"));
 const CustomsClearance = lazy(() => import("@/pages/services/CustomsClearance"));
 const Blog            = lazy(() => import("@/pages/Blog"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,          // 30 s — don't refetch data that is fresh
+      gcTime: 5 * 60_000,         // 5 min — keep unused data in cache
+      retry: 1,
+      refetchOnWindowFocus: false, // don't hammer the API every tab switch
+    },
+  },
+});
 
 function PageLoader() {
   return (
