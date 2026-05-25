@@ -28,6 +28,7 @@ function strengthMeta(score: number) {
 type FieldErrors = { name?: string; email?: string; phone?: string; password?: string; confirmPassword?: string };
 
 export default function Register() {
+  const BASE = import.meta.env.BASE_URL;
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);

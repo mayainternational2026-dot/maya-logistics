@@ -42,10 +42,62 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, KeyRound, Settings, Trash2, Users as UsersIcon } from "lucide-react";
+import {
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Plus,
+  Settings,
+  Trash2,
+  Users as UsersIcon,
+  XCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type RoleFilter = "all" | "admin" | "staff" | "customer";
+
+const PASSWORD_RULES = [
+  { label: "At least 8 characters",        test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter (A–Z)",    test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One number (0–9)",              test: (p: string) => /[0-9]/.test(p) },
+  { label: "One special character (!@#$…)", test: (p: string) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(p) },
+];
+
+function passwordScore(p: string) { return PASSWORD_RULES.filter((r) => r.test(p)).length; }
+function passwordMeta(score: number) {
+  if (score === 0) return { label: "",          bar: "bg-gray-200" };
+  if (score === 1) return { label: "Very Weak", bar: "bg-red-500" };
+  if (score === 2) return { label: "Weak",      bar: "bg-orange-500" };
+  if (score === 3) return { label: "Good",      bar: "bg-yellow-500" };
+  return              { label: "Strong",     bar: "bg-green-500" };
+}
+
+function PasswordRulesHint({ password }: { password: string }) {
+  return (
+    <ul className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1">
+      {PASSWORD_RULES.map((r) => {
+        const ok = password.length > 0 ? r.test(password) : false;
+        return (
+          <li
+            key={r.label}
+            className={cn(
+              "flex items-center gap-1 text-xs",
+              password.length > 0 ? (ok ? "text-green-600" : "text-red-500") : "text-gray-400",
+            )}
+          >
+            {password.length > 0
+              ? ok
+                ? <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+                : <XCircle className="h-3 w-3 flex-shrink-0" />
+              : <span className="h-3 w-3 flex-shrink-0 text-center font-bold">·</span>}
+            {r.label}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 function PermissionsDialog({
   user,
@@ -97,40 +149,28 @@ function PermissionsDialog({
         <label className="flex items-center gap-3 cursor-pointer">
           <Checkbox
             checked={perms.canManageShipments}
-            onCheckedChange={(v) =>
-              setPerms((p) => ({ ...p, canManageShipments: !!v }))
-            }
+            onCheckedChange={(v) => setPerms((p) => ({ ...p, canManageShipments: !!v }))}
           />
           <span className="text-sm">Manage shipments (create, update, delete)</span>
         </label>
         <label className="flex items-center gap-3 cursor-pointer">
           <Checkbox
             checked={perms.canManageCustomers}
-            onCheckedChange={(v) =>
-              setPerms((p) => ({ ...p, canManageCustomers: !!v }))
-            }
+            onCheckedChange={(v) => setPerms((p) => ({ ...p, canManageCustomers: !!v }))}
           />
           <span className="text-sm">Manage customer accounts</span>
         </label>
         <label className="flex items-center gap-3 cursor-pointer">
           <Checkbox
             checked={perms.canGenerateInvoice}
-            onCheckedChange={(v) =>
-              setPerms((p) => ({ ...p, canGenerateInvoice: !!v }))
-            }
+            onCheckedChange={(v) => setPerms((p) => ({ ...p, canGenerateInvoice: !!v }))}
           />
           <span className="text-sm">Generate invoices</span>
         </label>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={update.isPending}
-          className="bg-primary hover:bg-primary/90"
-        >
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} disabled={update.isPending} className="bg-primary hover:bg-primary/90">
           {update.isPending ? "Saving..." : "Save"}
         </Button>
       </DialogFooter>
@@ -148,25 +188,28 @@ function ResetPasswordDialog({
   const reset = useAdminResetUserPassword();
   const { toast } = useToast();
   const [newPassword, setNewPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+
+  const score = passwordScore(newPassword);
+  const { label: strLabel, bar: strBar } = passwordMeta(score);
+  const passwordOk = score === 4;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordOk) {
+      setError("Password does not meet all requirements");
+      return;
+    }
     reset.mutate(
       { id: user.id, data: { newPassword } },
       {
         onSuccess: () => {
-          toast({
-            title: "Password reset",
-            description: `New password set for ${user.name}.`,
-          });
+          toast({ title: "Password reset", description: `New password set for ${user.name}.` });
           onClose();
         },
         onError: (err: any) => {
-          toast({
-            title: "Reset failed",
-            description: err?.data?.error,
-            variant: "destructive",
-          });
+          toast({ title: "Reset failed", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
@@ -176,29 +219,51 @@ function ResetPasswordDialog({
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Reset password</DialogTitle>
-        <DialogDescription>
-          Choose a new temporary password for {user.name}.
-        </DialogDescription>
+        <DialogDescription>Choose a new strong password for {user.name}.</DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4 py-4">
-        <Input
-          type="password"
-          required
-          minLength={6}
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="New password (min. 6 chars)"
-          className="h-11"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">New password</label>
+          <div className="relative">
+            <Input
+              type={showPass ? "text" : "password"}
+              value={newPassword}
+              onChange={(e) => { setNewPassword(e.target.value); setError(undefined); }}
+              placeholder="••••••••"
+              className={cn("h-11 pr-12", error && "border-red-400 focus-visible:ring-red-400")}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass((v) => !v)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+              tabIndex={-1}
+            >
+              {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {newPassword.length > 0 && (
+            <div className="mt-1.5 flex items-center gap-1">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-all", i <= score ? strBar : "bg-gray-200")} />
+              ))}
+              {strLabel && (
+                <span className={cn("text-xs font-medium ml-2 w-20 text-right", score === 4 ? "text-green-600" : score >= 3 ? "text-yellow-600" : "text-red-500")}>
+                  {strLabel}
+                </span>
+              )}
+            </div>
+          )}
+          <PasswordRulesHint password={newPassword} />
+          {error && (
+            <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+              <XCircle className="h-3.5 w-3.5 flex-shrink-0" />{error}
+            </p>
+          )}
+        </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={reset.isPending}
-            className="bg-primary hover:bg-primary/90"
-          >
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" disabled={reset.isPending} className="bg-primary hover:bg-primary/90">
             {reset.isPending ? "Resetting..." : "Reset password"}
           </Button>
         </DialogFooter>
@@ -211,6 +276,9 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const create = useCreateUser();
+  const [showPass, setShowPass] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -223,14 +291,38 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
     canGenerateInvoice: false,
   });
 
+  const score = passwordScore(form.password);
+  const { label: strLabel, bar: strBar } = passwordMeta(score);
+  const passwordOk = score === 4;
+
+  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((s) => ({ ...s, [field]: e.target.value }));
+    setFieldErrors((p) => ({ ...p, [field]: "" }));
+  };
+
+  function validate(): boolean {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Full name is required";
+    if (!form.email.trim()) {
+      errs.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errs.email = "Enter a valid email address";
+    }
+    if (!form.phone.trim()) errs.phone = "Phone number is required";
+    if (!passwordOk) errs.password = "Password does not meet all requirements";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     create.mutate(
       {
         data: {
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
+          name: form.name.trim(),
+          email: form.email.trim().toLowerCase(),
+          phone: form.phone.trim(),
           whatsappNumber: form.whatsappNumber || undefined,
           password: form.password,
           role: form.role,
@@ -248,38 +340,39 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
           onClose();
         },
         onError: (err: any) => {
-          toast({
-            title: "Could not create user",
-            description: err?.data?.error,
-            variant: "destructive",
-          });
+          toast({ title: "Could not create user", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
   };
 
+  const FErr = ({ field }: { field: string }) =>
+    fieldErrors[field] ? (
+      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+        <XCircle className="h-3 w-3 flex-shrink-0" />{fieldErrors[field]}
+      </p>
+    ) : null;
+
   return (
     <DialogContent className="max-w-lg">
       <DialogHeader>
         <DialogTitle>Add a new user</DialogTitle>
-        <DialogDescription>
-          Create a staff member or customer account.
-        </DialogDescription>
+        <DialogDescription>Create a staff member or customer account.</DialogDescription>
       </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4 py-2">
+      <form onSubmit={handleSubmit} className="space-y-4 py-2" noValidate>
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            required
-            value={form.name}
-            onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-            placeholder="Full name"
-            className="h-11"
-          />
+          <div className="col-span-1">
+            <Input
+              value={form.name}
+              onChange={set("name")}
+              placeholder="Full name *"
+              className={cn("h-11", fieldErrors.name && "border-red-400")}
+            />
+            <FErr field="name" />
+          </div>
           <Select
             value={form.role}
-            onValueChange={(v) =>
-              setForm((s) => ({ ...s, role: v as "staff" | "customer" }))
-            }
+            onValueChange={(v) => setForm((s) => ({ ...s, role: v as "staff" | "customer" }))}
           >
             <SelectTrigger className="h-11">
               <SelectValue />
@@ -289,37 +382,74 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
               <SelectItem value="customer">Customer</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            required
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
-            placeholder="Email"
-            className="h-11"
-          />
-          <Input
-            required
-            value={form.phone}
-            onChange={(e) => setForm((s) => ({ ...s, phone: e.target.value }))}
-            placeholder="Phone"
-            className="h-11"
-          />
-          <Input
-            value={form.whatsappNumber}
-            onChange={(e) => setForm((s) => ({ ...s, whatsappNumber: e.target.value }))}
-            placeholder="WhatsApp number (optional)"
-            className="h-11"
-          />
-          <Input
-            required
-            type="password"
-            minLength={6}
-            autoComplete="new-password"
-            value={form.password}
-            onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
-            placeholder="Initial password"
-            className="h-11 col-span-2"
-          />
+
+          <div className="col-span-1">
+            <Input
+              type="email"
+              value={form.email}
+              onChange={set("email")}
+              placeholder="Email *"
+              className={cn("h-11", fieldErrors.email && "border-red-400")}
+            />
+            <FErr field="email" />
+          </div>
+
+          <div className="col-span-1">
+            <Input
+              value={form.phone}
+              onChange={set("phone")}
+              placeholder="Phone *"
+              className={cn("h-11", fieldErrors.phone && "border-red-400")}
+            />
+            <FErr field="phone" />
+          </div>
+
+          <div className="col-span-2">
+            <Input
+              value={form.whatsappNumber}
+              onChange={set("whatsappNumber")}
+              placeholder="WhatsApp number (optional)"
+              className="h-11"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Initial password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Input
+              type={showPass ? "text" : "password"}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(e) => { setForm((s) => ({ ...s, password: e.target.value })); setFieldErrors((p) => ({ ...p, password: "" })); }}
+              placeholder="••••••••"
+              className={cn("h-11 pr-12", fieldErrors.password && "border-red-400")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass((v) => !v)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+              tabIndex={-1}
+            >
+              {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {form.password.length > 0 && (
+            <div className="mt-1.5 flex items-center gap-1">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className={cn("h-1.5 flex-1 rounded-full transition-all", i <= score ? strBar : "bg-gray-200")} />
+              ))}
+              {strLabel && (
+                <span className={cn("text-xs font-medium ml-2 w-20 text-right", score === 4 ? "text-green-600" : score >= 3 ? "text-yellow-600" : "text-red-500")}>
+                  {strLabel}
+                </span>
+              )}
+            </div>
+          )}
+          <PasswordRulesHint password={form.password} />
+          <FErr field="password" />
         </div>
 
         {form.role === "staff" && (
@@ -330,27 +460,21 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
             <label className="flex items-center gap-3 cursor-pointer">
               <Checkbox
                 checked={form.canManageShipments}
-                onCheckedChange={(v) =>
-                  setForm((s) => ({ ...s, canManageShipments: !!v }))
-                }
+                onCheckedChange={(v) => setForm((s) => ({ ...s, canManageShipments: !!v }))}
               />
               <span className="text-sm">Manage shipments</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <Checkbox
                 checked={form.canManageCustomers}
-                onCheckedChange={(v) =>
-                  setForm((s) => ({ ...s, canManageCustomers: !!v }))
-                }
+                onCheckedChange={(v) => setForm((s) => ({ ...s, canManageCustomers: !!v }))}
               />
               <span className="text-sm">Manage customers</span>
             </label>
             <label className="flex items-center gap-3 cursor-pointer">
               <Checkbox
                 checked={form.canGenerateInvoice}
-                onCheckedChange={(v) =>
-                  setForm((s) => ({ ...s, canGenerateInvoice: !!v }))
-                }
+                onCheckedChange={(v) => setForm((s) => ({ ...s, canGenerateInvoice: !!v }))}
               />
               <span className="text-sm">Generate invoices</span>
             </label>
@@ -358,14 +482,8 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
         )}
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={create.isPending}
-            className="bg-primary hover:bg-primary/90"
-          >
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" disabled={create.isPending} className="bg-primary hover:bg-primary/90">
             {create.isPending ? "Creating..." : "Create user"}
           </Button>
         </DialogFooter>
@@ -399,11 +517,7 @@ export default function Users() {
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
         },
         onError: (err: any) => {
-          toast({
-            title: "Delete failed",
-            description: err?.data?.error,
-            variant: "destructive",
-          });
+          toast({ title: "Delete failed", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
@@ -414,9 +528,7 @@ export default function Users() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-secondary">Users</h1>
-          <p className="mt-1 text-gray-600">
-            Manage your team and customer accounts.
-          </p>
+          <p className="mt-1 text-gray-600">Manage your team and customer accounts.</p>
         </div>
         <div className="flex items-center gap-3">
           <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as RoleFilter)}>
@@ -469,9 +581,7 @@ export default function Users() {
               <tbody>
                 {(data ?? []).map((u) => (
                   <tr key={u.id} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-6 py-4 font-semibold text-secondary">
-                      {u.name}
-                    </td>
+                    <td className="px-6 py-4 font-semibold text-secondary">{u.name}</td>
                     <td className="px-6 py-4 text-gray-700">{u.email}</td>
                     <td className="px-6 py-4 text-gray-700">{u.phone}</td>
                     <td className="px-6 py-4">
@@ -494,31 +604,17 @@ export default function Users() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {u.role !== "admin" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 gap-1"
-                            onClick={() => setPermsFor(u)}
-                          >
+                          <Button size="sm" variant="ghost" className="h-8 gap-1" onClick={() => setPermsFor(u)}>
                             <Settings className="h-3.5 w-3.5" /> Permissions
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 gap-1"
-                          onClick={() => setResetFor(u)}
-                        >
+                        <Button size="sm" variant="ghost" className="h-8 gap-1" onClick={() => setResetFor(u)}>
                           <KeyRound className="h-3.5 w-3.5" /> Reset
                         </Button>
                         {u.role !== "admin" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 gap-1 text-destructive"
-                              >
+                              <Button size="sm" variant="ghost" className="h-8 gap-1 text-destructive">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </AlertDialogTrigger>
@@ -526,9 +622,8 @@ export default function Users() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Delete user?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will permanently remove {u.name}. Their
-                                  shipments will keep their tracking history but
-                                  lose the customer reference.
+                                  This will permanently remove {u.name}. Their shipments will keep
+                                  their tracking history but lose the customer reference.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
