@@ -219,7 +219,14 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   const email = parsed.data.email.toLowerCase().trim();
   const [user] = await db
-    .select()
+    .select({
+      id: usersTable.id,
+      email: usersTable.email,
+      passwordHash: usersTable.passwordHash,
+      role: usersTable.role,
+      name: usersTable.name,
+      phone: usersTable.phone,
+    })
     .from(usersTable)
     .where(eq(usersTable.email, email))
     .limit(1);
