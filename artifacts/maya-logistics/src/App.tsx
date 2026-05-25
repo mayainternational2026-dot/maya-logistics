@@ -23,7 +23,6 @@ const Users           = lazy(() => import("@/pages/admin/Users"));
 const Inquiries       = lazy(() => import("@/pages/admin/Inquiries"));
 const StaffActivity   = lazy(() => import("@/pages/admin/StaffActivity"));
 const CreateInvoice   = lazy(() => import("@/pages/admin/CreateInvoice"));
-const AddBooking      = lazy(() => import("@/pages/admin/AddBooking"));
 const Profile         = lazy(() => import("@/pages/Profile"));
 const Attendance      = lazy(() => import("@/pages/attendance/Attendance"));
 const AttendanceAdmin = lazy(() => import("@/pages/admin/AttendanceAdmin"));
@@ -92,9 +91,6 @@ function ProtectedShell() {
         </Route>
         <Route path="/admin/create-invoice">
           <ProtectedRoute allowedRoles={["admin", "staff"]}><CreateInvoice /></ProtectedRoute>
-        </Route>
-        <Route path="/admin/add-booking">
-          <ProtectedRoute allowedRoles={["admin", "staff"]}><AddBooking /></ProtectedRoute>
         </Route>
         <Route path="/attendance">
           <ProtectedRoute allowedRoles={["admin", "staff"]}><Attendance /></ProtectedRoute>

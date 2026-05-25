@@ -104,10 +104,7 @@ export function Navbar() {
                   </Button>
                 </>
               ) : (
-                <>
-                  <Button variant="ghost" onClick={() => setLocation("/login")}>Log In</Button>
-                  <Button onClick={() => setLocation("/register")} className="bg-primary hover:bg-primary/90 text-white">Register</Button>
-                </>
+                <Button onClick={() => setLocation("/register")} className="bg-primary hover:bg-primary/90 text-white">Register</Button>
               )}
             </div>
           </div>
@@ -141,7 +138,6 @@ export function Navbar() {
               </>
             ) : (
               <div className="space-y-3 pt-2">
-                <Button variant="outline" className="w-full justify-center" onClick={() => { setLocation("/login"); setIsOpen(false); }}>Log In</Button>
                 <Button className="w-full justify-center bg-primary hover:bg-primary/90" onClick={() => { setLocation("/register"); setIsOpen(false); }}>Register</Button>
               </div>
             )}
