@@ -139,15 +139,21 @@ router.get(
     }
 
     res.json({
-      trackingId: row.trackingId,
-      senderName: row.senderName,
-      receiverName: row.receiverName,
-      origin: row.origin,
-      destination: row.destination,
-      weight: Number(row.weight),
-      status: row.status,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
+      trackingId:        row.trackingId,
+      senderName:        row.senderName,
+      senderPhone:       row.senderPhone ?? null,
+      receiverName:      row.receiverName,
+      receiverPhone:     row.receiverPhone ?? null,
+      origin:            row.origin,
+      destination:       row.destination,
+      weight:            Number(row.weight),
+      freightMode:       row.freightMode ?? null,
+      productName:       row.productName ?? null,
+      quantity:          row.quantity ?? null,
+      estimatedDelivery: row.estimatedDelivery ? row.estimatedDelivery.toISOString() : null,
+      status:            row.status,
+      createdAt:         row.createdAt.toISOString(),
+      updatedAt:         row.updatedAt.toISOString(),
     });
   },
 );
