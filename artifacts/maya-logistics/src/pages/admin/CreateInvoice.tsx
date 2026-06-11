@@ -141,37 +141,41 @@ export default function CreateInvoice() {
   const [cd, setCd] = useState({
     name: "", whatsapp: "", email: "",
     productName: "", quantity: "1",
-    totalCost: "", paid: "",
+    shippingCost: "", customCost: "", serviceCharge: "",
+    paid: "",
   });
-  const cdDue = Math.max(0, (Number(cd.totalCost) || 0) - (Number(cd.paid) || 0));
+  const cdSubtotal = (Number(cd.shippingCost) || 0) + (Number(cd.customCost) || 0) + (Number(cd.serviceCharge) || 0);
+  const cdDue      = Math.max(0, cdSubtotal - (Number(cd.paid) || 0));
   const setcd = (e: React.ChangeEvent<HTMLInputElement>) =>
     setCd((p) => ({ ...p, [e.target.name]: e.target.value }));
   const openCd = () => {
     setCd({
-      name: form.billToName,
-      whatsapp: form.billToPhone,
-      email: form.billToEmail,
-      productName: form.productName,
-      quantity: form.productQuantity || "1",
-      totalCost: form.shippingCost,
-      paid: form.paidAmount,
+      name:          form.billToName,
+      whatsapp:      form.billToPhone,
+      email:         form.billToEmail,
+      productName:   form.productName,
+      quantity:      form.productQuantity || "1",
+      shippingCost:  form.shippingCost,
+      customCost:    form.customCost,
+      serviceCharge: form.serviceCharge,
+      paid:          form.paidAmount,
     });
     setCdOpen(true);
   };
   const saveCd = () => {
     setForm((p) => ({
       ...p,
-      billToName: cd.name,
-      billToPhone: cd.whatsapp,
-      billToEmail: cd.email,
-      productName: cd.productName,
+      billToName:    cd.name,
+      billToPhone:   cd.whatsapp,
+      billToEmail:   cd.email,
+      productName:   cd.productName,
       productQuantity: cd.quantity,
-      shippingCost: cd.totalCost,
-      customCost: "",
-      serviceCharge: "",
-      paidAmount: cd.paid,
+      shippingCost:  cd.shippingCost,
+      customCost:    cd.customCost,
+      serviceCharge: cd.serviceCharge,
+      paidAmount:    cd.paid,
       paymentTerms:
-        cd.paid && cd.totalCost && Number(cd.paid) >= Number(cd.totalCost)
+        cd.paid && cdSubtotal > 0 && Number(cd.paid) >= cdSubtotal
           ? "Payment Received"
           : "Due on Receipt",
     }));
@@ -886,42 +890,64 @@ export default function CreateInvoice() {
               </div>
             </div>
 
-            {/* Cost / payment */}
-            <div className="rounded-lg border border-green-100 bg-green-50/40 p-4 space-y-3">
-              <p className="text-[11px] font-bold text-green-600 uppercase tracking-widest">Cost &amp; Payment</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Total Cost (NPR)</label>
-                  <Input name="totalCost" type="number" min="0" step="0.01" value={cd.totalCost} onChange={setcd} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
+            {/* Cost breakdown */}
+            <div className="rounded-lg border border-orange-100 bg-orange-50/30 p-4 space-y-3">
+              <p className="text-[11px] font-bold text-orange-600 uppercase tracking-widest">Cost Breakdown</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="w-36 text-xs font-semibold text-gray-600 flex-shrink-0">🚚 Shipping Cost</label>
+                  <Input name="shippingCost" type="number" min="0" step="0.01" value={cd.shippingCost} onChange={setcd} placeholder="0.00" className="h-9 bg-white text-right font-mono flex-1" />
+                  <span className="text-xs text-gray-400 w-8">NPR</span>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Amount Paid (NPR)</label>
-                  <Input name="paid" type="number" min="0" step="0.01" value={cd.paid} onChange={setcd} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
+                <div className="flex items-center gap-2">
+                  <label className="w-36 text-xs font-semibold text-gray-600 flex-shrink-0">🛃 Custom Cost</label>
+                  <Input name="customCost" type="number" min="0" step="0.01" value={cd.customCost} onChange={setcd} placeholder="0.00" className="h-9 bg-white text-right font-mono flex-1" />
+                  <span className="text-xs text-gray-400 w-8">NPR</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="w-36 text-xs font-semibold text-gray-600 flex-shrink-0">⚙️ Service Charge</label>
+                  <Input name="serviceCharge" type="number" min="0" step="0.01" value={cd.serviceCharge} onChange={setcd} placeholder="0.00" className="h-9 bg-white text-right font-mono flex-1" />
+                  <span className="text-xs text-gray-400 w-8">NPR</span>
                 </div>
               </div>
 
-              {/* Due / Balance */}
-              <div className={cn(
-                "rounded-md px-4 py-3 flex items-center justify-between",
-                cdDue <= 0 && cd.totalCost
-                  ? "bg-green-100 border border-green-300"
-                  : "bg-red-50 border border-red-200",
-              )}>
-                <span className={cn(
-                  "text-sm font-bold",
-                  cdDue <= 0 && cd.totalCost ? "text-green-700" : "text-red-700",
+              {/* Subtotal row */}
+              <div className="flex items-center justify-between border-t border-orange-200 pt-2 mt-1">
+                <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">Subtotal</span>
+                <span className="text-sm font-bold font-mono text-orange-800">{formatNPR(cdSubtotal)}</span>
+              </div>
+            </div>
+
+            {/* Payment */}
+            <div className="rounded-lg border border-green-100 bg-green-50/40 p-4 space-y-3">
+              <p className="text-[11px] font-bold text-green-600 uppercase tracking-widest">Payment</p>
+              <div className="flex items-center gap-2">
+                <label className="w-36 text-xs font-semibold text-gray-600 flex-shrink-0">Amount Paid</label>
+                <Input name="paid" type="number" min="0" step="0.01" value={cd.paid} onChange={setcd} placeholder="0.00" className="h-9 bg-white text-right font-mono flex-1" />
+                <span className="text-xs text-gray-400 w-8">NPR</span>
+              </div>
+
+              {/* Total / Due / Balance summary */}
+              <div className="rounded-md border border-gray-200 overflow-hidden text-sm">
+                <div className="flex justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
+                  <span className="text-gray-500">Total Cost</span>
+                  <span className="font-mono font-semibold">{formatNPR(cdSubtotal)}</span>
+                </div>
+                <div className="flex justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
+                  <span className="text-green-600 font-medium">Amount Paid</span>
+                  <span className="font-mono font-semibold text-green-700">{formatNPR(Number(cd.paid) || 0)}</span>
+                </div>
+                <div className={cn(
+                  "flex justify-between px-3 py-2.5 font-bold",
+                  cdDue <= 0 && cdSubtotal > 0 ? "bg-green-100" : "bg-red-50",
                 )}>
-                  {cdDue <= 0 && cd.totalCost ? "✓ Paid in Full" : "Due / Remaining Balance"}
-                </span>
-                <span className={cn(
-                  "text-sm font-bold font-mono",
-                  cdDue <= 0 && cd.totalCost ? "text-green-700" : "text-red-700",
-                )}>
-                  {cdDue <= 0 && cd.totalCost
-                    ? "NPR 0.00"
-                    : `Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cdDue)}`
-                  }
-                </span>
+                  <span className={cdDue <= 0 && cdSubtotal > 0 ? "text-green-700" : "text-red-700"}>
+                    {cdDue <= 0 && cdSubtotal > 0 ? "✓ Paid in Full" : "Due / Remaining Balance"}
+                  </span>
+                  <span className={cn("font-mono", cdDue <= 0 && cdSubtotal > 0 ? "text-green-700" : "text-red-700")}>
+                    {cdDue <= 0 && cdSubtotal > 0 ? "NPR 0.00" : formatNPR(cdDue)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
