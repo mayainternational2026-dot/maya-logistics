@@ -5,16 +5,19 @@
  * Maya Import Export Logistic API
  * OpenAPI spec version: 0.1.0
  */
+import type { FreightMode } from "./freightMode";
 import type { ShipmentType } from "./shipmentType";
 
 export interface CreateShipmentBody {
   shipmentType?: ShipmentType;
+  freightMode?: FreightMode;
   /** @minLength 1 */
   senderName: string;
   senderPhone?: string;
   /** @minLength 1 */
   receiverName: string;
   receiverPhone?: string;
+  customerPhone?: string;
   /** @minLength 1 */
   origin: string;
   /** @minLength 1 */
@@ -27,6 +30,9 @@ export interface CreateShipmentBody {
   dimensions?: string;
   /** @minimum 0 */
   cost: number;
+  /** @minimum 0 */
+  paidAmount?: number;
+  estimatedDelivery?: Date;
   notes?: string;
   customerId?: number;
 }

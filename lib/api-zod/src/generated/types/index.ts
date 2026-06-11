@@ -20,6 +20,7 @@ export * from "./errorResponse";
 export * from "./expense";
 export * from "./forgotPasswordBody";
 export * from "./forgotPasswordResponse";
+export * from "./freightMode";
 export * from "./healthStatus";
 export * from "./inquiry";
 export * from "./listShipmentsParams";

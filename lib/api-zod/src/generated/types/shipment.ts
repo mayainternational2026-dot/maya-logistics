@@ -12,12 +12,16 @@ export interface Shipment {
   id: number;
   trackingId: string;
   shipmentType: ShipmentType;
+  /** @nullable */
+  freightMode?: string | null;
   senderName: string;
   /** @nullable */
   senderPhone?: string | null;
   receiverName: string;
   /** @nullable */
   receiverPhone?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
   origin: string;
   destination: string;
   /** @nullable */
@@ -28,6 +32,10 @@ export interface Shipment {
   /** @nullable */
   dimensions?: string | null;
   cost: number;
+  /** @nullable */
+  paidAmount?: number | null;
+  /** @nullable */
+  estimatedDelivery?: Date | null;
   status: ShipmentStatus;
   paid: boolean;
   /** @nullable */

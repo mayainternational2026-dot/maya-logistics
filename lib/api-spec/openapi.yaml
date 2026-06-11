@@ -978,6 +978,10 @@ components:
       type: string
       enum: [import, export]
 
+    FreightMode:
+      type: string
+      enum: [air, road, sea]
+
     Shipment:
       type: object
       properties:
@@ -987,6 +991,8 @@ components:
           type: string
         shipmentType:
           $ref: "#/components/schemas/ShipmentType"
+        freightMode:
+          type: ["string", "null"]
         senderName:
           type: string
         senderPhone:
@@ -994,6 +1000,8 @@ components:
         receiverName:
           type: string
         receiverPhone:
+          type: ["string", "null"]
+        customerPhone:
           type: ["string", "null"]
         origin:
           type: string
@@ -1009,6 +1017,11 @@ components:
           type: ["string", "null"]
         cost:
           type: number
+        paidAmount:
+          type: ["number", "null"]
+        estimatedDelivery:
+          type: ["string", "null"]
+          format: date-time
         status:
           $ref: "#/components/schemas/ShipmentStatus"
         paid:
@@ -1088,6 +1101,8 @@ components:
       properties:
         shipmentType:
           $ref: "#/components/schemas/ShipmentType"
+        freightMode:
+          $ref: "#/components/schemas/FreightMode"
         senderName:
           type: string
           minLength: 1
@@ -1097,6 +1112,8 @@ components:
           type: string
           minLength: 1
         receiverPhone:
+          type: string
+        customerPhone:
           type: string
         origin:
           type: string
@@ -1117,6 +1134,12 @@ components:
         cost:
           type: number
           minimum: 0
+        paidAmount:
+          type: number
+          minimum: 0
+        estimatedDelivery:
+          type: string
+          format: date-time
         notes:
           type: string
         customerId:
@@ -1128,6 +1151,8 @@ components:
       properties:
         shipmentType:
           $ref: "#/components/schemas/ShipmentType"
+        freightMode:
+          $ref: "#/components/schemas/FreightMode"
         senderName:
           type: string
         senderPhone:
@@ -1135,6 +1160,8 @@ components:
         receiverName:
           type: string
         receiverPhone:
+          type: string
+        customerPhone:
           type: string
         origin:
           type: string
@@ -1150,6 +1177,12 @@ components:
           type: string
         cost:
           type: number
+        paidAmount:
+          type: number
+          minimum: 0
+        estimatedDelivery:
+          type: string
+          format: date-time
         status:
           $ref: "#/components/schemas/ShipmentStatus"
         paid:

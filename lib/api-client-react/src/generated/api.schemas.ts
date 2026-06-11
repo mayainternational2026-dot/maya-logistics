@@ -137,16 +137,28 @@ export const ShipmentType = {
   export: "export",
 } as const;
 
+export type FreightMode = (typeof FreightMode)[keyof typeof FreightMode];
+
+export const FreightMode = {
+  air: "air",
+  road: "road",
+  sea: "sea",
+} as const;
+
 export interface Shipment {
   id: number;
   trackingId: string;
   shipmentType: ShipmentType;
+  /** @nullable */
+  freightMode?: string | null;
   senderName: string;
   /** @nullable */
   senderPhone?: string | null;
   receiverName: string;
   /** @nullable */
   receiverPhone?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
   origin: string;
   destination: string;
   /** @nullable */
@@ -157,6 +169,10 @@ export interface Shipment {
   /** @nullable */
   dimensions?: string | null;
   cost: number;
+  /** @nullable */
+  paidAmount?: number | null;
+  /** @nullable */
+  estimatedDelivery?: string | null;
   status: ShipmentStatus;
   paid: boolean;
   /** @nullable */
@@ -191,12 +207,14 @@ export interface PublicShipment {
 
 export interface CreateShipmentBody {
   shipmentType?: ShipmentType;
+  freightMode?: FreightMode;
   /** @minLength 1 */
   senderName: string;
   senderPhone?: string;
   /** @minLength 1 */
   receiverName: string;
   receiverPhone?: string;
+  customerPhone?: string;
   /** @minLength 1 */
   origin: string;
   /** @minLength 1 */
@@ -209,16 +227,21 @@ export interface CreateShipmentBody {
   dimensions?: string;
   /** @minimum 0 */
   cost: number;
+  /** @minimum 0 */
+  paidAmount?: number;
+  estimatedDelivery?: string;
   notes?: string;
   customerId?: number;
 }
 
 export interface UpdateShipmentBody {
   shipmentType?: ShipmentType;
+  freightMode?: FreightMode;
   senderName?: string;
   senderPhone?: string;
   receiverName?: string;
   receiverPhone?: string;
+  customerPhone?: string;
   origin?: string;
   destination?: string;
   productName?: string;
@@ -226,6 +249,9 @@ export interface UpdateShipmentBody {
   weight?: number;
   dimensions?: string;
   cost?: number;
+  /** @minimum 0 */
+  paidAmount?: number;
+  estimatedDelivery?: string;
   status?: ShipmentStatus;
   paid?: boolean;
   notes?: string;

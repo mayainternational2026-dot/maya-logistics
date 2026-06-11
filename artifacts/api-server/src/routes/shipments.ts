@@ -92,10 +92,12 @@ router.post(
       .values({
         trackingId,
         shipmentType: parsed.data.shipmentType ?? "export",
+        freightMode: parsed.data.freightMode ?? null,
         senderName: parsed.data.senderName.trim(),
         senderPhone: parsed.data.senderPhone?.trim() || null,
         receiverName: parsed.data.receiverName.trim(),
         receiverPhone: parsed.data.receiverPhone?.trim() || null,
+        customerPhone: parsed.data.customerPhone?.trim() || null,
         origin: parsed.data.origin.trim(),
         destination: parsed.data.destination.trim(),
         productName: parsed.data.productName?.trim() || null,
@@ -103,6 +105,8 @@ router.post(
         weight: String(parsed.data.weight),
         dimensions: parsed.data.dimensions?.trim() || null,
         cost: String(parsed.data.cost),
+        paidAmount: parsed.data.paidAmount != null ? String(parsed.data.paidAmount) : null,
+        estimatedDelivery: parsed.data.estimatedDelivery ? new Date(parsed.data.estimatedDelivery) : null,
         status: "pending",
         notes: parsed.data.notes?.trim() || null,
         customerId,
@@ -203,10 +207,12 @@ router.patch(
 
     const updates: Record<string, unknown> = {};
     if (body.data.shipmentType != null) updates.shipmentType = body.data.shipmentType;
+    if (body.data.freightMode != null) updates.freightMode = body.data.freightMode;
     if (body.data.senderName != null) updates.senderName = body.data.senderName.trim();
     if (body.data.senderPhone != null) updates.senderPhone = body.data.senderPhone.trim() || null;
     if (body.data.receiverName != null) updates.receiverName = body.data.receiverName.trim();
     if (body.data.receiverPhone != null) updates.receiverPhone = body.data.receiverPhone.trim() || null;
+    if (body.data.customerPhone != null) updates.customerPhone = body.data.customerPhone.trim() || null;
     if (body.data.origin != null) updates.origin = body.data.origin.trim();
     if (body.data.destination != null) updates.destination = body.data.destination.trim();
     if (body.data.productName != null) updates.productName = body.data.productName.trim() || null;
@@ -214,6 +220,8 @@ router.patch(
     if (body.data.weight != null) updates.weight = String(body.data.weight);
     if (body.data.dimensions != null) updates.dimensions = body.data.dimensions.trim() || null;
     if (body.data.cost != null) updates.cost = String(body.data.cost);
+    if (body.data.paidAmount != null) updates.paidAmount = String(body.data.paidAmount);
+    if (body.data.estimatedDelivery != null) updates.estimatedDelivery = new Date(body.data.estimatedDelivery);
     if (body.data.status != null) updates.status = body.data.status;
     if (body.data.paid != null) {
       updates.paid = body.data.paid;

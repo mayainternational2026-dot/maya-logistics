@@ -7,10 +7,12 @@ export interface SerializedShipment {
   id: number;
   trackingId: string;
   shipmentType: "import" | "export";
+  freightMode: string | null;
   senderName: string;
   senderPhone: string | null;
   receiverName: string;
   receiverPhone: string | null;
+  customerPhone: string | null;
   origin: string;
   destination: string;
   productName: string | null;
@@ -18,6 +20,8 @@ export interface SerializedShipment {
   weight: number;
   dimensions: string | null;
   cost: number;
+  paidAmount: number | null;
+  estimatedDelivery: string | null;
   status: "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
   paid: boolean;
   paidAt: string | null;
@@ -60,10 +64,12 @@ export async function serializeShipments(
       id: row.id,
       trackingId: row.trackingId,
       shipmentType: (row.shipmentType ?? "export") as "import" | "export",
+      freightMode: row.freightMode ?? null,
       senderName: row.senderName,
       senderPhone: row.senderPhone ?? null,
       receiverName: row.receiverName,
       receiverPhone: row.receiverPhone ?? null,
+      customerPhone: row.customerPhone ?? null,
       origin: row.origin,
       destination: row.destination,
       productName: row.productName ?? null,
@@ -71,6 +77,8 @@ export async function serializeShipments(
       weight: Number(row.weight),
       dimensions: row.dimensions ?? null,
       cost: Number(row.cost),
+      paidAmount: row.paidAmount != null ? Number(row.paidAmount) : null,
+      estimatedDelivery: row.estimatedDelivery ? row.estimatedDelivery.toISOString() : null,
       status: row.status as SerializedShipment["status"],
       paid: row.paid,
       paidAt: row.paidAt ? row.paidAt.toISOString() : null,

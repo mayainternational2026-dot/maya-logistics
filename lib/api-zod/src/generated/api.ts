@@ -243,10 +243,12 @@ export const ListShipmentsResponseItem = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
   shipmentType: zod.enum(["import", "export"]),
+  freightMode: zod.string().nullish(),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
   productName: zod.string().nullish(),
@@ -254,6 +256,8 @@ export const ListShipmentsResponseItem = zod.object({
   weight: zod.number(),
   dimensions: zod.string().nullish(),
   cost: zod.number(),
+  paidAmount: zod.number().nullish(),
+  estimatedDelivery: zod.coerce.date().nullish(),
   status: zod.enum([
     "pending",
     "collected",
@@ -284,12 +288,16 @@ export const createShipmentBodyWeightMin = 0;
 
 export const createShipmentBodyCostMin = 0;
 
+export const createShipmentBodyPaidAmountMin = 0;
+
 export const CreateShipmentBody = zod.object({
   shipmentType: zod.enum(["import", "export"]).optional(),
+  freightMode: zod.enum(["air", "road", "sea"]).optional(),
   senderName: zod.string().min(1),
   senderPhone: zod.string().optional(),
   receiverName: zod.string().min(1),
   receiverPhone: zod.string().optional(),
+  customerPhone: zod.string().optional(),
   origin: zod.string().min(1),
   destination: zod.string().min(1),
   productName: zod.string().optional(),
@@ -297,6 +305,8 @@ export const CreateShipmentBody = zod.object({
   weight: zod.number().min(createShipmentBodyWeightMin),
   dimensions: zod.string().optional(),
   cost: zod.number().min(createShipmentBodyCostMin),
+  paidAmount: zod.number().min(createShipmentBodyPaidAmountMin).optional(),
+  estimatedDelivery: zod.coerce.date().optional(),
   notes: zod.string().optional(),
   customerId: zod.number().optional(),
 });
@@ -309,10 +319,12 @@ export const GetShipmentResponse = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
   shipmentType: zod.enum(["import", "export"]),
+  freightMode: zod.string().nullish(),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
   productName: zod.string().nullish(),
@@ -320,6 +332,8 @@ export const GetShipmentResponse = zod.object({
   weight: zod.number(),
   dimensions: zod.string().nullish(),
   cost: zod.number(),
+  paidAmount: zod.number().nullish(),
+  estimatedDelivery: zod.coerce.date().nullish(),
   status: zod.enum([
     "pending",
     "collected",
@@ -345,12 +359,16 @@ export const UpdateShipmentParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const updateShipmentBodyPaidAmountMin = 0;
+
 export const UpdateShipmentBody = zod.object({
   shipmentType: zod.enum(["import", "export"]).optional(),
+  freightMode: zod.enum(["air", "road", "sea"]).optional(),
   senderName: zod.string().optional(),
   senderPhone: zod.string().optional(),
   receiverName: zod.string().optional(),
   receiverPhone: zod.string().optional(),
+  customerPhone: zod.string().optional(),
   origin: zod.string().optional(),
   destination: zod.string().optional(),
   productName: zod.string().optional(),
@@ -358,6 +376,8 @@ export const UpdateShipmentBody = zod.object({
   weight: zod.number().optional(),
   dimensions: zod.string().optional(),
   cost: zod.number().optional(),
+  paidAmount: zod.number().min(updateShipmentBodyPaidAmountMin).optional(),
+  estimatedDelivery: zod.coerce.date().optional(),
   status: zod
     .enum([
       "pending",
@@ -377,10 +397,12 @@ export const UpdateShipmentResponse = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
   shipmentType: zod.enum(["import", "export"]),
+  freightMode: zod.string().nullish(),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
   productName: zod.string().nullish(),
@@ -388,6 +410,8 @@ export const UpdateShipmentResponse = zod.object({
   weight: zod.number(),
   dimensions: zod.string().nullish(),
   cost: zod.number(),
+  paidAmount: zod.number().nullish(),
+  estimatedDelivery: zod.coerce.date().nullish(),
   status: zod.enum([
     "pending",
     "collected",
@@ -464,10 +488,12 @@ export const GetRecentShipmentsResponseItem = zod.object({
   id: zod.number(),
   trackingId: zod.string(),
   shipmentType: zod.enum(["import", "export"]),
+  freightMode: zod.string().nullish(),
   senderName: zod.string(),
   senderPhone: zod.string().nullish(),
   receiverName: zod.string(),
   receiverPhone: zod.string().nullish(),
+  customerPhone: zod.string().nullish(),
   origin: zod.string(),
   destination: zod.string(),
   productName: zod.string().nullish(),
@@ -475,6 +501,8 @@ export const GetRecentShipmentsResponseItem = zod.object({
   weight: zod.number(),
   dimensions: zod.string().nullish(),
   cost: zod.number(),
+  paidAmount: zod.number().nullish(),
+  estimatedDelivery: zod.coerce.date().nullish(),
   status: zod.enum([
     "pending",
     "collected",
