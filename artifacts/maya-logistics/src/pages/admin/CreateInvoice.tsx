@@ -9,12 +9,19 @@ import {
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import {
   ArrowLeft, Printer, FileText, RefreshCw,
   Upload, ImageIcon, Zap, CheckCircle2, ExternalLink,
-  User, Package, CreditCard, Truck,
+  User, Package, CreditCard, Truck, UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -128,6 +135,49 @@ export default function CreateInvoice() {
   const [form, setForm]               = useState<InvoiceForm>(emptyForm);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedId, setGeneratedId] = useState<string | null>(null);
+
+  /* ── Customer Details Dialog ── */
+  const [cdOpen, setCdOpen] = useState(false);
+  const [cd, setCd] = useState({
+    name: "", whatsapp: "", email: "",
+    productName: "", quantity: "1",
+    totalCost: "", paid: "",
+  });
+  const cdDue = Math.max(0, (Number(cd.totalCost) || 0) - (Number(cd.paid) || 0));
+  const setcd = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setCd((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const openCd = () => {
+    setCd({
+      name: form.billToName,
+      whatsapp: form.billToPhone,
+      email: form.billToEmail,
+      productName: form.productName,
+      quantity: form.productQuantity || "1",
+      totalCost: form.shippingCost,
+      paid: form.paidAmount,
+    });
+    setCdOpen(true);
+  };
+  const saveCd = () => {
+    setForm((p) => ({
+      ...p,
+      billToName: cd.name,
+      billToPhone: cd.whatsapp,
+      billToEmail: cd.email,
+      productName: cd.productName,
+      productQuantity: cd.quantity,
+      shippingCost: cd.totalCost,
+      customCost: "",
+      serviceCharge: "",
+      paidAmount: cd.paid,
+      paymentTerms:
+        cd.paid && cd.totalCost && Number(cd.paid) >= Number(cd.totalCost)
+          ? "Payment Received"
+          : "Due on Receipt",
+    }));
+    setCdOpen(false);
+    toast({ title: "Customer details saved", description: "The invoice has been updated." });
+  };
 
   const fromShipment = (() => {
     const tid = new URLSearchParams(search).get("trackingId") ?? "";
@@ -468,11 +518,20 @@ export default function CreateInvoice() {
               {fromShipment ? "Invoice — Edit & Print" : "Create Invoice"}
             </h1>
           </div>
-          {fromShipment && (
-            <span className="text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded-full px-3 py-1 font-medium">
-              Pre-filled · {form.trackingId}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {fromShipment && (
+              <span className="text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded-full px-3 py-1 font-medium">
+                Pre-filled · {form.trackingId}
+              </span>
+            )}
+            <Button
+              onClick={openCd}
+              className="gap-2 bg-primary hover:bg-primary/90 text-white shadow-md"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Customer Details
+            </Button>
+          </div>
         </div>
 
         {/* Success banner */}
@@ -779,6 +838,102 @@ export default function CreateInvoice() {
       <div className="print-only">
         <InvoiceDoc />
       </div>
+
+      {/* ══════════════════════════════════════════
+          CUSTOMER DETAILS DIALOG
+      ══════════════════════════════════════════ */}
+      <Dialog open={cdOpen} onOpenChange={setCdOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Add Customer Details
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Customer info */}
+            <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
+              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Customer Info</p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Customer Name</label>
+                <Input name="name" value={cd.name} onChange={setcd} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">WhatsApp Number</label>
+                  <Input name="whatsapp" value={cd.whatsapp} onChange={setcd} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Email ID</label>
+                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@example.com" className="h-10 bg-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* Product info */}
+            <div className="rounded-lg border border-purple-100 bg-purple-50/40 p-4 space-y-3">
+              <p className="text-[11px] font-bold text-purple-600 uppercase tracking-widest">Product Info</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Product Name</label>
+                  <Input name="productName" value={cd.productName} onChange={setcd} placeholder="Electronics, Clothes…" className="h-10 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Quantity</label>
+                  <Input name="quantity" type="number" min="1" value={cd.quantity} onChange={setcd} placeholder="1" className="h-10 bg-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* Cost / payment */}
+            <div className="rounded-lg border border-green-100 bg-green-50/40 p-4 space-y-3">
+              <p className="text-[11px] font-bold text-green-600 uppercase tracking-widest">Cost &amp; Payment</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Total Cost (NPR)</label>
+                  <Input name="totalCost" type="number" min="0" step="0.01" value={cd.totalCost} onChange={setcd} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Amount Paid (NPR)</label>
+                  <Input name="paid" type="number" min="0" step="0.01" value={cd.paid} onChange={setcd} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
+                </div>
+              </div>
+
+              {/* Due / Balance */}
+              <div className={cn(
+                "rounded-md px-4 py-3 flex items-center justify-between",
+                cdDue <= 0 && cd.totalCost
+                  ? "bg-green-100 border border-green-300"
+                  : "bg-red-50 border border-red-200",
+              )}>
+                <span className={cn(
+                  "text-sm font-bold",
+                  cdDue <= 0 && cd.totalCost ? "text-green-700" : "text-red-700",
+                )}>
+                  {cdDue <= 0 && cd.totalCost ? "✓ Paid in Full" : "Due / Remaining Balance"}
+                </span>
+                <span className={cn(
+                  "text-sm font-bold font-mono",
+                  cdDue <= 0 && cd.totalCost ? "text-green-700" : "text-red-700",
+                )}>
+                  {cdDue <= 0 && cd.totalCost
+                    ? "NPR 0.00"
+                    : `Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cdDue)}`
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCdOpen(false)}>Cancel</Button>
+            <Button onClick={saveCd} className="bg-primary hover:bg-primary/90 text-white gap-2">
+              <CheckCircle2 className="h-4 w-4" /> Save to Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <style>{`
         @media print {
