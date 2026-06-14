@@ -141,6 +141,7 @@ export default function CreateInvoice() {
   const [cd, setCd] = useState({
     name: "", whatsapp: "", email: "",
     productName: "", quantity: "1",
+    origin: "Kathmandu, Nepal", destination: "",
     shippingCost: "", customCost: "", serviceCharge: "",
     paid: "",
   });
@@ -155,6 +156,8 @@ export default function CreateInvoice() {
       email:         form.billToEmail,
       productName:   form.productName,
       quantity:      form.productQuantity || "1",
+      origin:        form.origin || "Kathmandu, Nepal",
+      destination:   form.destination,
       shippingCost:  form.shippingCost,
       customCost:    form.customCost,
       serviceCharge: form.serviceCharge,
@@ -165,22 +168,33 @@ export default function CreateInvoice() {
   const saveCd = () => {
     setForm((p) => ({
       ...p,
-      billToName:    cd.name,
-      billToPhone:   cd.whatsapp,
-      billToEmail:   cd.email,
-      productName:   cd.productName,
+      billToName:      cd.name,
+      billToPhone:     cd.whatsapp,
+      billToEmail:     cd.email,
+      /* customer is the receiver; Maya is the sender */
+      receiverName:    cd.name,
+      receiverPhone:   cd.whatsapp,
+      senderName:      p.senderName || "Maya Import Export Logistic",
+      origin:          cd.origin,
+      destination:     cd.destination,
+      productName:     cd.productName,
       productQuantity: cd.quantity,
-      shippingCost:  cd.shippingCost,
-      customCost:    cd.customCost,
-      serviceCharge: cd.serviceCharge,
-      paidAmount:    cd.paid,
+      shippingCost:    cd.shippingCost,
+      customCost:      cd.customCost,
+      serviceCharge:   cd.serviceCharge,
+      paidAmount:      cd.paid,
       paymentTerms:
         cd.paid && cdSubtotal > 0 && Number(cd.paid) >= cdSubtotal
           ? "Payment Received"
           : "Due on Receipt",
     }));
     setCdOpen(false);
-    toast({ title: "Customer details saved", description: "The invoice has been updated." });
+    toast({
+      title: "Customer details saved",
+      description: cd.destination
+        ? "All fields saved — click Generate Tracking ID to create the shipment."
+        : "Saved! Add a destination then click Generate Tracking ID.",
+    });
   };
 
   const fromShipment = (() => {
@@ -855,12 +869,16 @@ export default function CreateInvoice() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            {/* Customer info */}
+          <div className="space-y-3 py-1 max-h-[72vh] overflow-y-auto pr-1">
+
+            {/* ① Customer Info */}
             <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
-              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Customer Info</p>
+              <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest flex items-center gap-1">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold">1</span>
+                Customer Info
+              </p>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Customer Name</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Customer Name <span className="text-primary">*</span></label>
                 <Input name="name" value={cd.name} onChange={setcd} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -869,23 +887,44 @@ export default function CreateInvoice() {
                   <Input name="whatsapp" value={cd.whatsapp} onChange={setcd} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Email ID</label>
-                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@example.com" className="h-10 bg-white" />
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Gmail / Email ID</label>
+                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@gmail.com" className="h-10 bg-white" />
                 </div>
               </div>
             </div>
 
-            {/* Product info */}
+            {/* ② Product Info */}
             <div className="rounded-lg border border-purple-100 bg-purple-50/40 p-4 space-y-3">
-              <p className="text-[11px] font-bold text-purple-600 uppercase tracking-widest">Product Info</p>
+              <p className="text-[10px] font-extrabold text-purple-600 uppercase tracking-widest flex items-center gap-1">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold">2</span>
+                Product Info
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Product Name</label>
                   <Input name="productName" value={cd.productName} onChange={setcd} placeholder="Electronics, Clothes…" className="h-10 bg-white" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Quantity</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Product Quantity</label>
                   <Input name="quantity" type="number" min="1" value={cd.quantity} onChange={setcd} placeholder="1" className="h-10 bg-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* ③ Shipment Route — required for tracking ID */}
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50/50 p-4 space-y-3">
+              <p className="text-[10px] font-extrabold text-yellow-700 uppercase tracking-widest flex items-center gap-1">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-yellow-500 text-white text-[9px] font-bold">3</span>
+                Shipment Route <span className="text-[9px] normal-case font-normal text-yellow-600 ml-1">(needed for Tracking ID)</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Origin</label>
+                  <Input name="origin" value={cd.origin} onChange={setcd} placeholder="Kathmandu, Nepal" className="h-10 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Destination <span className="text-primary">*</span></label>
+                  <Input name="destination" value={cd.destination} onChange={setcd} placeholder="Tokyo, Japan" className="h-10 bg-white" />
                 </div>
               </div>
             </div>
