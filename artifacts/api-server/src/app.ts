@@ -105,6 +105,37 @@ const registerOtpLimiter = rateLimit({
   message: { error: "Too many registration attempts. Please try again later." },
 });
 
+// Per-email gate: max 3 OTP emails per hour for the same address regardless of IP.
+// This prevents a bot rotating IPs from bombing a single inbox.
+const registerOtpEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 3,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (typeof req.body?.email === "string" ? req.body.email : "")
+      .toLowerCase()
+      .trim();
+    return email ? `reg-email:${email}` : `reg-ip:${req.ip ?? "unknown"}`;
+  },
+  message: { error: "Too many OTP requests for this email address. Please try again later." },
+});
+
+// Per-email gate for password reset: max 3 emails per hour for the same address.
+const forgotPasswordEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 3,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (typeof req.body?.email === "string" ? req.body.email : "")
+      .toLowerCase()
+      .trim();
+    return email ? `fp-email:${email}` : `fp-ip:${req.ip ?? "unknown"}`;
+  },
+  message: { error: "Too many password reset requests for this email address. Please try again later." },
+});
+
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   limit: 10,
@@ -122,9 +153,11 @@ const inquiryLimiter = rateLimit({
 });
 
 app.use("/api/auth/forgot-password", forgotPasswordLimiter);
+app.use("/api/auth/forgot-password", forgotPasswordEmailLimiter);
 app.use("/api/auth/reset-password", resetPasswordLimiter);
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register-otp", registerOtpLimiter);
+app.use("/api/auth/register-otp", registerOtpEmailLimiter);
 app.use("/api/contact", contactLimiter);
 
 // Only rate-limit the public POST; admin GET/PATCH are authenticated
