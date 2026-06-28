@@ -18,6 +18,12 @@ uri = "file://artifacts/maya-logistics/public/hero-road.png"
 type = "image"
 title = "freight trucks on mountain road"
 
+[[generated]]
+id = "xEV1ISinCW8WP3lv0K5xZ"
+uri = "file://artifacts/maya-mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "w_evcbXAbxafCrahQdnW3"
 uri = "file://maya-php.zip"
