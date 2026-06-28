@@ -97,9 +97,38 @@ const loginLimiter = rateLimit({
   message: { error: "Too many login attempts. Please try again later." },
 });
 
+const registerOtpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many registration attempts. Please try again later." },
+});
+
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many messages sent. Please try again later." },
+});
+
+const inquiryLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many inquiry submissions. Please try again later." },
+});
+
 app.use("/api/auth/forgot-password", forgotPasswordLimiter);
 app.use("/api/auth/reset-password", resetPasswordLimiter);
 app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register-otp", registerOtpLimiter);
+app.use("/api/contact", contactLimiter);
+
+// Only rate-limit the public POST; admin GET/PATCH are authenticated
+app.post("/api/inquiries", inquiryLimiter);
 
 app.use("/api", router);
 
