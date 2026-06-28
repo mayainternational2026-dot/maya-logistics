@@ -20,7 +20,7 @@ import {
   verifyPassword,
   loadUserById,
 } from "../lib/auth";
-import { sendOtpEmail, sendRegistrationOtpEmail } from "../lib/mailer";
+import { sendOtpEmail, sendRegistrationOtpEmail, isEmailConfigured } from "../lib/mailer";
 
 const router: IRouter = Router();
 
@@ -302,11 +302,16 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
 
   req.log.info({ email, hasUser: !!user }, "Password reset OTP generated");
 
+  // Only expose OTP in response when running in development AND no email
+  // provider is configured (i.e. SMTP secrets are absent). Once GMAIL or
+  // Resend credentials are set the code is delivered by email and must
+  // not appear in the response regardless of NODE_ENV.
   const isDev = process.env["NODE_ENV"] !== "production";
+  const showFallbackOtp = isDev && user && !isEmailConfigured();
   res.json({
     message:
       "If that email is registered, a one-time code has been sent to your inbox.",
-    ...(isDev && user ? { otp } : {}),
+    ...(showFallbackOtp ? { otp } : {}),
   });
 });
 

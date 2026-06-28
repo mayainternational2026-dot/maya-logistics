@@ -95,6 +95,16 @@ function createTransport() {
   });
 }
 
+/**
+ * Returns true when at least one SMTP provider is configured.
+ * Use this to decide whether to fall back to returning OTP codes in API
+ * responses (dev-only fallback when no mailer is wired up).
+ */
+export function isEmailConfigured(): boolean {
+  if (process.env.RESEND_API_KEY) return true;
+  return !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
+}
+
 function getSenderAddress(): string {
   // When using Resend, must send from a verified domain
   // Use onboarding@resend.dev for testing or a verified domain
