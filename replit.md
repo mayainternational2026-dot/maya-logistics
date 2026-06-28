@@ -74,6 +74,37 @@ Workflows are configured automatically:
 
 To re-seed the database: `pnpm --filter @workspace/scripts run seed`
 
+## Deployment & Custom Domain
+
+The production deployment runs on Replit Autoscale and is reachable at:
+
+- **Replit URL**: `https://logistics-hub-mayainternatio1.replit.app` (always serves latest published code)
+- **Target custom domain**: `www.mayaimportexport.com`
+
+### DNS migration status (verified 2026-06-28)
+
+As of June 28 2026, `www.mayaimportexport.com` still resolves to Railway (IP `69.46.46.79`).
+The Replit deployment resolves to IP `172.24.0.5`.
+
+To complete the cutover, two manual steps are required:
+
+**Step 1 — Add domain in Replit**
+1. Open this project → **Deploy** → **Custom Domains**
+2. Click **Add domain** → enter `www.mayaimportexport.com`
+3. Copy the **CNAME target** Replit shows (e.g. `logistics-hub-mayainternatio1.replit.app`)
+
+**Step 2 — Update DNS at the registrar**
+Log in to the registrar where `mayaimportexport.com` was purchased and set:
+
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | `www` | *(Replit CNAME target from Step 1)* |
+
+Remove or replace any existing `www` CNAME pointing to Railway.
+
+DNS propagation takes 5–30 minutes. Replit will automatically provision TLS once the CNAME resolves.
+After this is done, every future Replit publish will update the live site automatically.
+
 ## Notes
 
 - OTP delivery is currently demo-only — codes are returned in the API response and surfaced in the UI. Wire up SMTP or an SMS gateway to send real codes.
