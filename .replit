@@ -43,3 +43,6 @@ channel = "stable-25_05"
 [userenv.production]
 ADMIN_EMAIL = "chapagainsirish@gmail.com"
 ADMIN_PASSWORD = "Sirish@@2054"
+
+[userenv.development]
+GITHUB_PAT_PUSH = "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"
