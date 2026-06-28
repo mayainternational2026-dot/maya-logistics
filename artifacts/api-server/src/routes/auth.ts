@@ -210,6 +210,9 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   res.status(201).json({ user: sessionUser });
 });
 
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_LOCKOUT_MINUTES = 15;
+
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
   if (!parsed.success) {
@@ -226,6 +229,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       role: usersTable.role,
       name: usersTable.name,
       phone: usersTable.phone,
+      failedLoginAttempts: usersTable.failedLoginAttempts,
+      lockedUntil: usersTable.lockedUntil,
     })
     .from(usersTable)
     .where(eq(usersTable.email, email))
@@ -236,11 +241,53 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const ok = await verifyPassword(parsed.data.password, user.passwordHash);
-  if (!ok) {
-    res.status(401).json({ error: "Invalid email or password" });
+  // Check account lockout
+  const now = new Date();
+  if (user.lockedUntil && user.lockedUntil > now) {
+    const minutesLeft = Math.ceil(
+      (user.lockedUntil.getTime() - now.getTime()) / 60_000,
+    );
+    req.log.warn({ email, minutesLeft }, "Login attempt on locked account");
+    res.status(429).json({
+      error: `Too many failed attempts, try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}`,
+    });
     return;
   }
+
+  const ok = await verifyPassword(parsed.data.password, user.passwordHash);
+  if (!ok) {
+    // Atomically increment the failure counter and conditionally set the lockout
+    // in a single UPDATE … RETURNING so concurrent requests cannot race past
+    // the threshold by all reading the same stale counter value.
+    const lockoutTime = new Date(now.getTime() + LOGIN_LOCKOUT_MINUTES * 60_000);
+    const [updated] = await db
+      .update(usersTable)
+      .set({
+        failedLoginAttempts: sql`${usersTable.failedLoginAttempts} + 1`,
+        lockedUntil: sql`CASE WHEN ${usersTable.failedLoginAttempts} + 1 >= ${LOGIN_MAX_ATTEMPTS} THEN ${lockoutTime} ELSE ${usersTable.lockedUntil} END`,
+      })
+      .where(eq(usersTable.id, user.id))
+      .returning({
+        failedLoginAttempts: usersTable.failedLoginAttempts,
+        lockedUntil: usersTable.lockedUntil,
+      });
+
+    if (updated?.lockedUntil && updated.lockedUntil > now) {
+      req.log.warn({ email, attempts: updated.failedLoginAttempts }, "Account locked after too many failed login attempts");
+      res.status(429).json({
+        error: `Too many failed attempts, try again in ${LOGIN_LOCKOUT_MINUTES} minutes`,
+      });
+    } else {
+      res.status(401).json({ error: "Invalid email or password" });
+    }
+    return;
+  }
+
+  // Successful login — reset failure counter and any lockout
+  await db
+    .update(usersTable)
+    .set({ failedLoginAttempts: 0, lockedUntil: null })
+    .where(eq(usersTable.id, user.id));
 
   req.session.userId = user.id;
   const sessionUser = await loadUserById(user.id);
