@@ -242,9 +242,22 @@ export default function CreateInvoice() {
 
   /* ── Generate Tracking ID ── */
   const handleGenerateTracking = () => {
-    if (!form.senderName.trim() || !form.receiverName.trim() || !form.origin.trim() || !form.destination.trim()) {
-      toast({ title: "Missing fields", description: "Please fill Sender Name, Receiver Name, Origin and Destination.", variant: "destructive" });
+    if (!form.origin.trim() || !form.destination.trim()) {
+      toast({ title: "Missing route", description: "Please fill Origin and Destination before generating.", variant: "destructive" });
       return;
+    }
+
+    /* auto-fill sender / receiver if the user skipped those fields */
+    const effectiveSender   = form.senderName.trim()   || CO.name;
+    const effectiveReceiver = form.receiverName.trim()  || form.billToName.trim() || form.destination.trim();
+
+    /* keep the form in sync so the invoice preview updates too */
+    if (!form.senderName.trim() || !form.receiverName.trim()) {
+      setForm((p) => ({
+        ...p,
+        senderName:   p.senderName.trim()   || CO.name,
+        receiverName: p.receiverName.trim()  || p.billToName.trim() || p.destination.trim(),
+      }));
     }
 
     const notesParts = [
@@ -255,9 +268,9 @@ export default function CreateInvoice() {
     createShipment.mutate(
       {
         data: {
-          senderName:        form.senderName.trim(),
+          senderName:        effectiveSender,
           senderPhone:       form.senderPhone.trim() || undefined,
-          receiverName:      form.receiverName.trim(),
+          receiverName:      effectiveReceiver,
           receiverPhone:     form.receiverPhone.trim() || undefined,
           customerPhone:     form.billToPhone.trim() || undefined,
           origin:            form.origin.trim(),
@@ -671,6 +684,80 @@ export default function CreateInvoice() {
             </div>
           </div>
 
+          {/* ── COST BREAKDOWN ── moved here so it's immediately visible ── */}
+          <div className="rounded-xl border-2 border-orange-200 bg-orange-50/30 p-5">
+            <h2 className="text-[11px] font-extrabold text-orange-700 uppercase tracking-widest mb-1 flex items-center gap-2">
+              💰 Cost Breakdown
+            </h2>
+            <p className="text-xs text-orange-600 mb-4">Enter each charge — Total Amount is calculated automatically.</p>
+
+            {/* Three cost input fields */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <Lbl t="Shipping Cost (NPR)" />
+                <Input name="shippingCost" type="number" min="0" step="0.01" value={form.shippingCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" />
+              </div>
+              <div>
+                <Lbl t="Custom / Duties Cost (NPR)" />
+                <Input name="customCost" type="number" min="0" step="0.01" value={form.customCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" />
+              </div>
+              <div>
+                <Lbl t="Service Charge (NPR)" />
+                <Input name="serviceCharge" type="number" min="0" step="0.01" value={form.serviceCharge} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" />
+              </div>
+            </div>
+
+            {/* Live summary: rows + bold Total */}
+            <div className="rounded-lg border border-orange-200 overflow-hidden text-sm">
+              <div className="flex justify-between items-center px-4 py-2.5 bg-white border-b border-orange-100">
+                <span className="text-gray-600">🚚 Shipping Cost</span>
+                <span className="font-mono font-semibold text-gray-800">{formatNPR(shipping)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5 bg-orange-50/30 border-b border-orange-100">
+                <span className="text-gray-600">🛃 Custom / Duties Cost</span>
+                <span className="font-mono font-semibold text-gray-800">{formatNPR(customs)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-2.5 bg-white border-b border-orange-200">
+                <span className="text-gray-600">⚙️ Service Charge</span>
+                <span className="font-mono font-semibold text-gray-800">{formatNPR(service)}</span>
+              </div>
+              <div className="flex justify-between items-center px-4 py-3 bg-blue-600 text-white">
+                <span className="font-bold text-base">Total Amount</span>
+                <span className="font-bold font-mono text-base">{formatNPR(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── PAYMENT SUMMARY ── */}
+          <div className="rounded-xl border-2 border-green-100 bg-green-50/30 p-5">
+            <SecHead icon={CreditCard} title="Payment Summary" color="green" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Lbl t="Total Amount (NPR)" />
+                <div className="h-10 flex items-center px-3 rounded-md border border-gray-200 bg-gray-50 text-sm font-bold font-mono text-secondary">
+                  {formatNPR(total)}
+                </div>
+              </div>
+              <div>
+                <Lbl t="Amount Paid (NPR)" />
+                <Input name="paidAmount" type="number" min="0" step="0.01" value={form.paidAmount} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
+              </div>
+              <div>
+                <Lbl t="Amount Due (NPR)" />
+                <div className={cn(
+                  "h-10 flex items-center px-3 rounded-md border text-sm font-bold font-mono",
+                  due <= 0 && total > 0
+                    ? "border-green-300 bg-green-50 text-green-700"
+                    : due > 0
+                      ? "border-red-200 bg-red-50 text-red-700"
+                      : "border-gray-200 bg-gray-50 text-gray-400",
+                )}>
+                  {total > 0 && due <= 0 ? "✓ Paid in Full" : formatNPR(due)}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* ── SHIPPING OPTIONS ── */}
           <div>
             <h2 className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-3">Shipping Options</h2>
@@ -719,89 +806,6 @@ export default function CreateInvoice() {
                   <option>Net 15</option>
                   <option>Net 30</option>
                 </select>
-              </div>
-            </div>
-          </div>
-
-          {/* ── COST BREAKDOWN ── */}
-          <div className="rounded-xl border-2 border-orange-100 bg-orange-50/20 p-5">
-            <h2 className="text-[11px] font-extrabold text-orange-700 uppercase tracking-widest mb-4">Cost Breakdown</h2>
-
-            {/* Three cost fields */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-              <div>
-                <Lbl t="Shipping Cost (NPR)" />
-                <Input name="shippingCost" type="number" min="0" step="0.01" value={form.shippingCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
-              </div>
-              <div>
-                <Lbl t="Custom / Duties Cost (NPR)" />
-                <Input name="customCost" type="number" min="0" step="0.01" value={form.customCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
-              </div>
-              <div>
-                <Lbl t="Service Charge (NPR)" />
-                <Input name="serviceCharge" type="number" min="0" step="0.01" value={form.serviceCharge} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
-              </div>
-            </div>
-
-            {/* Summary table */}
-            <div className="rounded-lg border border-orange-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr className="border-b border-orange-100 bg-white">
-                    <td className="px-4 py-2.5 text-gray-600">Shipping Cost</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-gray-800">{formatNPR(shipping)}</td>
-                  </tr>
-                  <tr className="border-b border-orange-100 bg-orange-50/30">
-                    <td className="px-4 py-2.5 text-gray-600">Custom / Duties Cost</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-gray-800">{formatNPR(customs)}</td>
-                  </tr>
-                  <tr className="border-b border-orange-100 bg-white">
-                    <td className="px-4 py-2.5 text-gray-600">Service Charge</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-gray-800">{formatNPR(service)}</td>
-                  </tr>
-                  <tr className="border-b-2 border-orange-200 bg-orange-50">
-                    <td className="px-4 py-3 font-bold text-orange-800">Subtotal</td>
-                    <td className="px-4 py-3 text-right font-bold font-mono text-orange-800">{formatNPR(subtotal)}</td>
-                  </tr>
-                  <tr className="border-b border-gray-100 bg-gray-50">
-                    <td className="px-4 py-2.5 text-gray-500">Tax / VAT</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-gray-400">NPR 0.00</td>
-                  </tr>
-                  <tr className="bg-blue-600 text-white">
-                    <td className="px-4 py-3 font-bold text-sm">Total</td>
-                    <td className="px-4 py-3 text-right font-bold font-mono text-sm">{formatNPR(total)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* ── PAYMENT SUMMARY ── */}
-          <div className="rounded-xl border-2 border-green-100 bg-green-50/30 p-5">
-            <SecHead icon={CreditCard} title="Payment Summary" color="green" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Lbl t="Total Amount (NPR)" />
-                <div className="h-10 flex items-center px-3 rounded-md border border-gray-200 bg-gray-50 text-sm font-bold font-mono text-secondary">
-                  {formatNPR(total)}
-                </div>
-              </div>
-              <div>
-                <Lbl t="Amount Paid (NPR)" />
-                <Input name="paidAmount" type="number" min="0" step="0.01" value={form.paidAmount} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" />
-              </div>
-              <div>
-                <Lbl t="Amount Due (NPR)" />
-                <div className={cn(
-                  "h-10 flex items-center px-3 rounded-md border text-sm font-bold font-mono",
-                  due <= 0 && total > 0
-                    ? "border-green-300 bg-green-50 text-green-700"
-                    : due > 0
-                      ? "border-red-200 bg-red-50 text-red-700"
-                      : "border-gray-200 bg-gray-50 text-gray-400",
-                )}>
-                  {total > 0 && due <= 0 ? "✓ Paid in Full" : formatNPR(due)}
-                </div>
               </div>
             </div>
           </div>
