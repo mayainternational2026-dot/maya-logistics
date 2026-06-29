@@ -147,4 +147,23 @@ export const api = {
     if (!res.ok) throw new Error("Shipment not found");
     return res.json();
   },
+
+  async createInquiry(body: {
+    name: string;
+    email: string;
+    phone?: string;
+    productDetails: string;
+    productLink?: string;
+    quantity?: number;
+    estimatedCost?: number;
+  }): Promise<void> {
+    const res = await apiFetch("/inquiries", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error ?? "Submission failed");
+    }
+  },
 };
