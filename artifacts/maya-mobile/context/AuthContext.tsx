@@ -3,9 +3,11 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
-import { api, clearSession, type User } from "@/lib/api";
+import { Alert } from "react-native";
+import { api, clearSession, setUnauthorizedHandler, type User } from "@/lib/api";
 
 interface AuthContextValue {
   user: User | null;
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialCheckDone = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -31,7 +34,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
+    setUnauthorizedHandler(() => {
+      if (!initialCheckDone.current) {
+        return;
+      }
+      setUser(null);
+      Alert.alert(
+        "Session Expired",
+        "Your session has expired. Please log in again.",
+        [{ text: "OK" }],
+      );
+    });
+
+    refresh().finally(() => {
+      initialCheckDone.current = true;
+      setLoading(false);
+    });
+
+    return () => {
+      setUnauthorizedHandler(() => {});
+    };
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string) => {

@@ -1,12 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const COOKIE_KEY = "maya_session_cookie";
-const DOMAIN_KEY = "maya_api_domain";
 
 let _baseUrl: string | null = null;
+let _onUnauthorized: (() => void) | null = null;
 
 export function setApiBaseUrl(url: string) {
   _baseUrl = url;
+}
+
+export function setUnauthorizedHandler(fn: () => void) {
+  _onUnauthorized = fn;
 }
 
 function getBaseUrl(): string {
@@ -36,14 +40,18 @@ export async function clearSession() {
   } catch {}
 }
 
-async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+async function apiFetch(
+  path: string,
+  options: RequestInit & { _skipUnauthorized?: boolean } = {},
+): Promise<Response> {
+  const { _skipUnauthorized, ...fetchOptions } = options;
   const base = getBaseUrl();
   const url = `${base}/api${path}`;
   const cookie = await getStoredCookie();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(options.headers as Record<string, string> | undefined),
+    ...(fetchOptions.headers as Record<string, string> | undefined),
   };
 
   if (cookie) {
@@ -51,7 +59,7 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<Respon
   }
 
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers,
     credentials: "include",
   });
@@ -62,6 +70,11 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<Respon
     if (sessionPart) {
       await storeCookie(sessionPart);
     }
+  }
+
+  if (response.status === 401 && !_skipUnauthorized) {
+    await clearSession();
+    _onUnauthorized?.();
   }
 
   return response;
@@ -108,20 +121,29 @@ export const api = {
     const res = await apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    });
+      _skipUnauthorized: true,
+    } as RequestInit & { _skipUnauthorized: boolean });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Login failed");
     return data;
   },
 
   async logout(): Promise<void> {
-    await apiFetch("/auth/logout", { method: "POST" });
+    await apiFetch("/auth/logout", {
+      method: "POST",
+      _skipUnauthorized: true,
+    } as RequestInit & { _skipUnauthorized: boolean });
     await clearSession();
   },
 
   async getCurrentUser(): Promise<User | null> {
-    const res = await apiFetch("/auth/me");
-    if (!res.ok) return null;
+    const res = await apiFetch("/auth/me", { _skipUnauthorized: true } as RequestInit & {
+      _skipUnauthorized: boolean;
+    });
+    if (!res.ok) {
+      await clearSession();
+      return null;
+    }
     const data = await res.json();
     return data.user ?? null;
   },
