@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { ArrowLeft, Upload, Download } from "lucide-react";
 
 export default function NewShipment() {
@@ -49,7 +50,7 @@ export default function NewShipment() {
     senderPhone: user?.phone ?? "",
     receiverName: "",
     receiverPhone: "",
-    origin: "Kathmandu, Nepal",
+    origin: "",
     destination: "",
     productName: "",
     quantity: "",
@@ -63,8 +64,26 @@ export default function NewShipment() {
   const set = <K extends keyof typeof form>(k: K, v: string) =>
     setForm((s) => ({ ...s, [k]: v }));
 
+  type FormErrors = { senderName?: string; receiverName?: string; origin?: string; destination?: string; weight?: string; cost?: string };
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  function validate(): boolean {
+    const errs: FormErrors = {};
+    if (!form.senderName.trim())   errs.senderName   = "Sender name is required";
+    if (!form.receiverName.trim()) errs.receiverName = "Receiver name is required";
+    if (!form.origin.trim())       errs.origin       = "Origin is required";
+    if (!form.destination.trim())  errs.destination  = "Destination is required";
+    if (!form.weight)              errs.weight       = "Weight is required";
+    else if (Number(form.weight) <= 0) errs.weight   = "Weight must be greater than 0";
+    if (!form.cost)                errs.cost         = "Cost is required";
+    else if (Number(form.cost) < 0)    errs.cost     = "Cost cannot be negative";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     const payload: any = {
       shipmentType: form.shipmentType,
       senderName: form.senderName,
@@ -135,6 +154,8 @@ export default function NewShipment() {
 
       <form
         onSubmit={handleSubmit}
+        autoComplete="off"
+        noValidate
         className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-6"
       >
         {isStaff && (
@@ -190,14 +211,14 @@ export default function NewShipment() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
-              Sender name
+              Sender name <span className="text-red-500">*</span>
             </label>
             <Input
-              required
               value={form.senderName}
-              onChange={(e) => set("senderName", e.target.value)}
-              className="h-11 bg-gray-50"
+              onChange={(e) => { set("senderName", e.target.value); setErrors((p) => ({ ...p, senderName: undefined })); }}
+              className={cn("h-11 bg-gray-50", errors.senderName && "border-red-400 focus-visible:ring-red-400")}
             />
+            {errors.senderName && <p className="mt-1 text-xs text-red-600">{errors.senderName}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
@@ -211,14 +232,14 @@ export default function NewShipment() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
-              Receiver name
+              Receiver name <span className="text-red-500">*</span>
             </label>
             <Input
-              required
               value={form.receiverName}
-              onChange={(e) => set("receiverName", e.target.value)}
-              className="h-11 bg-gray-50"
+              onChange={(e) => { set("receiverName", e.target.value); setErrors((p) => ({ ...p, receiverName: undefined })); }}
+              className={cn("h-11 bg-gray-50", errors.receiverName && "border-red-400 focus-visible:ring-red-400")}
             />
+            {errors.receiverName && <p className="mt-1 text-xs text-red-600">{errors.receiverName}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
@@ -232,26 +253,27 @@ export default function NewShipment() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
-              Origin
+              Origin <span className="text-red-500">*</span>
             </label>
             <Input
-              required
               value={form.origin}
-              onChange={(e) => set("origin", e.target.value)}
-              className="h-11 bg-gray-50"
+              onChange={(e) => { set("origin", e.target.value); setErrors((p) => ({ ...p, origin: undefined })); }}
+              placeholder="e.g. Kathmandu, Nepal"
+              className={cn("h-11 bg-gray-50", errors.origin && "border-red-400 focus-visible:ring-red-400")}
             />
+            {errors.origin && <p className="mt-1 text-xs text-red-600">{errors.origin}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
-              Destination
+              Destination <span className="text-red-500">*</span>
             </label>
             <Input
-              required
               value={form.destination}
-              onChange={(e) => set("destination", e.target.value)}
+              onChange={(e) => { set("destination", e.target.value); setErrors((p) => ({ ...p, destination: undefined })); }}
               placeholder="e.g. Berlin, Germany"
-              className="h-11 bg-gray-50"
+              className={cn("h-11 bg-gray-50", errors.destination && "border-red-400 focus-visible:ring-red-400")}
             />
+            {errors.destination && <p className="mt-1 text-xs text-red-600">{errors.destination}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
@@ -279,17 +301,17 @@ export default function NewShipment() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
-              Weight (kg)
+              Weight (kg) <span className="text-red-500">*</span>
             </label>
             <Input
-              required
               type="number"
               step="0.01"
               min="0"
               value={form.weight}
-              onChange={(e) => set("weight", e.target.value)}
-              className="h-11 bg-gray-50"
+              onChange={(e) => { set("weight", e.target.value); setErrors((p) => ({ ...p, weight: undefined })); }}
+              className={cn("h-11 bg-gray-50", errors.weight && "border-red-400 focus-visible:ring-red-400")}
             />
+            {errors.weight && <p className="mt-1 text-xs text-red-600">{errors.weight}</p>}
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
@@ -304,17 +326,17 @@ export default function NewShipment() {
           </div>
           <div>
             <label className="block text-sm font-semibold text-secondary mb-2">
-              Cost (NPR)
+              Cost (NPR) <span className="text-red-500">*</span>
             </label>
             <Input
-              required
               type="number"
               step="1"
               min="0"
               value={form.cost}
-              onChange={(e) => set("cost", e.target.value)}
-              className="h-11 bg-gray-50"
+              onChange={(e) => { set("cost", e.target.value); setErrors((p) => ({ ...p, cost: undefined })); }}
+              className={cn("h-11 bg-gray-50", errors.cost && "border-red-400 focus-visible:ring-red-400")}
             />
+            {errors.cost && <p className="mt-1 text-xs text-red-600">{errors.cost}</p>}
           </div>
         </div>
 

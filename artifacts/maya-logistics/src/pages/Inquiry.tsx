@@ -160,7 +160,7 @@ export default function InquiryPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        <form onSubmit={handleSubmit} noValidate autoComplete="off" className="space-y-6">
           {/* Contact info */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider">Your Details</h3>

@@ -55,6 +55,7 @@ interface InvoiceForm {
   destination: string;
   productName: string;
   productQuantity: string;
+  perPicCost: string;
   weight: string;
   freightMode: "air" | "road" | "sea";
   estimatedDelivery: string;
@@ -79,10 +80,11 @@ const emptyForm: InvoiceForm = {
   senderPhone: "",
   receiverName: "",
   receiverPhone: "",
-  origin: "Kathmandu, Nepal",
+  origin: "",
   destination: "",
   productName: "",
-  productQuantity: "1",
+  productQuantity: "",
+  perPicCost: "",
   weight: "",
   freightMode: "air",
   estimatedDelivery: "",
@@ -140,8 +142,8 @@ export default function CreateInvoice() {
   const [cdOpen, setCdOpen] = useState(false);
   const [cd, setCd] = useState({
     name: "", whatsapp: "", email: "",
-    productName: "", quantity: "1",
-    origin: "Kathmandu, Nepal", destination: "",
+    productName: "", quantity: "", perPicCost: "",
+    origin: "", destination: "",
     shippingCost: "", customCost: "", serviceCharge: "",
     paid: "",
   });
@@ -155,8 +157,9 @@ export default function CreateInvoice() {
       whatsapp:      form.billToPhone,
       email:         form.billToEmail,
       productName:   form.productName,
-      quantity:      form.productQuantity || "1",
-      origin:        form.origin || "Kathmandu, Nepal",
+      quantity:      form.productQuantity,
+      perPicCost:    form.perPicCost,
+      origin:        form.origin,
       destination:   form.destination,
       shippingCost:  form.shippingCost,
       customCost:    form.customCost,
@@ -179,6 +182,7 @@ export default function CreateInvoice() {
       destination:     cd.destination,
       productName:     cd.productName,
       productQuantity: cd.quantity,
+      perPicCost:      cd.perPicCost,
       shippingCost:    cd.shippingCost,
       customCost:      cd.customCost,
       serviceCharge:   cd.serviceCharge,
@@ -224,13 +228,14 @@ export default function CreateInvoice() {
   const removeLogo = () => { setForm((p) => ({ ...p, logoUrl: "" })); if (logoInputRef.current) logoInputRef.current.value = ""; };
 
   /* ── cost maths ── */
-  const shipping  = n(form.shippingCost);
-  const customs   = n(form.customCost);
-  const service   = n(form.serviceCharge);
-  const subtotal  = shipping + customs + service;
-  const total     = subtotal;
-  const paid      = n(form.paidAmount);
-  const due       = Math.max(0, total - paid);
+  const shipping     = n(form.shippingCost);
+  const customs      = n(form.customCost);
+  const service      = n(form.serviceCharge);
+  const productCost  = n(form.productQuantity) * n(form.perPicCost);
+  const subtotal     = shipping + customs + service + productCost;
+  const total        = subtotal;
+  const paid         = n(form.paidAmount);
+  const due          = Math.max(0, total - paid);
 
   const invoiceDateDisplay = form.invoiceDate
     ? format(new Date(form.invoiceDate + "T00:00:00"), "MMMM d, yyyy")
@@ -457,6 +462,17 @@ export default function CreateInvoice() {
           </tr>
         </thead>
         <tbody>
+          {productCost > 0 && (
+            <tr style={{ background: "white", borderBottom: `1px solid ${BORDER}` }}>
+              <td style={{ padding: "9px 12px", fontSize: 12 }}>
+                Product Cost
+                {form.productQuantity && form.perPicCost
+                  ? ` (${form.productQuantity} × Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n(form.perPicCost))})`
+                  : ""}
+              </td>
+              <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(productCost)}</td>
+            </tr>
+          )}
           <tr style={{ background: LIGHT, borderBottom: `1px solid ${BORDER}` }}>
             <td style={{ padding: "9px 12px", fontSize: 12 }}>Shipping Cost</td>
             <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(shipping)}</td>
@@ -619,9 +635,9 @@ export default function CreateInvoice() {
           <div className="rounded-xl border-2 border-blue-100 bg-blue-50/30 p-5">
             <SecHead icon={User} title="Customer Details" color="blue" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><Lbl t="Customer Name" /><Input name="billToName" value={form.billToName} onChange={set} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" /></div>
-              <div><Lbl t="Phone Number" /><Input name="billToPhone" value={form.billToPhone} onChange={set} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" /></div>
-              <div><Lbl t="Email ID" /><Input name="billToEmail" type="email" value={form.billToEmail} onChange={set} placeholder="customer@example.com" className="h-10 bg-white" /></div>
+              <div><Lbl t="Customer Name" /><Input name="billToName" value={form.billToName} onChange={set} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Phone Number" /><Input name="billToPhone" value={form.billToPhone} onChange={set} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Email ID" /><Input name="billToEmail" type="email" value={form.billToEmail} onChange={set} placeholder="customer@example.com" className="h-10 bg-white" autoComplete="off" /></div>
             </div>
           </div>
 
@@ -632,13 +648,13 @@ export default function CreateInvoice() {
               Fill these fields then click <strong>Generate Tracking ID</strong> — the ID will appear on the invoice automatically.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><Lbl t="Sender Name" req /><Input name="senderName" value={form.senderName} onChange={set} placeholder="Full name" className="h-10 bg-white" /></div>
-              <div><Lbl t="Sender Phone" /><Input name="senderPhone" value={form.senderPhone} onChange={set} placeholder="+977 98…" className="h-10 bg-white" /></div>
-              <div><Lbl t="Receiver Name" req /><Input name="receiverName" value={form.receiverName} onChange={set} placeholder="Full name" className="h-10 bg-white" /></div>
-              <div><Lbl t="Receiver Phone" /><Input name="receiverPhone" value={form.receiverPhone} onChange={set} placeholder="+81 90…" className="h-10 bg-white" /></div>
-              <div><Lbl t="Origin" req /><Input name="origin" value={form.origin} onChange={set} placeholder="Kathmandu, Nepal" className="h-10 bg-white" /></div>
-              <div><Lbl t="Destination" req /><Input name="destination" value={form.destination} onChange={set} placeholder="Tokyo, Japan" className="h-10 bg-white" /></div>
-              <div><Lbl t="Weight (kg)" /><Input name="weight" type="number" step="0.01" min="0" value={form.weight} onChange={set} placeholder="5" className="h-10 bg-white" /></div>
+              <div><Lbl t="Sender Name" req /><Input name="senderName" value={form.senderName} onChange={set} placeholder="Full name" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Sender Phone" /><Input name="senderPhone" value={form.senderPhone} onChange={set} placeholder="+977 98…" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Receiver Name" req /><Input name="receiverName" value={form.receiverName} onChange={set} placeholder="Full name" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Receiver Phone" /><Input name="receiverPhone" value={form.receiverPhone} onChange={set} placeholder="+81 90…" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Origin" req /><Input name="origin" value={form.origin} onChange={set} placeholder="Kathmandu, Nepal" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Destination" req /><Input name="destination" value={form.destination} onChange={set} placeholder="Tokyo, Japan" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Weight (kg)" /><Input name="weight" type="number" step="0.01" min="0" value={form.weight} onChange={set} placeholder="5" className="h-10 bg-white" autoComplete="off" /></div>
 
               {/* Generate button */}
               <div className="flex items-end">
@@ -678,9 +694,18 @@ export default function CreateInvoice() {
           {/* ── PRODUCT DETAILS ── */}
           <div className="rounded-xl border-2 border-purple-100 bg-purple-50/30 p-5">
             <SecHead icon={Package} title="Product Details" color="purple" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><Lbl t="Product Name" /><Input name="productName" value={form.productName} onChange={set} placeholder="e.g. Electronics, Clothes…" className="h-10 bg-white" /></div>
-              <div><Lbl t="Quantity" /><Input name="productQuantity" type="number" min="1" value={form.productQuantity} onChange={set} placeholder="1" className="h-10 bg-white" /></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div><Lbl t="Product Name" /><Input name="productName" value={form.productName} onChange={set} placeholder="e.g. Electronics, Clothes…" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Quantity (Pcs)" /><Input name="productQuantity" type="number" min="1" value={form.productQuantity} onChange={set} placeholder="e.g. 10" className="h-10 bg-white" autoComplete="off" /></div>
+              <div>
+                <Lbl t="Per Pic Cost (NPR)" />
+                <Input name="perPicCost" type="number" min="0" step="0.01" value={form.perPicCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" autoComplete="off" />
+                {n(form.productQuantity) > 0 && n(form.perPicCost) > 0 && (
+                  <p className="mt-1 text-xs text-purple-600 font-semibold">
+                    Product Cost: {formatNPR(n(form.productQuantity) * n(form.perPicCost))}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -695,20 +720,26 @@ export default function CreateInvoice() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <Lbl t="Shipping Cost (NPR)" />
-                <Input name="shippingCost" type="number" min="0" step="0.01" value={form.shippingCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" />
+                <Input name="shippingCost" type="number" min="0" step="0.01" value={form.shippingCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" autoComplete="off" />
               </div>
               <div>
                 <Lbl t="Custom / Duties Cost (NPR)" />
-                <Input name="customCost" type="number" min="0" step="0.01" value={form.customCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" />
+                <Input name="customCost" type="number" min="0" step="0.01" value={form.customCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" autoComplete="off" />
               </div>
               <div>
                 <Lbl t="Service Charge (NPR)" />
-                <Input name="serviceCharge" type="number" min="0" step="0.01" value={form.serviceCharge} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" />
+                <Input name="serviceCharge" type="number" min="0" step="0.01" value={form.serviceCharge} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono text-base" autoComplete="off" />
               </div>
             </div>
 
             {/* Live summary: rows + bold Total */}
             <div className="rounded-lg border border-orange-200 overflow-hidden text-sm">
+              {productCost > 0 && (
+                <div className="flex justify-between items-center px-4 py-2.5 bg-purple-50/40 border-b border-orange-100">
+                  <span className="text-gray-600">📦 Product Cost ({form.productQuantity} × {formatNPR(n(form.perPicCost))})</span>
+                  <span className="font-mono font-semibold text-gray-800">{formatNPR(productCost)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center px-4 py-2.5 bg-white border-b border-orange-100">
                 <span className="text-gray-600">🚚 Shipping Cost</span>
                 <span className="font-mono font-semibold text-gray-800">{formatNPR(shipping)}</span>
@@ -883,16 +914,16 @@ export default function CreateInvoice() {
               </p>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Customer Name <span className="text-primary">*</span></label>
-                <Input name="name" value={cd.name} onChange={setcd} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" />
+                <Input name="name" value={cd.name} onChange={setcd} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" autoComplete="off" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">WhatsApp Number</label>
-                  <Input name="whatsapp" value={cd.whatsapp} onChange={setcd} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" />
+                  <Input name="whatsapp" value={cd.whatsapp} onChange={setcd} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" autoComplete="off" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Gmail / Email ID</label>
-                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@gmail.com" className="h-10 bg-white" />
+                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@gmail.com" className="h-10 bg-white" autoComplete="off" />
                 </div>
               </div>
             </div>
@@ -903,14 +934,18 @@ export default function CreateInvoice() {
                 <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold">2</span>
                 Product Info
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Product Name</label>
-                  <Input name="productName" value={cd.productName} onChange={setcd} placeholder="Electronics, Clothes…" className="h-10 bg-white" />
+                  <Input name="productName" value={cd.productName} onChange={setcd} placeholder="Electronics…" className="h-10 bg-white" autoComplete="off" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Product Quantity</label>
-                  <Input name="quantity" type="number" min="1" value={cd.quantity} onChange={setcd} placeholder="1" className="h-10 bg-white" />
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Quantity (Pcs)</label>
+                  <Input name="quantity" type="number" min="1" value={cd.quantity} onChange={setcd} placeholder="e.g. 10" className="h-10 bg-white" autoComplete="off" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Per Pic Cost (NPR)</label>
+                  <Input name="perPicCost" type="number" min="0" step="0.01" value={cd.perPicCost} onChange={setcd} placeholder="0.00" className="h-10 bg-white text-right font-mono" autoComplete="off" />
                 </div>
               </div>
             </div>
@@ -924,11 +959,11 @@ export default function CreateInvoice() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Origin</label>
-                  <Input name="origin" value={cd.origin} onChange={setcd} placeholder="Kathmandu, Nepal" className="h-10 bg-white" />
+                  <Input name="origin" value={cd.origin} onChange={setcd} placeholder="Kathmandu, Nepal" className="h-10 bg-white" autoComplete="off" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Destination <span className="text-primary">*</span></label>
-                  <Input name="destination" value={cd.destination} onChange={setcd} placeholder="Tokyo, Japan" className="h-10 bg-white" />
+                  <Input name="destination" value={cd.destination} onChange={setcd} placeholder="Tokyo, Japan" className="h-10 bg-white" autoComplete="off" />
                 </div>
               </div>
             </div>

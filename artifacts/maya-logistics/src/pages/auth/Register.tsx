@@ -135,7 +135,7 @@ export default function Register() {
           </ul>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+        <form className="space-y-4" onSubmit={handleSubmit} noValidate autoComplete="off">
 
           {/* Full Name */}
           <div>

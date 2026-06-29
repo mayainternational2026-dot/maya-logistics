@@ -126,7 +126,7 @@ export default function Login() {
             {isStaff ? "Staff & Admin Portal" : "Customer Portal"}
           </p>
 
-          <form onSubmit={handleSubmit} autoComplete="on" noValidate className="space-y-4">
+          <form onSubmit={handleSubmit} autoComplete="off" noValidate className="space-y-4">
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
@@ -141,7 +141,7 @@ export default function Login() {
                   onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined })); }}
                   className={cn("pl-10 h-12 bg-gray-50", errors.email && "border-red-400 focus-visible:ring-red-400")}
                   placeholder="Enter your email"
-                  autoComplete="email"
+                  autoComplete="off"
                 />
               </div>
               <FieldError msg={errors.email} />
@@ -161,7 +161,7 @@ export default function Login() {
                   onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined })); }}
                   className={cn("pl-10 pr-12 h-12 bg-gray-50", errors.password && "border-red-400 focus-visible:ring-red-400")}
                   placeholder="Enter your password"
-                  autoComplete="current-password"
+                  autoComplete="off"
                 />
                 {password.length > 0 && (
                   <button

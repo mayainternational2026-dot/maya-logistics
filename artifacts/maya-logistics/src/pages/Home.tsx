@@ -314,15 +314,15 @@ export default function Home() {
                 </motion.div>
               </div>
 
-              <form onSubmit={handleContact} className="space-y-4 bg-gray-50 p-8 rounded-2xl shadow-sm border border-gray-100">
+              <form onSubmit={handleContact} autoComplete="off" noValidate className="space-y-4 bg-gray-50 p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h3 className="text-xl font-bold text-secondary mb-4">Send a Message</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-sm font-medium">Name</label><Input name="name" required placeholder="John Doe" className="bg-white" /></div>
-                  <div className="space-y-2"><label className="text-sm font-medium">Email</label><Input name="email" type="email" required placeholder="john@example.com" className="bg-white" /></div>
+                  <div className="space-y-2"><label className="text-sm font-medium">Name <span className="text-red-500">*</span></label><Input name="name" required autoComplete="off" placeholder="John Doe" className="bg-white" /></div>
+                  <div className="space-y-2"><label className="text-sm font-medium">Email <span className="text-red-500">*</span></label><Input name="email" type="email" required autoComplete="off" placeholder="john@example.com" className="bg-white" /></div>
                 </div>
-                <div className="space-y-2"><label className="text-sm font-medium">Phone</label><Input name="phone" placeholder="+977..." className="bg-white" /></div>
+                <div className="space-y-2"><label className="text-sm font-medium">Phone</label><Input name="phone" autoComplete="off" placeholder="+977..." className="bg-white" /></div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Message</label>
+                  <label className="text-sm font-medium">Message <span className="text-red-500">*</span></label>
                   <textarea name="message" required placeholder="How can we help you?" className="w-full min-h-[120px] rounded-md border border-input bg-white px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
                 </div>
                 <Button type="submit" disabled={contactMutation.isPending} className="w-full bg-secondary hover:bg-secondary/90 text-white">
