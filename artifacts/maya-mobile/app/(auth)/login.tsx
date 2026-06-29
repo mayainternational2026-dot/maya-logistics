@@ -146,6 +146,17 @@ export default function LoginScreen() {
               <Text style={styles.loginBtnText}>Sign in</Text>
             )}
           </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/(auth)/register" as any)}
+            style={styles.signUpLink}
+            testID="go-to-register"
+          >
+            <Text style={styles.signUpLinkText}>
+              New to Maya?{" "}
+              <Text style={styles.signUpLinkBold}>Create account</Text>
+            </Text>
+          </Pressable>
         </View>
 
         <View style={styles.dividerRow}>
@@ -415,6 +426,19 @@ function makeStyles(colors: ReturnType<typeof useColors>, insets: ReturnType<typ
       backgroundColor: colors.crimson,
       alignItems: "center",
       justifyContent: "center",
+    },
+    signUpLink: {
+      marginTop: 16,
+      alignItems: "center",
+    },
+    signUpLinkText: {
+      fontSize: 14,
+      fontFamily: "Inter_400Regular",
+      color: colors.mutedForeground,
+    },
+    signUpLinkBold: {
+      fontFamily: "Inter_600SemiBold",
+      color: colors.crimson,
     },
   });
 }

@@ -170,6 +170,36 @@ export const api = {
     return res.json();
   },
 
+  async registerOtp(body: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+  }): Promise<{ message: string }> {
+    const res = await apiFetch("/auth/register-otp", {
+      method: "POST",
+      body: JSON.stringify(body),
+      _skipUnauthorized: true,
+    } as RequestInit & { _skipUnauthorized: boolean });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Registration failed");
+    return data;
+  },
+
+  async registerVerify(body: {
+    email: string;
+    otp: string;
+  }): Promise<{ user: User }> {
+    const res = await apiFetch("/auth/register-verify", {
+      method: "POST",
+      body: JSON.stringify(body),
+      _skipUnauthorized: true,
+    } as RequestInit & { _skipUnauthorized: boolean });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Verification failed");
+    return data;
+  },
+
   async createInquiry(body: {
     name: string;
     email: string;
