@@ -15,10 +15,15 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.maya.logistics.mobile"
+      "bundleIdentifier": "com.maya.logistics.mobile",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Maya Logistics needs access to your photo library so you can attach product photos to your inquiry.",
+        "NSCameraUsageDescription": "Maya Logistics needs camera access so you can take product photos to include with your inquiry."
+      }
     },
     "android": {
       "package": "com.maya.logistics.mobile",
+      "permissions": ["READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#0F1729"

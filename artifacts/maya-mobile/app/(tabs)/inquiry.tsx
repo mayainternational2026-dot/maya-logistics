@@ -1,8 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
+  ActionSheetIOS,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,6 +19,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/lib/api";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
+
+const MAX_IMAGES = 4;
+
+type AttachedImage = { name: string; dataUrl: string; uri: string };
 
 type FormErrors = {
   name?: string;
@@ -40,6 +47,7 @@ export default function InquiryScreen() {
     quantity: "",
     estimatedCost: "",
   });
+  const [images, setImages] = useState<AttachedImage[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -47,6 +55,78 @@ export default function InquiryScreen() {
   const set = (field: keyof typeof form) => (text: string) => {
     setForm((prev) => ({ ...prev, [field]: text }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const pickFromSource = async (useCamera: boolean) => {
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) return;
+
+    if (useCamera) {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission required", "Allow camera access to take product photos.");
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.7, base64: true });
+      if (result.canceled || !result.assets[0]?.base64) return;
+      const asset = result.assets[0];
+      const mime = asset.mimeType ?? "image/jpeg";
+      const ext = mime.split("/")[1] ?? "jpg";
+      const name = asset.fileName ?? `photo_${Date.now()}.${ext}`;
+      const dataUrl = `data:${mime};base64,${asset.base64}`;
+      setImages((prev) => [...prev, { name, dataUrl, uri: asset.uri }].slice(0, MAX_IMAGES));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission required", "Allow access to your photo library to attach product photos.");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
+        quality: 0.7,
+        base64: true,
+      });
+      if (result.canceled) return;
+      const newImages: AttachedImage[] = result.assets
+        .filter((a) => a.base64)
+        .map((a) => {
+          const mime = a.mimeType ?? "image/jpeg";
+          const ext = mime.split("/")[1] ?? "jpg";
+          const name = a.fileName ?? `photo_${Date.now()}.${ext}`;
+          return { name, dataUrl: `data:${mime};base64,${a.base64}`, uri: a.uri };
+        });
+      setImages((prev) => [...prev, ...newImages].slice(0, MAX_IMAGES));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleAddPhoto = () => {
+    if (images.length >= MAX_IMAGES) {
+      Alert.alert("Limit reached", `You can attach up to ${MAX_IMAGES} photos.`);
+      return;
+    }
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ["Cancel", "Take Photo", "Choose from Library"], cancelButtonIndex: 0 },
+        (idx) => {
+          if (idx === 1) pickFromSource(true);
+          else if (idx === 2) pickFromSource(false);
+        },
+      );
+    } else {
+      Alert.alert("Add Photo", "Choose a source", [
+        { text: "Camera", onPress: () => pickFromSource(true) },
+        { text: "Photo Library", onPress: () => pickFromSource(false) },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const validate = (): boolean => {
@@ -78,6 +158,7 @@ export default function InquiryScreen() {
         productLink: form.productLink.trim() || undefined,
         quantity: form.quantity ? Number(form.quantity) : undefined,
         estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : undefined,
+        images: images.length > 0 ? images.map(({ name, dataUrl }) => ({ name, dataUrl })) : undefined,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSubmitted(true);
@@ -104,6 +185,7 @@ export default function InquiryScreen() {
       quantity: "",
       estimatedCost: "",
     });
+    setImages([]);
     setErrors({});
   };
 
@@ -327,6 +409,50 @@ export default function InquiryScreen() {
               />
             </View>
           </View>
+
+          <View style={styles.fieldGroup}>
+            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+              Product Photos{" "}
+              <Text style={[styles.optionalText, { color: colors.mutedForeground }]}>
+                (optional, up to {MAX_IMAGES})
+              </Text>
+            </Text>
+
+            {images.length > 0 && (
+              <View style={styles.thumbnailRow}>
+                {images.map((img, i) => (
+                  <View key={i} style={styles.thumbnailWrapper}>
+                    <Image source={{ uri: img.uri }} style={styles.thumbnail} />
+                    <Pressable
+                      onPress={() => handleRemoveImage(i)}
+                      style={[styles.removeBtn, { backgroundColor: colors.destructive }]}
+                      hitSlop={4}
+                    >
+                      <Feather name="x" size={10} color="#fff" />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {images.length < MAX_IMAGES && (
+              <Pressable
+                onPress={handleAddPhoto}
+                style={({ pressed }) => [
+                  styles.addPhotoBtn,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: pressed ? colors.surface : colors.background,
+                  },
+                ]}
+              >
+                <Feather name="camera" size={18} color={colors.mutedForeground} />
+                <Text style={[styles.addPhotoBtnText, { color: colors.mutedForeground }]}>
+                  {images.length === 0 ? "Add Photos" : "Add More"}
+                </Text>
+              </Pressable>
+            )}
+          </View>
         </View>
 
         <Pressable
@@ -451,6 +577,44 @@ function makeStyles(
       fontSize: 12,
       fontFamily: "Inter_400Regular",
       marginTop: 4,
+    },
+    thumbnailRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 10,
+    },
+    thumbnailWrapper: {
+      position: "relative",
+    },
+    thumbnail: {
+      width: 72,
+      height: 72,
+      borderRadius: 8,
+    },
+    removeBtn: {
+      position: "absolute",
+      top: -6,
+      right: -6,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    addPhotoBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      height: 44,
+      borderWidth: 1,
+      borderStyle: "dashed",
+      borderRadius: 10,
+    },
+    addPhotoBtnText: {
+      fontSize: 14,
+      fontFamily: "Inter_500Medium",
     },
     submitBtn: {
       height: 50,

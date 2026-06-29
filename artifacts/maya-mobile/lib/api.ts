@@ -208,6 +208,7 @@ export const api = {
     productLink?: string;
     quantity?: number;
     estimatedCost?: number;
+    images?: Array<{ name: string; dataUrl: string }>;
   }): Promise<void> {
     const res = await apiFetch("/inquiries", {
       method: "POST",
