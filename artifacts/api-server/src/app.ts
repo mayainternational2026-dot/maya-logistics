@@ -183,6 +183,22 @@ const contactLimiter = rateLimit({
   message: { error: "Too many messages sent. Please try again later." },
 });
 
+// Per-email gate for contact form: max 5 submissions per hour for the same sender
+// address regardless of IP, so a bot rotating IPs cannot exhaust the SMTP quota.
+const contactEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (typeof req.body?.email === "string" ? req.body.email : "")
+      .toLowerCase()
+      .trim();
+    return email ? `contact-email:${email}` : `contact-ip:${getRealIp(req)}`;
+  },
+  message: { error: "Too many contact requests from this email address. Please try again later." },
+});
+
 const inquiryLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   limit: 10,
@@ -199,6 +215,7 @@ app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register-otp", registerOtpLimiter);
 app.use("/api/auth/register-otp", registerOtpEmailLimiter);
 app.use("/api/contact", contactLimiter);
+app.use("/api/contact", contactEmailLimiter);
 
 // Only rate-limit the public POST; admin GET/PATCH are authenticated
 app.post("/api/inquiries", inquiryLimiter);
