@@ -1,9 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,6 +20,7 @@ import { useColors } from "@/hooks/useColors";
 export default function LoginScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -27,6 +28,19 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [trackingInput, setTrackingInput] = useState("");
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+
+  const handleTrack = () => {
+    const trimmed = trackingInput.trim();
+    if (!trimmed) {
+      setTrackingError("Please enter a tracking ID.");
+      return;
+    }
+    setTrackingError(null);
+    router.push(`/track/${encodeURIComponent(trimmed)}` as any);
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -132,6 +146,57 @@ export default function LoginScreen() {
               <Text style={styles.loginBtnText}>Sign in</Text>
             )}
           </Pressable>
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: "rgba(255,255,255,0.15)" }]} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={[styles.dividerLine, { backgroundColor: "rgba(255,255,255,0.15)" }]} />
+        </View>
+
+        <View style={styles.trackCard}>
+          <View style={styles.trackCardHeader}>
+            <Feather name="map-pin" size={16} color={colors.crimson} />
+            <Text style={styles.trackCardTitle}>Track a package</Text>
+          </View>
+          <Text style={styles.trackCardSubtitle}>
+            No account needed — enter a tracking ID to check status instantly.
+          </Text>
+
+          {trackingError && (
+            <View style={styles.trackErrorBox}>
+              <Feather name="alert-circle" size={13} color={colors.destructive} />
+              <Text style={styles.trackErrorText}>{trackingError}</Text>
+            </View>
+          )}
+
+          <View style={styles.trackInputRow}>
+            <View style={[styles.trackInputWrap, { borderColor: colors.border }]}>
+              <Feather name="search" size={15} color={colors.mutedForeground} style={styles.trackInputIcon} />
+              <TextInput
+                style={[styles.trackInput, { color: colors.foreground }]}
+                placeholder="e.g. MYA-20240001"
+                placeholderTextColor={colors.mutedForeground}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                value={trackingInput}
+                onChangeText={(t) => {
+                  setTrackingInput(t);
+                  if (trackingError) setTrackingError(null);
+                }}
+                onSubmitEditing={handleTrack}
+                returnKeyType="search"
+                testID="track-input"
+              />
+            </View>
+            <Pressable
+              onPress={handleTrack}
+              style={({ pressed }) => [styles.trackBtn, { opacity: pressed ? 0.8 : 1 }]}
+              testID="track-submit"
+            >
+              <Feather name="arrow-right" size={18} color="#FFFFFF" />
+            </Pressable>
+          </View>
         </View>
 
         <Text style={styles.footer}>
@@ -262,6 +327,94 @@ function makeStyles(colors: ReturnType<typeof useColors>, insets: ReturnType<typ
       fontFamily: "Inter_400Regular",
       color: "rgba(255,255,255,0.4)",
       marginTop: 32,
+    },
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginTop: 20,
+      marginBottom: 16,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+    },
+    dividerText: {
+      fontSize: 13,
+      fontFamily: "Inter_400Regular",
+      color: "rgba(255,255,255,0.4)",
+    },
+    trackCard: {
+      backgroundColor: "rgba(255,255,255,0.06)",
+      borderRadius: 16,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.1)",
+    },
+    trackCardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6,
+    },
+    trackCardTitle: {
+      fontSize: 16,
+      fontFamily: "Inter_600SemiBold",
+      color: "#FFFFFF",
+    },
+    trackCardSubtitle: {
+      fontSize: 13,
+      fontFamily: "Inter_400Regular",
+      color: "rgba(255,255,255,0.55)",
+      marginBottom: 14,
+      lineHeight: 18,
+    },
+    trackErrorBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: `rgba(220,38,38,0.12)`,
+      borderRadius: 8,
+      padding: 10,
+      marginBottom: 10,
+    },
+    trackErrorText: {
+      flex: 1,
+      fontSize: 12,
+      fontFamily: "Inter_400Regular",
+      color: colors.destructive,
+    },
+    trackInputRow: {
+      flexDirection: "row",
+      gap: 10,
+      alignItems: "center",
+    },
+    trackInputWrap: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderRadius: 10,
+      backgroundColor: colors.background,
+      paddingHorizontal: 12,
+      height: 46,
+    },
+    trackInputIcon: {
+      marginRight: 8,
+    },
+    trackInput: {
+      flex: 1,
+      fontSize: 14,
+      fontFamily: "Inter_400Regular",
+      height: "100%",
+    },
+    trackBtn: {
+      width: 46,
+      height: 46,
+      borderRadius: 10,
+      backgroundColor: colors.crimson,
+      alignItems: "center",
+      justifyContent: "center",
     },
   });
 }

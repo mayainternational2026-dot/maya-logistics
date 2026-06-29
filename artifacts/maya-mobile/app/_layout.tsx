@@ -37,6 +37,7 @@ function RootLayoutNav() {
         <Redirect href="/(auth)/login" />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
+          <Stack.Screen name="track/[trackingId]" options={{ headerShown: false }} />
         </Stack>
       </>
     );
@@ -46,6 +47,7 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="shipment/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="track/[trackingId]" options={{ headerShown: false }} />
     </Stack>
   );
 }
