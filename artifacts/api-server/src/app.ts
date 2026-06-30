@@ -8,6 +8,7 @@ import { rateLimit } from "express-rate-limit";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { attachUser } from "./lib/auth";
+import { PgRateLimitStore } from "./lib/pg-rate-limit-store";
 import { pool } from "@workspace/db";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -106,13 +107,17 @@ app.use(
 app.use(attachUser);
 
 // Rate limit sensitive auth endpoints to slow brute-force and enumeration.
-// Limits are per IP; windows reset after the specified duration.
+// Every rateLimit() call receives a scoped PgRateLimitStore so counters are:
+//   • Persistent across process restarts (PostgreSQL-backed), and
+//   • Fully isolated between policies — the same IP is counted separately
+//     by each limiter; no cross-endpoint counter sharing or window corruption.
 const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 5,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: getRealIp,
+  store: new PgRateLimitStore(pool, "fp-ip"),
   message: { error: "Too many requests. Please try again later." },
 });
 
@@ -122,6 +127,7 @@ const resetPasswordLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: getRealIp,
+  store: new PgRateLimitStore(pool, "rp-ip"),
   message: { error: "Too many attempts. Please request a new code and try again." },
 });
 
@@ -139,6 +145,7 @@ const resetPasswordEmailLimiter = rateLimit({
       .trim();
     return email ? `rp-email:${email}` : `rp-ip:${getRealIp(req)}`;
   },
+  store: new PgRateLimitStore(pool, "rp-email"),
   message: { error: "Too many attempts for this email. Please request a new code and try again." },
 });
 
@@ -148,6 +155,7 @@ const loginLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: getRealIp,
+  store: new PgRateLimitStore(pool, "login-ip"),
   message: { error: "Too many login attempts. Please try again later." },
 });
 
@@ -157,6 +165,7 @@ const registerOtpLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: getRealIp,
+  store: new PgRateLimitStore(pool, "reg-otp-ip"),
   message: { error: "Too many registration attempts. Please try again later." },
 });
 
@@ -173,6 +182,7 @@ const registerOtpEmailLimiter = rateLimit({
       .trim();
     return email ? `reg-email:${email}` : `reg-ip:${getRealIp(req)}`;
   },
+  store: new PgRateLimitStore(pool, "reg-otp-email"),
   message: { error: "Too many OTP requests for this email address. Please try again later." },
 });
 
@@ -188,6 +198,7 @@ const forgotPasswordEmailLimiter = rateLimit({
       .trim();
     return email ? `fp-email:${email}` : `fp-ip:${getRealIp(req)}`;
   },
+  store: new PgRateLimitStore(pool, "fp-email"),
   message: { error: "Too many password reset requests for this email address. Please try again later." },
 });
 
@@ -197,6 +208,7 @@ const contactLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: getRealIp,
+  store: new PgRateLimitStore(pool, "contact-ip"),
   message: { error: "Too many messages sent. Please try again later." },
 });
 
@@ -213,6 +225,7 @@ const contactEmailLimiter = rateLimit({
       .trim();
     return email ? `contact-email:${email}` : `contact-ip:${getRealIp(req)}`;
   },
+  store: new PgRateLimitStore(pool, "contact-email"),
   message: { error: "Too many contact requests from this email address. Please try again later." },
 });
 
@@ -222,8 +235,21 @@ const inquiryLimiter = rateLimit({
   standardHeaders: "draft-8",
   legacyHeaders: false,
   keyGenerator: getRealIp,
+  store: new PgRateLimitStore(pool, "inquiry-ip"),
   message: { error: "Too many inquiry submissions. Please try again later." },
 });
+
+// Prune expired rate-limit rows every 10 minutes to prevent unbounded table growth.
+// The prune store scope is arbitrary — pruneExpired() deletes across all scopes.
+const pruneStore = new PgRateLimitStore(pool, "prune");
+setInterval(
+  () => {
+    pruneStore.pruneExpired().catch((err: unknown) => {
+      logger.warn({ err }, "rate_limit_hits prune failed");
+    });
+  },
+  10 * 60 * 1000,
+);
 
 app.use("/api/auth/forgot-password", forgotPasswordLimiter);
 app.use("/api/auth/forgot-password", forgotPasswordEmailLimiter);
