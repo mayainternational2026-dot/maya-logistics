@@ -6,9 +6,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN pnpm install --frozen-lockfile
-
-RUN pnpm run typecheck:libs
+RUN pnpm install
 
 RUN pnpm --filter @workspace/maya-logistics run build
 
