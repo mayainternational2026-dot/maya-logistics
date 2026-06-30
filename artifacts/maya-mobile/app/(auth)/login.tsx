@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +22,7 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { login } = useAuth();
+  const { resetSuccess } = useLocalSearchParams<{ resetSuccess?: string }>();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,6 +87,15 @@ export default function LoginScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Sign in</Text>
 
+          {resetSuccess === "1" && (
+            <View style={styles.successBox}>
+              <Feather name="check-circle" size={14} color="#166534" />
+              <Text style={styles.successText}>
+                Password reset successfully. Sign in with your new password.
+              </Text>
+            </View>
+          )}
+
           {error && (
             <View style={styles.errorBox}>
               <Feather name="alert-circle" size={14} color={colors.destructive} />
@@ -145,6 +155,14 @@ export default function LoginScreen() {
             ) : (
               <Text style={styles.loginBtnText}>Sign in</Text>
             )}
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push("/(auth)/forgot-password" as any)}
+            style={styles.forgotLink}
+            testID="go-to-forgot-password"
+          >
+            <Text style={styles.forgotLinkText}>Forgot password?</Text>
           </Pressable>
 
           <Pressable
@@ -273,6 +291,21 @@ function makeStyles(colors: ReturnType<typeof useColors>, insets: ReturnType<typ
       fontFamily: "Inter_600SemiBold",
       color: colors.foreground,
       marginBottom: 20,
+    },
+    successBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: "#DCFCE7",
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+    },
+    successText: {
+      flex: 1,
+      fontSize: 13,
+      fontFamily: "Inter_400Regular",
+      color: "#166534",
     },
     errorBox: {
       flexDirection: "row",
@@ -427,8 +460,17 @@ function makeStyles(colors: ReturnType<typeof useColors>, insets: ReturnType<typ
       alignItems: "center",
       justifyContent: "center",
     },
+    forgotLink: {
+      marginTop: 12,
+      alignItems: "center",
+    },
+    forgotLinkText: {
+      fontSize: 14,
+      fontFamily: "Inter_500Medium",
+      color: colors.crimson,
+    },
     signUpLink: {
-      marginTop: 16,
+      marginTop: 12,
       alignItems: "center",
     },
     signUpLinkText: {

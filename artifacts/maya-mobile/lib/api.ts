@@ -264,4 +264,30 @@ export const api = {
     if (!res.ok) throw new Error("Failed to load inquiries");
     return res.json();
   },
+
+  async forgotPassword(email: string): Promise<{ message: string; otp?: string }> {
+    const res = await apiFetch("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+      _skipUnauthorized: true,
+    } as RequestInit & { _skipUnauthorized: boolean });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Request failed");
+    return data;
+  },
+
+  async resetPassword(body: {
+    email: string;
+    otp: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    const res = await apiFetch("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(body),
+      _skipUnauthorized: true,
+    } as RequestInit & { _skipUnauthorized: boolean });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Reset failed");
+    return data;
+  },
 };
