@@ -8,6 +8,8 @@ COPY . .
 
 RUN pnpm install
 
+RUN pnpm run typecheck:libs
+
 RUN pnpm --filter @workspace/maya-logistics run build
 
 RUN pnpm --filter @workspace/api-server run build
