@@ -14,7 +14,9 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { NetworkErrorOverlay } from "@/components/NetworkErrorOverlay";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { NetworkProvider } from "@/context/NetworkContext";
 import { setApiBaseUrl } from "@/lib/api";
 
 // Set API base URL from the Expo public domain env var
@@ -74,9 +76,12 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <AuthProvider>
-                <RootLayoutNav />
-              </AuthProvider>
+              <NetworkProvider>
+                <AuthProvider>
+                  <RootLayoutNav />
+                  <NetworkErrorOverlay />
+                </AuthProvider>
+              </NetworkProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

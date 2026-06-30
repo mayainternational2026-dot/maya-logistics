@@ -4,6 +4,7 @@ const COOKIE_KEY = "maya_session_cookie";
 
 let _baseUrl: string | null = null;
 let _onUnauthorized: (() => void) | null = null;
+let _onNetworkError: (() => void) | null = null;
 
 export function setApiBaseUrl(url: string) {
   _baseUrl = url;
@@ -11,6 +12,10 @@ export function setApiBaseUrl(url: string) {
 
 export function setUnauthorizedHandler(fn: () => void) {
   _onUnauthorized = fn;
+}
+
+export function setNetworkErrorHandler(fn: () => void) {
+  _onNetworkError = fn;
 }
 
 function getBaseUrl(): string {
@@ -58,11 +63,17 @@ async function apiFetch(
     headers["Cookie"] = cookie;
   }
 
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      credentials: "include",
+    });
+  } catch (err) {
+    _onNetworkError?.();
+    throw err;
+  }
 
   const setCookie = response.headers.get("set-cookie");
   if (setCookie) {
@@ -78,6 +89,16 @@ async function apiFetch(
   }
 
   return response;
+}
+
+export async function pingServer(): Promise<boolean> {
+  const base = getBaseUrl();
+  try {
+    await fetch(`${base}/api/auth/me`, { method: "HEAD" });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export type ShipmentStatus =
