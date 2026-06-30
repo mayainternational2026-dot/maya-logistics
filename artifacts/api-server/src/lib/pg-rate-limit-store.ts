@@ -39,8 +39,8 @@ const CREATE_INDEX_SQL = `
     ON rate_limit_hits (window_start)
 `;
 
-/** Shared flag so DDL runs only once per process, regardless of instance count. */
-let tableEnsured = false;
+/** Shared promise so DDL runs exactly once per process, regardless of instance count. */
+let tableEnsuredPromise: Promise<void> | null = null;
 
 export class PgRateLimitStore implements Store {
   private pool: QueryablePool;
@@ -73,11 +73,13 @@ export class PgRateLimitStore implements Store {
 
   async init(options: Options): Promise<void> {
     this.windowMs = options.windowMs;
-    if (!tableEnsured) {
-      await this.pool.query(CREATE_TABLE_SQL);
-      await this.pool.query(CREATE_INDEX_SQL);
-      tableEnsured = true;
+    if (!tableEnsuredPromise) {
+      tableEnsuredPromise = this.pool
+        .query(CREATE_TABLE_SQL)
+        .then(() => this.pool.query(CREATE_INDEX_SQL))
+        .then(() => undefined);
     }
+    await tableEnsuredPromise;
   }
 
   async increment(key: string): Promise<IncrementResponse> {

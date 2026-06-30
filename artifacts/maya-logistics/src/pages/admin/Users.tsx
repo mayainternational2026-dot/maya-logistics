@@ -6,7 +6,9 @@ import {
   useUpdateUserPermissions,
   useAdminResetUserPassword,
   useDeleteUser,
+  useCreateShipment,
   getListUsersQueryKey,
+  getListShipmentsQueryKey,
 } from "@workspace/api-client-react";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,6 +48,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  FileText,
   KeyRound,
   Plus,
   Settings,
@@ -492,6 +495,227 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function QuickBookingDialog({
+  customer,
+  onClose,
+}: {
+  customer: { id: number; name: string; phone: string; email: string };
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const create = useCreateShipment();
+
+  const [form, setForm] = useState({
+    productName: "",
+    destination: "",
+    quantity: "",
+    weight: "",
+    totalCost: "",
+    amountPaid: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const set = (field: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((s) => ({ ...s, [field]: e.target.value }));
+      setErrors((p) => ({ ...p, [field]: "" }));
+    };
+
+  const totalCostNum = parseFloat(form.totalCost) || 0;
+  const amountPaidNum = parseFloat(form.amountPaid) || 0;
+  const dueAmount = Math.max(0, totalCostNum - amountPaidNum);
+
+  function validate() {
+    const errs: Record<string, string> = {};
+    if (!form.productName.trim()) errs.productName = "Product name is required";
+    if (!form.destination.trim()) errs.destination = "Destination is required";
+    if (!form.weight || isNaN(Number(form.weight)) || Number(form.weight) <= 0)
+      errs.weight = "Enter a valid weight (kg)";
+    if (!form.totalCost || isNaN(Number(form.totalCost)) || Number(form.totalCost) < 0)
+      errs.totalCost = "Enter a valid total cost";
+    if (form.amountPaid && (isNaN(Number(form.amountPaid)) || Number(form.amountPaid) < 0))
+      errs.amountPaid = "Enter a valid amount";
+    if (amountPaidNum > totalCostNum)
+      errs.amountPaid = "Amount paid cannot exceed total cost";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    create.mutate(
+      {
+        data: {
+          customerId: customer.id,
+          senderName: customer.name,
+          senderPhone: customer.phone,
+          receiverName: "Maya Import Export Logistic",
+          origin: "Kathmandu, Nepal",
+          destination: form.destination.trim(),
+          productName: form.productName.trim(),
+          quantity: form.quantity ? Number(form.quantity) : undefined,
+          weight: Number(form.weight),
+          cost: totalCostNum,
+          paidAmount: amountPaidNum > 0 ? amountPaidNum : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Booking created", description: `Shipment created for ${customer.name}.` });
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          onClose();
+        },
+        onError: (err: any) => {
+          toast({ title: "Could not create booking", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const FErr = ({ field }: { field: string }) =>
+    errors[field] ? (
+      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+        <XCircle className="h-3 w-3 flex-shrink-0" />{errors[field]}
+      </p>
+    ) : null;
+
+  return (
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>New Booking</DialogTitle>
+        <DialogDescription>Create a shipment for this customer.</DialogDescription>
+      </DialogHeader>
+
+      <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <p className="text-xs text-gray-500 mb-0.5">Customer Name</p>
+          <p className="font-semibold text-secondary truncate">{customer.name}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 mb-0.5">Phone</p>
+          <p className="font-semibold text-secondary">{customer.phone}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 mb-0.5">Email</p>
+          <p className="font-semibold text-secondary truncate">{customer.email}</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={form.productName}
+              onChange={set("productName")}
+              placeholder="e.g. Electronics, Garments"
+              className={cn("h-11", errors.productName && "border-red-400")}
+            />
+            <FErr field="productName" />
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Destination <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={form.destination}
+              onChange={set("destination")}
+              placeholder="e.g. New York, USA"
+              className={cn("h-11", errors.destination && "border-red-400")}
+            />
+            <FErr field="destination" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+            <Input
+              type="number"
+              min="1"
+              value={form.quantity}
+              onChange={set("quantity")}
+              placeholder="Units"
+              className="h-11"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Weight (kg) <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.weight}
+              onChange={set("weight")}
+              placeholder="0.00"
+              className={cn("h-11", errors.weight && "border-red-400")}
+            />
+            <FErr field="weight" />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Payment</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Cost (NPR) <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.totalCost}
+                onChange={set("totalCost")}
+                placeholder="0.00"
+                className={cn("h-11", errors.totalCost && "border-red-400")}
+              />
+              <FErr field="totalCost" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Amount Paid (NPR)</label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.amountPaid}
+                onChange={set("amountPaid")}
+                placeholder="0.00"
+                className={cn("h-11", errors.amountPaid && "border-red-400")}
+              />
+              <FErr field="amountPaid" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md bg-gray-50 px-4 py-2.5 border border-gray-100">
+            <span className="text-sm font-medium text-gray-600">Due Amount (NPR)</span>
+            <span className={cn(
+              "text-base font-bold",
+              dueAmount > 0 ? "text-red-600" : "text-green-600",
+            )}>
+              {dueAmount.toLocaleString("en-NP", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" disabled={create.isPending} className="bg-primary hover:bg-primary/90">
+            {create.isPending ? "Creating…" : "Create Booking"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  );
+}
+
 export default function Users() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -507,6 +731,7 @@ export default function Users() {
   const [createOpen, setCreateOpen] = useState(false);
   const [permsFor, setPermsFor] = useState<any | null>(null);
   const [resetFor, setResetFor] = useState<any | null>(null);
+  const [bookingFor, setBookingFor] = useState<any | null>(null);
 
   const handleDelete = (id: number) => {
     remove.mutate(
@@ -603,6 +828,11 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {u.role === "customer" && (
+                          <Button size="sm" variant="ghost" className="h-8 gap-1 text-primary" onClick={() => setBookingFor(u)}>
+                            <FileText className="h-3.5 w-3.5" /> New Booking
+                          </Button>
+                        )}
                         {u.role !== "admin" && (
                           <Button size="sm" variant="ghost" className="h-8 gap-1" onClick={() => setPermsFor(u)}>
                             <Settings className="h-3.5 w-3.5" /> Permissions
@@ -656,6 +886,11 @@ export default function Users() {
       {resetFor && (
         <Dialog open={!!resetFor} onOpenChange={(o) => !o && setResetFor(null)}>
           <ResetPasswordDialog user={resetFor} onClose={() => setResetFor(null)} />
+        </Dialog>
+      )}
+      {bookingFor && (
+        <Dialog open={!!bookingFor} onOpenChange={(o) => !o && setBookingFor(null)}>
+          <QuickBookingDialog customer={bookingFor} onClose={() => setBookingFor(null)} />
         </Dialog>
       )}
 
