@@ -125,6 +125,23 @@ const resetPasswordLimiter = rateLimit({
   message: { error: "Too many attempts. Please request a new code and try again." },
 });
 
+// Per-email gate for OTP submission: max 5 attempts per email per 15-minute
+// window regardless of IP. An attacker rotating IPs cannot guess the 6-digit
+// OTP more than 5 times per window for the same target address.
+const resetPasswordEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (typeof req.body?.email === "string" ? req.body.email : "")
+      .toLowerCase()
+      .trim();
+    return email ? `rp-email:${email}` : `rp-ip:${getRealIp(req)}`;
+  },
+  message: { error: "Too many attempts for this email. Please request a new code and try again." },
+});
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
@@ -211,6 +228,7 @@ const inquiryLimiter = rateLimit({
 app.use("/api/auth/forgot-password", forgotPasswordLimiter);
 app.use("/api/auth/forgot-password", forgotPasswordEmailLimiter);
 app.use("/api/auth/reset-password", resetPasswordLimiter);
+app.use("/api/auth/reset-password", resetPasswordEmailLimiter);
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register-otp", registerOtpLimiter);
 app.use("/api/auth/register-otp", registerOtpEmailLimiter);

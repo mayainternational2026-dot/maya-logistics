@@ -220,7 +220,95 @@ describe("email-case normalisation — mixed-case addresses share one bucket", (
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. IP limiter fires independently of the email limiter
+// 4. /api/auth/reset-password — per-email limit blocks IP-rotating attackers
+// ─────────────────────────────────────────────────────────────────────────────
+describe("/api/auth/reset-password — per-email rate limit", () => {
+  const ROUTE = "/api/auth/reset-password";
+  const EMAIL_LIMIT = 5; // mirrors production (rp-email:)
+  let app: express.Express;
+
+  beforeEach(() => {
+    app = buildApp(ROUTE, {
+      ipLimit: 100,           // high enough not to interfere
+      emailLimit: EMAIL_LIMIT,
+      emailKeyPrefix: "rp-email:",
+      ipFallbackPrefix: "rp-ip:",
+    });
+  });
+
+  it("returns 200 for the first attempts up to the per-email threshold", async () => {
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      const res = await post(app, ROUTE, "victim@example.com");
+      expect(res.status, `attempt ${i + 1} should succeed`).toBe(200);
+    }
+  });
+
+  it("returns 429 on the attempt that exceeds the per-email threshold", async () => {
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      await post(app, ROUTE, "victim-limit@example.com");
+    }
+    const blocked = await post(app, ROUTE, "victim-limit@example.com");
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error).toMatch(/too many/i);
+  });
+
+  it("blocks an IP-rotating attacker: same email is blocked regardless of caller IP", async () => {
+    // Simulate IP rotation by sending each request from a different XFF header.
+    // The shared app has trust proxy disabled (supertest uses loopback socket),
+    // so the loopback socket triggers the XFF path in getRealIp, meaning each
+    // request really does appear to come from a unique IP. The email limiter
+    // must still block them all because the key is the email, not the IP.
+    const rotatingApp = express();
+    rotatingApp.use(express.json());
+
+    const emailLimiter = rateLimit({
+      windowMs: 60_000,
+      limit: EMAIL_LIMIT,
+      keyGenerator: (req) => {
+        const email = (typeof req.body?.email === "string" ? req.body.email : "")
+          .toLowerCase()
+          .trim();
+        return email ? `rp-email:${email}` : `rp-ip:${getRealIp(req)}`;
+      },
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      message: { error: "Too many attempts for this email. Please request a new code and try again." },
+    });
+
+    rotatingApp.use(ROUTE, emailLimiter);
+    rotatingApp.post(ROUTE, (_req, res) => res.json({ ok: true }));
+
+    // Exhaust the per-email bucket, each time with a different spoofed IP.
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      await request(rotatingApp)
+        .post(ROUTE)
+        .set("Content-Type", "application/json")
+        .set("X-Forwarded-For", `10.0.0.${i + 1}`)
+        .send({ email: "rotate-victim@example.com", otp: "000000", newPassword: "Test@1234" });
+    }
+
+    // The next attempt — from yet another new IP — must still be blocked.
+    const blocked = await request(rotatingApp)
+      .post(ROUTE)
+      .set("Content-Type", "application/json")
+      .set("X-Forwarded-For", "10.0.0.99")
+      .send({ email: "rotate-victim@example.com", otp: "999999", newPassword: "Test@1234" });
+
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error).toMatch(/too many/i);
+  });
+
+  it("two different target emails do not share a bucket", async () => {
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      await post(app, ROUTE, "target-a@example.com");
+    }
+    const res = await post(app, ROUTE, "target-b@example.com");
+    expect(res.status).toBe(200);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. IP limiter fires independently of the email limiter
 // ─────────────────────────────────────────────────────────────────────────────
 describe("IP limiter fires independently of the email limiter", () => {
   const ROUTE = "/api/auth/register-otp";
