@@ -2179,6 +2179,81 @@ export function useListInquiries<
 }
 
 /**
+ * @summary List the current customer's own inquiries (authenticated)
+ */
+export const getListMyInquiriesUrl = () => {
+  return `/api/inquiries/mine`;
+};
+
+export const listMyInquiries = async (
+  options?: RequestInit,
+): Promise<Inquiry[]> => {
+  return customFetch<Inquiry[]>(getListMyInquiriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMyInquiriesQueryKey = () => {
+  return [`/api/inquiries/mine`] as const;
+};
+
+export const getListMyInquiriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMyInquiries>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMyInquiries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMyInquiriesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyInquiries>>> = ({
+    signal,
+  }) => listMyInquiries({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMyInquiries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMyInquiriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMyInquiries>>
+>;
+export type ListMyInquiriesQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List the current customer's own inquiries (authenticated)
+ */
+
+export function useListMyInquiries<
+  TData = Awaited<ReturnType<typeof listMyInquiries>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMyInquiries>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMyInquiriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Update inquiry status or admin notes (admin/staff)
  */
 export const getUpdateInquiryUrl = (id: number) => {

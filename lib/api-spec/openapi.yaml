@@ -519,6 +519,27 @@ paths:
                 items:
                   $ref: "#/components/schemas/Inquiry"
 
+  /inquiries/mine:
+    get:
+      operationId: listMyInquiries
+      tags: [inquiries]
+      summary: List the current customer's own inquiries (authenticated)
+      responses:
+        "200":
+          description: Inquiries submitted by the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inquiry"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /inquiries/{id}:
     patch:
       operationId: updateInquiry
@@ -1274,6 +1295,8 @@ components:
       properties:
         id:
           type: integer
+        userId:
+          type: ["integer", "null"]
         name:
           type: string
         email:

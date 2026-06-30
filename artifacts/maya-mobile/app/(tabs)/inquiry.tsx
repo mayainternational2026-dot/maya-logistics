@@ -1,14 +1,17 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,27 +19,46 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { api } from "@/lib/api";
+import { api, type Inquiry } from "@/lib/api";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
 const MAX_IMAGES = 4;
 
+type Tab = "new" | "history";
 type AttachedImage = { name: string; dataUrl: string; uri: string };
-
-type FormErrors = {
-  name?: string;
-  email?: string;
-  productDetails?: string;
-};
+type FormErrors = { name?: string; email?: string; productDetails?: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  pending:   { label: "Pending",   color: "#92400E", bg: "#FEF3C7" },
+  reviewing: { label: "Reviewing", color: "#1D4ED8", bg: "#DBEAFE" },
+  quoted:    { label: "Quoted",    color: "#065F46", bg: "#D1FAE5" },
+  closed:    { label: "Closed",    color: "#6B7280", bg: "#F3F4F6" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: "#6B7280", bg: "#F3F4F6" };
+  return (
+    <View style={{ backgroundColor: cfg.bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: "flex-start" }}>
+      <Text style={{ fontSize: 11, fontFamily: "Inter_600SemiBold", color: cfg.color }}>{cfg.label}</Text>
+    </View>
+  );
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default function InquiryScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const { user } = useAuth();
+
+  const [activeTab, setActiveTab] = useState<Tab>("new");
 
   const [form, setForm] = useState({
     name: user?.name ?? "",
@@ -51,6 +73,38 @@ export default function InquiryScreen() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
+
+  const fetchHistory = useCallback(async () => {
+    if (!user) return;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const data = await api.listMyInquiries();
+      setInquiries(data);
+    } catch (e: any) {
+      setHistoryError(e.message ?? "Failed to load inquiries");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === "history" && user) {
+      fetchHistory();
+    }
+  }, [activeTab, user, fetchHistory]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchHistory();
+    setRefreshing(false);
+  };
 
   const set = (field: keyof typeof form) => (text: string) => {
     setForm((prev) => ({ ...prev, [field]: text }));
@@ -162,6 +216,9 @@ export default function InquiryScreen() {
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSubmitted(true);
+      if (user) {
+        fetchHistory();
+      }
     } catch (err: any) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       if (Platform.OS === "web") {
@@ -207,6 +264,17 @@ export default function InquiryScreen() {
           <Text style={[styles.successBody, { color: colors.mutedForeground }]}>
             Thank you! We've received your inquiry and will respond within 24 hours with a custom freight quote.
           </Text>
+          {user && (
+            <Pressable
+              onPress={() => { handleReset(); setActiveTab("history"); }}
+              style={({ pressed }) => [
+                styles.submitBtn,
+                { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, opacity: pressed ? 0.8 : 1, marginBottom: 8 },
+              ]}
+            >
+              <Text style={[styles.submitBtnText, { color: colors.foreground }]}>View My Inquiries</Text>
+            </Pressable>
+          )}
           <Pressable
             onPress={handleReset}
             style={({ pressed }) => [
@@ -222,266 +290,508 @@ export default function InquiryScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <View style={styles.root}>
       <View style={styles.topBar}>
         <Text style={styles.screenTitle}>Inquiry</Text>
-        <Text style={[styles.screenSubtitle, { color: colors.mutedForeground }]}>
-          Request a custom freight quote
-        </Text>
+        {user ? (
+          <View style={[styles.tabRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Pressable
+              onPress={() => setActiveTab("new")}
+              style={[
+                styles.tabBtn,
+                activeTab === "new" && { backgroundColor: colors.primary },
+              ]}
+            >
+              <Text style={[
+                styles.tabBtnText,
+                { color: activeTab === "new" ? "#fff" : colors.mutedForeground },
+              ]}>New</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setActiveTab("history")}
+              style={[
+                styles.tabBtn,
+                activeTab === "history" && { backgroundColor: colors.primary },
+              ]}
+            >
+              <Text style={[
+                styles.tabBtnText,
+                { color: activeTab === "history" ? "#fff" : colors.mutedForeground },
+              ]}>My Inquiries</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={[styles.screenSubtitle, { color: colors.mutedForeground }]}>
+            Request a custom freight quote
+          </Text>
+        )}
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Your Details</Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              Full Name <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.surface,
-                  borderColor: errors.name ? colors.destructive : colors.border,
-                },
-              ]}
-              placeholder="Ram Bahadur"
-              placeholderTextColor={colors.mutedForeground}
-              value={form.name}
-              onChangeText={set("name")}
-              autoCapitalize="words"
-              returnKeyType="next"
-            />
-            {errors.name && (
-              <Text style={[styles.errorText, { color: colors.destructive }]}>{errors.name}</Text>
-            )}
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              Email <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.surface,
-                  borderColor: errors.email ? colors.destructive : colors.border,
-                },
-              ]}
-              placeholder="ram@email.com"
-              placeholderTextColor={colors.mutedForeground}
-              value={form.email}
-              onChangeText={set("email")}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-            />
-            {errors.email && (
-              <Text style={[styles.errorText, { color: colors.destructive }]}>{errors.email}</Text>
-            )}
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Phone</Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-              placeholder="+977 98XXXXXXXX"
-              placeholderTextColor={colors.mutedForeground}
-              value={form.phone}
-              onChangeText={set("phone")}
-              keyboardType="phone-pad"
-              returnKeyType="next"
-            />
-          </View>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Product Details</Text>
-
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              Product Description <Text style={{ color: colors.destructive }}>*</Text>
-            </Text>
-            <TextInput
-              style={[
-                styles.textarea,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.surface,
-                  borderColor: errors.productDetails ? colors.destructive : colors.border,
-                },
-              ]}
-              placeholder="Describe the product — type, brand, material, size, special handling requirements…"
-              placeholderTextColor={colors.mutedForeground}
-              value={form.productDetails}
-              onChangeText={set("productDetails")}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-            {errors.productDetails && (
-              <Text style={[styles.errorText, { color: colors.destructive }]}>
-                {errors.productDetails}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              Product Link{" "}
-              <Text style={[styles.optionalText, { color: colors.mutedForeground }]}>(optional)</Text>
-            </Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  color: colors.foreground,
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-              placeholder="https://amazon.com/product…"
-              placeholderTextColor={colors.mutedForeground}
-              value={form.productLink}
-              onChangeText={set("productLink")}
-              keyboardType="url"
-              autoCapitalize="none"
-              returnKeyType="next"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <View style={[styles.fieldGroup, styles.halfField]}>
-              <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Quantity</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: colors.foreground,
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-                placeholder="e.g. 10"
-                placeholderTextColor={colors.mutedForeground}
-                value={form.quantity}
-                onChangeText={set("quantity")}
-                keyboardType="numeric"
-                returnKeyType="next"
-              />
-            </View>
-
-            <View style={[styles.fieldGroup, styles.halfField]}>
-              <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Est. Value (NPR)</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: colors.foreground,
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-                placeholder="e.g. 25000"
-                placeholderTextColor={colors.mutedForeground}
-                value={form.estimatedCost}
-                onChangeText={set("estimatedCost")}
-                keyboardType="numeric"
-                returnKeyType="done"
-              />
-            </View>
-          </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
-              Product Photos{" "}
-              <Text style={[styles.optionalText, { color: colors.mutedForeground }]}>
-                (optional, up to {MAX_IMAGES})
-              </Text>
-            </Text>
-
-            {images.length > 0 && (
-              <View style={styles.thumbnailRow}>
-                {images.map((img, i) => (
-                  <View key={i} style={styles.thumbnailWrapper}>
-                    <Image source={{ uri: img.uri }} style={styles.thumbnail} />
-                    <Pressable
-                      onPress={() => handleRemoveImage(i)}
-                      style={[styles.removeBtn, { backgroundColor: colors.destructive }]}
-                      hitSlop={4}
-                    >
-                      <Feather name="x" size={10} color="#fff" />
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {images.length < MAX_IMAGES && (
-              <Pressable
-                onPress={handleAddPhoto}
-                style={({ pressed }) => [
-                  styles.addPhotoBtn,
-                  {
-                    borderColor: colors.border,
-                    backgroundColor: pressed ? colors.surface : colors.background,
-                  },
-                ]}
-              >
-                <Feather name="camera" size={18} color={colors.mutedForeground} />
-                <Text style={[styles.addPhotoBtnText, { color: colors.mutedForeground }]}>
-                  {images.length === 0 ? "Add Photos" : "Add More"}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        </View>
-
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            handleSubmit();
-          }}
-          disabled={loading}
-          style={({ pressed }) => [
-            styles.submitBtn,
-            {
-              backgroundColor: colors.primary,
-              opacity: pressed || loading ? 0.75 : 1,
-            },
-          ]}
-          testID="submit-inquiry-btn"
+      {activeTab === "history" ? (
+        <HistoryView
+          inquiries={inquiries}
+          loading={historyLoading}
+          error={historyError}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          onSelect={setSelectedInquiry}
+          colors={colors}
+          insets={insets}
+          isWeb={isWeb}
+        />
+      ) : (
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          {loading ? (
-            <Text style={styles.submitBtnText}>Submitting…</Text>
-          ) : (
-            <Text style={styles.submitBtnText}>Submit Inquiry</Text>
-          )}
-        </Pressable>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {!user && (
+              <Text style={[styles.screenSubtitle, { color: colors.mutedForeground, marginBottom: 4 }]}>
+                Request a custom freight quote
+              </Text>
+            )}
 
-        <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
-          We respond within 24 hours. You can also reach us on WhatsApp: +977 9769686908
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Your Details</Text>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+                  Full Name <Text style={{ color: colors.destructive }}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: errors.name ? colors.destructive : colors.border }]}
+                  placeholder="Ram Bahadur"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={form.name}
+                  onChangeText={set("name")}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                />
+                {errors.name && <Text style={[styles.errorText, { color: colors.destructive }]}>{errors.name}</Text>}
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+                  Email <Text style={{ color: colors.destructive }}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: errors.email ? colors.destructive : colors.border }]}
+                  placeholder="ram@email.com"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={form.email}
+                  onChangeText={set("email")}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                />
+                {errors.email && <Text style={[styles.errorText, { color: colors.destructive }]}>{errors.email}</Text>}
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Phone</Text>
+                <TextInput
+                  style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: colors.border }]}
+                  placeholder="+977 98XXXXXXXX"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={form.phone}
+                  onChangeText={set("phone")}
+                  keyboardType="phone-pad"
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>Product Details</Text>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+                  Product Description <Text style={{ color: colors.destructive }}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.textarea, { color: colors.foreground, backgroundColor: colors.surface, borderColor: errors.productDetails ? colors.destructive : colors.border }]}
+                  placeholder="Describe the product — type, brand, material, size, special handling requirements…"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={form.productDetails}
+                  onChangeText={set("productDetails")}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+                {errors.productDetails && <Text style={[styles.errorText, { color: colors.destructive }]}>{errors.productDetails}</Text>}
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+                  Product Link{" "}
+                  <Text style={[styles.optionalText, { color: colors.mutedForeground }]}>(optional)</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: colors.border }]}
+                  placeholder="https://amazon.com/product…"
+                  placeholderTextColor={colors.mutedForeground}
+                  value={form.productLink}
+                  onChangeText={set("productLink")}
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                />
+              </View>
+
+              <View style={styles.row}>
+                <View style={[styles.fieldGroup, styles.halfField]}>
+                  <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Quantity</Text>
+                  <TextInput
+                    style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: colors.border }]}
+                    placeholder="e.g. 10"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={form.quantity}
+                    onChangeText={set("quantity")}
+                    keyboardType="numeric"
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <View style={[styles.fieldGroup, styles.halfField]}>
+                  <Text style={[styles.fieldLabel, { color: colors.foreground }]}>Est. Value (NPR)</Text>
+                  <TextInput
+                    style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: colors.border }]}
+                    placeholder="e.g. 25000"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={form.estimatedCost}
+                    onChangeText={set("estimatedCost")}
+                    keyboardType="numeric"
+                    returnKeyType="done"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>
+                  Product Photos{" "}
+                  <Text style={[styles.optionalText, { color: colors.mutedForeground }]}>
+                    (optional, up to {MAX_IMAGES})
+                  </Text>
+                </Text>
+
+                {images.length > 0 && (
+                  <View style={styles.thumbnailRow}>
+                    {images.map((img, i) => (
+                      <View key={i} style={styles.thumbnailWrapper}>
+                        <Image source={{ uri: img.uri }} style={styles.thumbnail} />
+                        <Pressable
+                          onPress={() => handleRemoveImage(i)}
+                          style={[styles.removeBtn, { backgroundColor: colors.destructive }]}
+                          hitSlop={4}
+                        >
+                          <Feather name="x" size={10} color="#fff" />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {images.length < MAX_IMAGES && (
+                  <Pressable
+                    onPress={handleAddPhoto}
+                    style={({ pressed }) => [
+                      styles.addPhotoBtn,
+                      { borderColor: colors.border, backgroundColor: pressed ? colors.surface : colors.background },
+                    ]}
+                  >
+                    <Feather name="camera" size={18} color={colors.mutedForeground} />
+                    <Text style={[styles.addPhotoBtnText, { color: colors.mutedForeground }]}>
+                      {images.length === 0 ? "Add Photos" : "Add More"}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                handleSubmit();
+              }}
+              disabled={loading}
+              style={({ pressed }) => [
+                styles.submitBtn,
+                { backgroundColor: colors.primary, opacity: pressed || loading ? 0.75 : 1 },
+              ]}
+              testID="submit-inquiry-btn"
+            >
+              {loading ? (
+                <Text style={styles.submitBtnText}>Submitting…</Text>
+              ) : (
+                <Text style={styles.submitBtnText}>Submit Inquiry</Text>
+              )}
+            </Pressable>
+
+            <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
+              We respond within 24 hours. You can also reach us on WhatsApp: +977 9769686908
+            </Text>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
+
+      {selectedInquiry && (
+        <InquiryDetailModal
+          inquiry={selectedInquiry}
+          onClose={() => setSelectedInquiry(null)}
+          colors={colors}
+          insets={insets}
+        />
+      )}
+    </View>
+  );
+}
+
+function HistoryView({
+  inquiries,
+  loading,
+  error,
+  refreshing,
+  onRefresh,
+  onSelect,
+  colors,
+  insets,
+  isWeb,
+}: {
+  inquiries: Inquiry[];
+  loading: boolean;
+  error: string | null;
+  refreshing: boolean;
+  onRefresh: () => Promise<void>;
+  onSelect: (i: Inquiry) => void;
+  colors: ReturnType<typeof useColors>;
+  insets: ReturnType<typeof useSafeAreaInsets>;
+  isWeb: boolean;
+}) {
+  if (loading && inquiries.length === 0) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 12 }}>
+        <Feather name="alert-circle" size={40} color={colors.destructive} />
+        <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground, textAlign: "center" }}>{error}</Text>
+        <Pressable onPress={onRefresh} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+          <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 14, color: colors.primary }}>Try again</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (inquiries.length === 0) {
+    return (
+      <ScrollView
+        contentContainerStyle={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 12 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
+        <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center" }}>
+          <Feather name="inbox" size={32} color={colors.mutedForeground} />
+        </View>
+        <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 17, color: colors.foreground }}>No inquiries yet</Text>
+        <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.mutedForeground, textAlign: "center", lineHeight: 20 }}>
+          Inquiries you submit will appear here so you can track their status.
         </Text>
       </ScrollView>
-    </KeyboardAvoidingView>
+    );
+  }
+
+  return (
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingBottom: isWeb ? 34 : insets.bottom + 100, gap: 10 }}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+    >
+      {inquiries.map((inq) => (
+        <InquiryCard key={inq.id} inquiry={inq} onPress={() => onSelect(inq)} colors={colors} />
+      ))}
+    </ScrollView>
+  );
+}
+
+function InquiryCard({
+  inquiry,
+  onPress,
+  colors,
+}: {
+  inquiry: Inquiry;
+  onPress: () => void;
+  colors: ReturnType<typeof useColors>;
+}) {
+  const snippet = inquiry.productDetails.length > 90
+    ? inquiry.productDetails.slice(0, 90) + "…"
+    : inquiry.productDetails;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        backgroundColor: pressed ? colors.surface : colors.card,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 14,
+        padding: 14,
+        gap: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
+      })}
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <Text
+          style={{ flex: 1, fontFamily: "Inter_500Medium", fontSize: 14, color: colors.foreground, lineHeight: 20 }}
+          numberOfLines={2}
+        >
+          {snippet}
+        </Text>
+        <Feather name="chevron-right" size={16} color={colors.mutedForeground} style={{ marginTop: 2 }} />
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <StatusBadge status={inquiry.status} />
+        <Text style={{ fontFamily: "Inter_400Regular", fontSize: 12, color: colors.mutedForeground }}>
+          {formatDate(inquiry.createdAt)}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function InquiryDetailModal({
+  inquiry,
+  onClose,
+  colors,
+  insets,
+}: {
+  inquiry: Inquiry;
+  onClose: () => void;
+  colors: ReturnType<typeof useColors>;
+  insets: ReturnType<typeof useSafeAreaInsets>;
+}) {
+  const images = inquiry.images
+    ? (() => { try { return JSON.parse(inquiry.images) as Array<{ name: string; dataUrl: string }>; } catch { return []; } })()
+    : [];
+
+  return (
+    <Modal animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingTop: insets.top + 12,
+          paddingBottom: 12,
+          paddingHorizontal: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.background,
+        }}>
+          <Text style={{ fontFamily: "Inter_700Bold", fontSize: 18, color: colors.foreground }}>
+            Inquiry Details
+          </Text>
+          <Pressable onPress={onClose} hitSlop={8} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
+            <Feather name="x" size={22} color={colors.foreground} />
+          </Pressable>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: insets.bottom + 32 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <StatusBadge status={inquiry.status} />
+            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: colors.mutedForeground }}>
+              {formatDate(inquiry.createdAt)}
+            </Text>
+          </View>
+
+          <DetailSection label="Product Description" colors={colors}>
+            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 15, color: colors.foreground, lineHeight: 22 }}>
+              {inquiry.productDetails}
+            </Text>
+          </DetailSection>
+
+          {inquiry.productLink ? (
+            <DetailSection label="Product Link" colors={colors}>
+              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.primary, lineHeight: 20 }} numberOfLines={2}>
+                {inquiry.productLink}
+              </Text>
+            </DetailSection>
+          ) : null}
+
+          {(inquiry.quantity != null || inquiry.estimatedCost != null) && (
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              {inquiry.quantity != null && (
+                <DetailSection label="Quantity" colors={colors} style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground }}>{inquiry.quantity}</Text>
+                </DetailSection>
+              )}
+              {inquiry.estimatedCost != null && (
+                <DetailSection label="Est. Value" colors={colors} style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground }}>NPR {inquiry.estimatedCost.toLocaleString()}</Text>
+                </DetailSection>
+              )}
+            </View>
+          )}
+
+          {images.length > 0 && (
+            <DetailSection label="Attached Photos" colors={colors}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {images.map((img, i) => (
+                  <Image
+                    key={i}
+                    source={{ uri: img.dataUrl }}
+                    style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
+                  />
+                ))}
+              </View>
+            </DetailSection>
+          )}
+
+          {inquiry.adminNotes ? (
+            <DetailSection label="Admin Notes" colors={colors}>
+              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.foreground, lineHeight: 20 }}>
+                {inquiry.adminNotes}
+              </Text>
+            </DetailSection>
+          ) : null}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+function DetailSection({
+  label,
+  children,
+  colors,
+  style,
+}: {
+  label: string;
+  children: React.ReactNode;
+  colors: ReturnType<typeof useColors>;
+  style?: object;
+}) {
+  return (
+    <View style={[{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, gap: 6 }, style]}>
+      <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 11, color: colors.mutedForeground, textTransform: "uppercase", letterSpacing: 0.6 }}>
+        {label}
+      </Text>
+      {children}
+    </View>
   );
 }
 
@@ -502,16 +812,32 @@ function makeStyles(
       paddingBottom: 12,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      gap: 10,
     },
     screenTitle: {
       fontSize: 26,
       fontFamily: "Inter_700Bold",
       color: colors.foreground,
-      marginBottom: 2,
     },
     screenSubtitle: {
       fontSize: 13,
       fontFamily: "Inter_400Regular",
+    },
+    tabRow: {
+      flexDirection: "row",
+      borderRadius: 10,
+      borderWidth: 1,
+      padding: 3,
+      alignSelf: "flex-start",
+    },
+    tabBtn: {
+      paddingHorizontal: 16,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    tabBtnText: {
+      fontSize: 13,
+      fontFamily: "Inter_600SemiBold",
     },
     scrollContent: {
       padding: 16,

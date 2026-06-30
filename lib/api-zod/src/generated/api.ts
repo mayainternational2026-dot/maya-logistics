@@ -573,6 +573,7 @@ export const CreateInquiryBody = zod.object({
  */
 export const ListInquiriesResponseItem = zod.object({
   id: zod.number(),
+  userId: zod.number().nullish(),
   name: zod.string(),
   email: zod.string(),
   phone: zod.string().nullish(),
@@ -588,6 +589,26 @@ export const ListInquiriesResponseItem = zod.object({
 export const ListInquiriesResponse = zod.array(ListInquiriesResponseItem);
 
 /**
+ * @summary List the current customer's own inquiries (authenticated)
+ */
+export const ListMyInquiriesResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number().nullish(),
+  name: zod.string(),
+  email: zod.string(),
+  phone: zod.string().nullish(),
+  productDetails: zod.string(),
+  images: zod.string().nullish(),
+  productLink: zod.string().nullish(),
+  quantity: zod.number().nullish(),
+  estimatedCost: zod.number().nullish(),
+  status: zod.string(),
+  adminNotes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListMyInquiriesResponse = zod.array(ListMyInquiriesResponseItem);
+
+/**
  * @summary Update inquiry status or admin notes (admin/staff)
  */
 export const UpdateInquiryParams = zod.object({
@@ -601,6 +622,7 @@ export const UpdateInquiryBody = zod.object({
 
 export const UpdateInquiryResponse = zod.object({
   id: zod.number(),
+  userId: zod.number().nullish(),
   name: zod.string(),
   email: zod.string(),
   phone: zod.string().nullish(),

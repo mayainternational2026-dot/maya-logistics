@@ -1,7 +1,9 @@
-import { pgTable, serial, text, varchar, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { usersTable } from "./users";
 
 export const inquiriesTable = pgTable("inquiries", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   email: varchar("email", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 64 }),

@@ -36,7 +36,23 @@ function sanitizeImages(raw: unknown): string | null {
   return safe.length > 0 ? JSON.stringify(safe) : null;
 }
 
-// Public — anyone can submit an inquiry
+// Customer — list only their own inquiries (matched by userId)
+// MUST be registered before GET /inquiries so Express doesn't try that route first
+router.get("/inquiries/mine", requireAuth("admin", "staff", "customer"), async (req, res): Promise<void> => {
+  const currentUser = req.currentUser;
+  if (!currentUser) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+  const rows = await db
+    .select()
+    .from(inquiriesTable)
+    .where(eq(inquiriesTable.userId, currentUser.id))
+    .orderBy(desc(inquiriesTable.createdAt));
+  res.json(rows.map(serialize));
+});
+
+// Public — anyone can submit an inquiry; link to session user if authenticated
 router.post("/inquiries", async (req, res): Promise<void> => {
   const { name, email, phone, productDetails, images, productLink, quantity, estimatedCost } = req.body;
   if (!name || !email || !productDetails) {
@@ -50,9 +66,12 @@ router.post("/inquiries", async (req, res): Promise<void> => {
     return;
   }
 
+  const userId = req.currentUser?.id ?? null;
+
   const [row] = await db
     .insert(inquiriesTable)
     .values({
+      userId,
       name: String(name).trim(),
       email: String(email).trim().toLowerCase(),
       phone: phone ? String(phone).trim() : null,
@@ -95,6 +114,7 @@ router.patch("/inquiries/:id", requireAuth("admin", "staff"), async (req, res): 
 function serialize(row: typeof inquiriesTable.$inferSelect) {
   return {
     id: row.id,
+    userId: row.userId ?? null,
     name: row.name,
     email: row.email,
     phone: row.phone ?? null,

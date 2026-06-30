@@ -116,6 +116,24 @@ export interface Shipment {
   updatedAt: string;
 }
 
+export type InquiryStatus = "pending" | "reviewing" | "quoted" | "closed";
+
+export interface Inquiry {
+  id: number;
+  userId: number | null;
+  name: string;
+  email: string;
+  phone: string | null;
+  productDetails: string;
+  images: string | null;
+  productLink: string | null;
+  quantity: number | null;
+  estimatedCost: number | null;
+  status: InquiryStatus;
+  adminNotes: string | null;
+  createdAt: string;
+}
+
 export const api = {
   async login(email: string, password: string): Promise<{ user: User }> {
     const res = await apiFetch("/auth/login", {
@@ -218,5 +236,11 @@ export const api = {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error ?? "Submission failed");
     }
+  },
+
+  async listMyInquiries(): Promise<Inquiry[]> {
+    const res = await apiFetch("/inquiries/mine");
+    if (!res.ok) throw new Error("Failed to load inquiries");
+    return res.json();
   },
 };
