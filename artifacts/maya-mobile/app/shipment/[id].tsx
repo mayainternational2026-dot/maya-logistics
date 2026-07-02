@@ -1,8 +1,9 @@
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -11,18 +12,19 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type Shipment, type ShipmentStatus } from "@/lib/api";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/context/AuthContext";
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
-  pending: "Pending",
+  pending: "Order Received",
   collected: "Collected",
   at_warehouse: "At Warehouse",
   customs_clearance: "Customs Clearance",
   in_transit: "In Transit",
-  arrived: "Arrived",
-  delivered: "Delivered",
+  arrived: "Arrived at Office",
+  delivered: "Dispatched",
 };
 
 const STATUS_DESCRIPTIONS: Record<ShipmentStatus, string> = {
@@ -32,15 +34,15 @@ const STATUS_DESCRIPTIONS: Record<ShipmentStatus, string> = {
   customs_clearance: "Your shipment is currently going through customs.",
   in_transit: "Your shipment is on its way to the destination.",
   arrived: "Your shipment has arrived at the destination city.",
-  delivered: "Your shipment has been successfully delivered.",
+  delivered: "Your shipment has been successfully dispatched.",
 };
 
 const STATUS_ICONS: Record<ShipmentStatus, string> = {
-  pending: "clock",
-  collected: "package",
+  pending: "clipboard",
+  collected: "truck",
   at_warehouse: "home",
-  customs_clearance: "file-text",
-  in_transit: "truck",
+  customs_clearance: "shield",
+  in_transit: "navigation",
   arrived: "map-pin",
   delivered: "check-circle",
 };
@@ -198,12 +200,172 @@ const detailStyles = StyleSheet.create({
   },
 });
 
+function StatusUpdateCard({
+  shipment,
+  colors,
+  onUpdated,
+}: {
+  shipment: Shipment;
+  colors: ReturnType<typeof useColors>;
+  onUpdated: () => void;
+}) {
+  const [selected, setSelected] = useState<ShipmentStatus>(shipment.status);
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (newStatus: ShipmentStatus) =>
+      api.updateShipment(shipment.id, { status: newStatus }),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["shipment", String(shipment.id)], updated);
+      queryClient.invalidateQueries({ queryKey: ["shipments"] });
+      onUpdated();
+    },
+    onError: (err: any) => {
+      Alert.alert("Update Failed", err?.message ?? "Could not update status.");
+      setSelected(shipment.status);
+    },
+  });
+
+  const handleSelect = (status: ShipmentStatus) => {
+    if (status === shipment.status) return;
+    Alert.alert(
+      "Update Status",
+      `Change status to "${STATUS_LABELS[status]}"?`,
+      [
+        { text: "Cancel", style: "cancel", onPress: () => setSelected(shipment.status) },
+        {
+          text: "Update",
+          onPress: () => {
+            setSelected(status);
+            mutation.mutate(status);
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <View style={[updateStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={updateStyles.header}>
+        <Feather name="refresh-cw" size={16} color={colors.primary} />
+        <Text style={[updateStyles.title, { color: colors.foreground }]}>Update Status</Text>
+        {mutation.isPending && (
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: "auto" }} />
+        )}
+      </View>
+      <View style={updateStyles.grid}>
+        {STATUS_ORDER.map((status) => {
+          const isActive = selected === status;
+          const isCurrent = shipment.status === status;
+          const color = STATUS_COLORS[status];
+          return (
+            <Pressable
+              key={status}
+              onPress={() => handleSelect(status)}
+              disabled={mutation.isPending}
+              style={({ pressed }) => [
+                updateStyles.pill,
+                {
+                  backgroundColor: isActive ? color : `${color}18`,
+                  borderColor: isActive ? color : `${color}40`,
+                  opacity: pressed ? 0.75 : mutation.isPending ? 0.6 : 1,
+                },
+              ]}
+            >
+              <Feather
+                name={STATUS_ICONS[status] as any}
+                size={13}
+                color={isActive ? "#fff" : color}
+              />
+              <Text
+                style={[
+                  updateStyles.pillLabel,
+                  { color: isActive ? "#fff" : color },
+                ]}
+                numberOfLines={1}
+              >
+                {STATUS_LABELS[status]}
+              </Text>
+              {isCurrent && !isActive && (
+                <View style={[updateStyles.dot, { backgroundColor: color }]} />
+              )}
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={[updateStyles.hint, { color: colors.mutedForeground }]}>
+        Tap a stage to move the shipment to that status.
+      </Text>
+    </View>
+  );
+}
+
+const updateStyles = StyleSheet.create({
+  card: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 14,
+  },
+  title: {
+    fontSize: 16,
+    fontFamily: "Inter_600SemiBold",
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  pillLabel: {
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+    flexShrink: 1,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginLeft: 2,
+  },
+  hint: {
+    fontSize: 11,
+    fontFamily: "Inter_400Regular",
+    marginTop: 12,
+    textAlign: "center",
+  },
+});
+
 export default function ShipmentDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const isWeb = Platform.OS === "web";
+
+  const canUpdateStatus =
+    user?.role === "admin" ||
+    user?.role === "staff";
 
   const { data: shipment, isLoading, isError, refetch } = useQuery({
     queryKey: ["shipment", id],
@@ -291,10 +453,18 @@ export default function ShipmentDetailScreen() {
 
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              Tracking Timeline
+              Shipment Journey
             </Text>
             <StatusTimeline shipment={shipment} colors={colors} />
           </View>
+
+          {canUpdateStatus && (
+            <StatusUpdateCard
+              shipment={shipment}
+              colors={colors}
+              onUpdated={() => refetch()}
+            />
+          )}
 
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>

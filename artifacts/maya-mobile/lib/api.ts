@@ -259,6 +259,19 @@ export const api = {
     }
   },
 
+  async updateShipment(
+    id: number,
+    body: { status?: ShipmentStatus; notes?: string },
+  ): Promise<Shipment> {
+    const res = await apiFetch(`/shipments/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Update failed");
+    return data;
+  },
+
   async listMyInquiries(): Promise<Inquiry[]> {
     const res = await apiFetch("/inquiries/mine");
     if (!res.ok) throw new Error("Failed to load inquiries");
