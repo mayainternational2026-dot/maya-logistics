@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActionSheetIOS,
@@ -24,6 +25,55 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
 const MAX_IMAGES = 4;
+// Per-image size guard (applied after quality: 0.6 compression).
+// expo-image-picker v17 does not expose maxWidth/maxHeight, so quality is the
+// only lever for reducing payload size. We still verify the resulting base64
+// string — if a photo is still over 1 MB of actual image data after JPEG
+// compression at 0.6, we reject it with a clear error rather than hanging.
+//
+// base64 encoding inflates byte size by ~33 %, so a 1 MB image becomes
+// ~1.37 M characters of base64 text. We compare dataUrl string length as a
+// fast proxy for actual byte size.
+const MAX_IMAGE_BYTES = 1 * 1024 * 1024; // 1 MB
+const MAX_IMAGE_DATA_URL_LEN = Math.ceil(MAX_IMAGE_BYTES * (4 / 3)); // ~1.37 M chars
+// Total base64 budget across all images (well under the 10 MB API body limit).
+const MAX_TOTAL_DATA_URL_LEN = 4 * MAX_IMAGE_DATA_URL_LEN; // ~5.5 M chars
+
+const MAX_RESIZE_PX = 800;
+
+/**
+ * Resize an image so its longest side is at most MAX_RESIZE_PX, then compress
+ * it to JPEG at quality 0.6. Returns a base64 dataUrl and the compressed URI.
+ *
+ * expo-image-picker v17 does not expose maxWidth/maxHeight, so we do the resize
+ * step ourselves via expo-image-manipulator after picking.
+ */
+async function resizeAndEncode(
+  uri: string,
+  srcWidth: number,
+  srcHeight: number,
+): Promise<{ dataUrl: string; compressedUri: string }> {
+  const needsResize = srcWidth > MAX_RESIZE_PX || srcHeight > MAX_RESIZE_PX;
+  const resizeAction = needsResize
+    ? srcWidth >= srcHeight
+      ? [{ resize: { width: MAX_RESIZE_PX } }]
+      : [{ resize: { height: MAX_RESIZE_PX } }]
+    : [];
+
+  const result = await manipulateAsync(uri, resizeAction, {
+    compress: 0.6,
+    format: SaveFormat.JPEG,
+    base64: true,
+  });
+
+  if (!result.base64) {
+    throw new Error("Image processing failed — no base64 output.");
+  }
+  return {
+    dataUrl: `data:image/jpeg;base64,${result.base64}`,
+    compressedUri: result.uri,
+  };
+}
 
 type Tab = "new" | "history";
 type AttachedImage = { name: string; dataUrl: string; uri: string };
@@ -121,14 +171,25 @@ export default function InquiryScreen() {
         Alert.alert("Permission required", "Allow camera access to take product photos.");
         return;
       }
-      const result = await ImagePicker.launchCameraAsync({ quality: 0.7, base64: true });
-      if (result.canceled || !result.assets[0]?.base64) return;
+      const result = await ImagePicker.launchCameraAsync({ quality: 1 });
+      if (result.canceled || !result.assets[0]) return;
       const asset = result.assets[0];
-      const mime = asset.mimeType ?? "image/jpeg";
-      const ext = mime.split("/")[1] ?? "jpg";
-      const name = asset.fileName ?? `photo_${Date.now()}.${ext}`;
-      const dataUrl = `data:${mime};base64,${asset.base64}`;
-      setImages((prev) => [...prev, { name, dataUrl, uri: asset.uri }].slice(0, MAX_IMAGES));
+      const name = asset.fileName ?? `photo_${Date.now()}.jpg`;
+      let encoded: { dataUrl: string; compressedUri: string };
+      try {
+        encoded = await resizeAndEncode(asset.uri, asset.width, asset.height);
+      } catch {
+        Alert.alert("Processing failed", "Could not process the photo. Please try again.");
+        return;
+      }
+      if (encoded.dataUrl.length > MAX_IMAGE_DATA_URL_LEN) {
+        Alert.alert(
+          "Photo too large",
+          "This photo is too large to attach even after resizing and compression. Please choose a smaller image.",
+        );
+        return;
+      }
+      setImages((prev) => [...prev, { name, dataUrl: encoded.dataUrl, uri: encoded.compressedUri }].slice(0, MAX_IMAGES));
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -140,18 +201,32 @@ export default function InquiryScreen() {
         mediaTypes: ["images"],
         allowsMultipleSelection: true,
         selectionLimit: remaining,
-        quality: 0.7,
-        base64: true,
+        quality: 1,
       });
       if (result.canceled) return;
-      const newImages: AttachedImage[] = result.assets
-        .filter((a) => a.base64)
-        .map((a) => {
-          const mime = a.mimeType ?? "image/jpeg";
-          const ext = mime.split("/")[1] ?? "jpg";
+      const oversized: string[] = [];
+      const settled = await Promise.allSettled(
+        result.assets.map(async (a) => {
+          const ext = (a.mimeType ?? "image/jpeg").split("/")[1] ?? "jpg";
           const name = a.fileName ?? `photo_${Date.now()}.${ext}`;
-          return { name, dataUrl: `data:${mime};base64,${a.base64}`, uri: a.uri };
-        });
+          const encoded = await resizeAndEncode(a.uri, a.width, a.height);
+          if (encoded.dataUrl.length > MAX_IMAGE_DATA_URL_LEN) {
+            oversized.push(name);
+            return null;
+          }
+          return { name, dataUrl: encoded.dataUrl, uri: encoded.compressedUri } as AttachedImage;
+        }),
+      );
+      const newImages: AttachedImage[] = settled
+        .filter((r): r is PromiseFulfilledResult<AttachedImage> => r.status === "fulfilled" && r.value !== null)
+        .map((r) => r.value);
+      if (oversized.length > 0) {
+        Alert.alert(
+          "Photo too large",
+          `${oversized.length === 1 ? "1 photo was" : `${oversized.length} photos were`} too large to attach even after resizing and compression and ${oversized.length === 1 ? "was" : "were"} skipped. Please choose smaller images.`,
+        );
+      }
+      if (newImages.length === 0) return;
       setImages((prev) => [...prev, ...newImages].slice(0, MAX_IMAGES));
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -199,6 +274,20 @@ export default function InquiryScreen() {
   const handleSubmit = async () => {
     if (!validate()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    const totalLen = images.reduce((sum, img) => sum + img.dataUrl.length, 0);
+    if (totalLen > MAX_TOTAL_DATA_URL_LEN) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS === "web") {
+        alert("The attached photos are too large in total. Please remove one or more photos and try again.");
+      } else {
+        Alert.alert(
+          "Photos too large",
+          "The attached photos are too large in total. Please remove one or more photos and try again.",
+        );
+      }
       return;
     }
 

@@ -44,7 +44,14 @@ app.use(
 );
 
 app.use(cors({ credentials: true, origin: true }));
-app.use(express.json());
+// 10 MB body-size limit: the inquiry form lets customers attach up to 4 product
+// photos. Before upload the mobile client resizes each image so its longest
+// side is at most 800 px, then compresses to JPEG quality 0.6. A typical
+// result is ~50–150 KB per image. 4 images × ~150 KB = ~600 KB of raw bytes;
+// base64 encoding inflates that to ~800 KB. 10 MB gives ample headroom while
+// still bounding runaway payloads. All other endpoints send tiny JSON payloads
+// (< 1 KB) and are unaffected by this limit.
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 const PgSession = connectPgSimple(session);
