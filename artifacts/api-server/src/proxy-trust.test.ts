@@ -32,20 +32,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
 import request from "supertest";
-
-// ── Replica of getRealIp from app.ts ─────────────────────────────────────────
-// Keep in sync: any change in app.ts must be reflected here.
-const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
-
-function getRealIp(req: express.Request): string {
-  const socketIp = req.socket.remoteAddress ?? "unknown";
-  if (!LOOPBACK.has(socketIp)) return socketIp;
-  const xff = req.headers["x-forwarded-for"];
-  if (!xff) return socketIp;
-  const chain = (Array.isArray(xff) ? xff.join(",") : xff).split(",");
-  const proxied = chain[chain.length - 1]?.trim();
-  return proxied || socketIp;
-}
+import { getRealIp } from "./lib/get-real-ip";
 
 // ── Helper: build a fake express.Request for unit tests ───────────────────────
 function fakeReq(socketIp: string, xff?: string): express.Request {

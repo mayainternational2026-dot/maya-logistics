@@ -16,20 +16,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import express from "express";
 import { rateLimit, type Options } from "express-rate-limit";
 import request from "supertest";
-
-// ── Replica of the getRealIp helper from app.ts ──────────────────────────────
-// (Kept in sync: any change there must be reflected here.)
-const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
-
-function getRealIp(req: express.Request): string {
-  const socketIp = req.socket.remoteAddress ?? "unknown";
-  if (!LOOPBACK.has(socketIp)) return socketIp;
-  const xff = req.headers["x-forwarded-for"];
-  if (!xff) return socketIp;
-  const chain = (Array.isArray(xff) ? xff.join(",") : xff).split(",");
-  const proxied = chain[chain.length - 1]?.trim();
-  return proxied || socketIp;
-}
+import { getRealIp } from "./lib/get-real-ip";
 
 // ── Test-app builder ──────────────────────────────────────────────────────────
 // Builds an express app that mirrors the production middleware stack for a
