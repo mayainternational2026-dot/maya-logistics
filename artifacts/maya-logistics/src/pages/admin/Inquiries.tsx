@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useListInquiries, useUpdateInquiry } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Package, ExternalLink, ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
+import { Package, ExternalLink, ChevronDown, ChevronUp, ImageIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNPR } from "@/lib/utils";
@@ -25,12 +25,100 @@ const statusColor: Record<string, string> = {
   closed: "bg-gray-100 text-gray-500",
 };
 
+function ImageLightbox({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: { name: string; dataUrl: string }[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [index, setIndex] = useState(startIndex);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % images.length);
+      if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + images.length) % images.length);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [images.length, onClose]);
+
+  const img = images[index];
+  const safeSrc = img && /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/.test(img.dataUrl)
+    ? img.dataUrl
+    : null;
+
+  if (!safeSrc) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <button
+        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+        onClick={onClose}
+        aria-label="Close"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+            onClick={(e) => { e.stopPropagation(); setIndex((i) => (i - 1 + images.length) % images.length); }}
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+            onClick={(e) => { e.stopPropagation(); setIndex((i) => (i + 1) % images.length); }}
+            aria-label="Next image"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </>
+      )}
+
+      <div className="flex flex-col items-center gap-3 px-16" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={safeSrc}
+          alt={img.name}
+          className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+        />
+        <div className="flex items-center gap-2 text-white/70 text-sm">
+          <span>{img.name}</span>
+          {images.length > 1 && <span>· {index + 1} / {images.length}</span>}
+        </div>
+        {images.length > 1 && (
+          <div className="flex gap-1.5 mt-1">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/40"}`}
+                aria-label={`Go to image ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Inquiries() {
   const { data: inquiries = [], isLoading, refetch } = useListInquiries();
   const update = useUpdateInquiry();
   const { toast } = useToast();
   const [expanded, setExpanded] = useState<number | null>(null);
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const [lightbox, setLightbox] = useState<{ images: { name: string; dataUrl: string }[]; index: number } | null>(null);
 
   const handleStatus = (id: number, status: string) => {
     update.mutate(
@@ -133,21 +221,31 @@ export default function Inquiries() {
                 </div>
 
                 {/* Images */}
-                {parsedImages.length > 0 && (
-                  <div>
-                    <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Images</p>
-                    <div className="flex flex-wrap gap-2">
-                      {parsedImages.map((img, i) => {
-                        const safeSrc = /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/.test(img.dataUrl)
-                          ? img.dataUrl
-                          : null;
-                        return safeSrc ? (
-                          <img key={i} src={safeSrc} alt={img.name} className="h-24 w-24 object-cover rounded-lg border border-gray-200" />
-                        ) : null;
-                      })}
+                {(() => {
+                  const IMAGE_RE = /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/;
+                  const safeImages = parsedImages.filter((m) => IMAGE_RE.test(m.dataUrl));
+                  if (safeImages.length === 0) return null;
+                  return (
+                    <div>
+                      <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">
+                        Images <span className="normal-case font-normal text-gray-300">· click to enlarge</span>
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {safeImages.map((img, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setLightbox({ images: safeImages, index: i })}
+                            className="h-24 w-24 flex-shrink-0 rounded-lg border border-gray-200 overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 hover:opacity-90 transition-opacity cursor-zoom-in"
+                            aria-label={`View image ${i + 1}: ${img.name}`}
+                          >
+                            <img src={img.dataUrl} alt={img.name} className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Status + Notes */}
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -185,6 +283,14 @@ export default function Inquiries() {
           </div>
         );
       })}
+
+      {lightbox && (
+        <ImageLightbox
+          images={lightbox.images}
+          startIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+        />
+      )}
     </div>
   );
 }
