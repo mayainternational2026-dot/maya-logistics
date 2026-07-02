@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   useListShipments,
   useCreateShipment,
+  useUpdateShipment,
   useListUsers,
   getListShipmentsQueryKey,
   getListUsersQueryKey,
@@ -111,6 +112,25 @@ export default function Shipments() {
   );
 
   const create = useCreateShipment();
+  const updateShipment = useUpdateShipment();
+
+  type ShipStatus = "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
+
+  const handleInlineStatusChange = (rowId: number, newStatus: ShipStatus) => {
+    updateShipment.mutate(
+      { id: rowId, data: { status: newStatus } },
+      {
+        onSuccess: () => {
+          toast({ title: "Status updated" });
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        },
+        onError: (err: any) => {
+          toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
 
   const setField = <K extends keyof typeof shipForm>(k: K, v: string) =>
     setShipForm((s) => ({ ...s, [k]: v }));
@@ -253,9 +273,29 @@ export default function Shipments() {
                     <td className="px-6 py-4 text-gray-700">{row.weight} kg</td>
                     <td className="px-6 py-4 font-semibold text-secondary">{formatNPR(row.cost)}</td>
                     <td className="px-6 py-4">
-                      <span className={cn("inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold", statusBadgeClass(row.status))}>
-                        {statusLabel(row.status)}
-                      </span>
+                      {isInternal ? (
+                        <Select
+                          value={row.status}
+                          onValueChange={(v) => handleInlineStatusChange(row.id, v as ShipStatus)}
+                        >
+                          <SelectTrigger className={cn("h-8 w-44 text-xs font-semibold border rounded-full px-3", statusBadgeClass(row.status))}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">📦 Order Received</SelectItem>
+                            <SelectItem value="collected">🚚 Shipment Collected</SelectItem>
+                            <SelectItem value="at_warehouse">🏭 At Warehouse</SelectItem>
+                            <SelectItem value="customs_clearance">🛃 Customs Clearance</SelectItem>
+                            <SelectItem value="in_transit">✈️ In Transit</SelectItem>
+                            <SelectItem value="arrived">🏢 Arrived at Office</SelectItem>
+                            <SelectItem value="delivered">✅ Dispatched</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className={cn("inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold", statusBadgeClass(row.status))}>
+                          {statusLabel(row.status)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs">{format(new Date(row.createdAt), "MMM d, yyyy")}</td>
                     <td className="px-6 py-4 text-right">
