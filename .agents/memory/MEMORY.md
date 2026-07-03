@@ -1,2 +1,3 @@
 - [Railway deployment layout](railway-deployment.md) — two Railway projects; maya-logistics service in easygoing-exploration owns www.mayaimportexport.com
 - [Verify git push actually shipped the diff](git-push-verification.md) — a "successful" push can still miss the intended code; always confirm the target file's content on the remote, not just push exit status.
+- [Verifying a fix on minified frontend bundles](minified-bundle-verification.md) — grepping for source identifiers in prod JS often fails post-minification; prefer functional API/login end-to-end checks over bundle archaeology.
