@@ -188,7 +188,9 @@ export const api = {
       _skipUnauthorized: boolean;
     });
     if (!res.ok) {
-      await clearSession();
+      if (res.status === 401) {
+        await clearSession();
+      }
       return null;
     }
     const data = await res.json();
