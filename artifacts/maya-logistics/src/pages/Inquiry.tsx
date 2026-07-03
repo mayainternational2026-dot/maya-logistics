@@ -7,23 +7,28 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { ChatBot } from "@/components/ui/ChatBot";
+import { useAuth } from "@/lib/use-auth";
 import { Package, Link2, DollarSign, ImagePlus, X, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MyInquiries } from "@/components/inquiry/MyInquiries";
 
 const BASE = import.meta.env.BASE_URL;
 const MAX_IMAGES = 4;
 const MAX_SIZE_MB = 2;
 
 type Errors = { name?: string; email?: string; productDetails?: string };
+type Tab = "new" | "history";
 
 export default function InquiryPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<{ name: string; dataUrl: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
+  const [activeTab, setActiveTab] = useState<Tab>("new");
 
   const [form, setForm] = useState({
     name: "",
@@ -123,6 +128,20 @@ export default function InquiryPage() {
             <p className="text-gray-600 mb-6">
               Thank you! We've received your inquiry and will respond within 24 hours with a custom quote.
             </p>
+            {user && (
+              <Button
+                variant="outline"
+                className="w-full mb-3"
+                onClick={() => {
+                  setSubmitted(false);
+                  setForm({ name: "", email: "", phone: "", productDetails: "", productLink: "", quantity: "", estimatedCost: "" });
+                  setImages([]);
+                  setActiveTab("history");
+                }}
+              >
+                View My Inquiries
+              </Button>
+            )}
             <Button onClick={() => setLocation("/")} className="w-full bg-secondary hover:bg-secondary/90">
               Back to Home
             </Button>
@@ -160,6 +179,36 @@ export default function InquiryPage() {
           </p>
         </div>
 
+        {user && (
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex rounded-full bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => setActiveTab("new")}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
+                  activeTab === "new" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                New Inquiry
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("history")}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
+                  activeTab === "history" ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                My Inquiries
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "history" && user ? (
+          <MyInquiries />
+        ) : (
         <form onSubmit={handleSubmit} noValidate autoComplete="off" className="space-y-6">
           {/* Contact info */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
@@ -311,6 +360,7 @@ export default function InquiryPage() {
             </a>.
           </p>
         </form>
+        )}
       </div>
 
       <WhatsAppButton />

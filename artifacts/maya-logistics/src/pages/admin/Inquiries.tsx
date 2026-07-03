@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useListInquiries, useUpdateInquiry } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Package, ExternalLink, ChevronDown, ChevronUp, ImageIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, ExternalLink, ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNPR } from "@/lib/utils";
+import { ImageLightbox, SAFE_IMAGE_DATA_URL_RE } from "@/components/ui/ImageLightbox";
 
 const STATUS_OPTIONS = ["pending", "reviewing", "quoted", "closed"];
 
@@ -24,93 +25,6 @@ const statusColor: Record<string, string> = {
   quoted: "bg-emerald-100 text-emerald-700",
   closed: "bg-gray-100 text-gray-500",
 };
-
-function ImageLightbox({
-  images,
-  startIndex,
-  onClose,
-}: {
-  images: { name: string; dataUrl: string }[];
-  startIndex: number;
-  onClose: () => void;
-}) {
-  const [index, setIndex] = useState(startIndex);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % images.length);
-      if (e.key === "ArrowLeft") setIndex((i) => (i - 1 + images.length) % images.length);
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [images.length, onClose]);
-
-  const img = images[index];
-  const safeSrc = img && /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/.test(img.dataUrl)
-    ? img.dataUrl
-    : null;
-
-  if (!safeSrc) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <button
-        className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
-        onClick={onClose}
-        aria-label="Close"
-      >
-        <X className="h-5 w-5" />
-      </button>
-
-      {images.length > 1 && (
-        <>
-          <button
-            className="absolute left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
-            onClick={(e) => { e.stopPropagation(); setIndex((i) => (i - 1 + images.length) % images.length); }}
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            className="absolute right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
-            onClick={(e) => { e.stopPropagation(); setIndex((i) => (i + 1) % images.length); }}
-            aria-label="Next image"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </>
-      )}
-
-      <div className="flex flex-col items-center gap-3 px-16" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={safeSrc}
-          alt={img.name}
-          className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
-        />
-        <div className="flex items-center gap-2 text-white/70 text-sm">
-          <span>{img.name}</span>
-          {images.length > 1 && <span>· {index + 1} / {images.length}</span>}
-        </div>
-        {images.length > 1 && (
-          <div className="flex gap-1.5 mt-1">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setIndex(i)}
-                className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/40"}`}
-                aria-label={`Go to image ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function Inquiries() {
   const { data: inquiries = [], isLoading, refetch } = useListInquiries();
@@ -222,8 +136,7 @@ export default function Inquiries() {
 
                 {/* Images */}
                 {(() => {
-                  const IMAGE_RE = /^data:image\/(png|jpe?g|gif|webp|bmp);base64,/;
-                  const safeImages = parsedImages.filter((m) => IMAGE_RE.test(m.dataUrl));
+                  const safeImages = parsedImages.filter((m) => SAFE_IMAGE_DATA_URL_RE.test(m.dataUrl));
                   if (safeImages.length === 0) return null;
                   return (
                     <div>
