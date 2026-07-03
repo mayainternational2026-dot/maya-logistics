@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useParams } from "wouter";
+import { useLocation, useParams, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { SEOHead } from "@/components/SEOHead";
@@ -12,11 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText, Warehouse, ShieldCheck, PlaneTakeoff, Building2, RefreshCw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText, Warehouse, ShieldCheck, PlaneTakeoff, Building2, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import {
   useTrackShipment,
   getTrackShipmentQueryKey,
   useUpdateShipment,
+  useDeleteShipment,
   getGetDashboardSummaryQueryKey,
   getListShipmentsQueryKey,
 } from "@workspace/api-client-react";
@@ -51,7 +63,10 @@ export default function Track() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const canUpdateStatus = user?.role === "admin" || user?.role === "staff";
+  const isAdmin = user?.role === "admin";
+  const isStaff = user?.role === "staff";
+  const canManage = isAdmin || (isStaff && (user?.permissions?.canManageShipments ?? false));
+  const canUpdateStatus = canManage;
 
   const { data: shipment, isLoading, isError, error } = useTrackShipment(
     searchQuery,
@@ -59,6 +74,7 @@ export default function Track() {
   );
 
   const updateShipment = useUpdateShipment();
+  const deleteShipment = useDeleteShipment();
 
   const handleStatusChange = (newStatus: ShipmentStatus) => {
     if (!shipment?.id) return;
@@ -73,6 +89,26 @@ export default function Track() {
         },
         onError: (err: any) => {
           toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleDelete = () => {
+    if (!shipment?.id) return;
+    deleteShipment.mutate(
+      { id: shipment.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Shipment deleted" });
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+          setSearchQuery("");
+          setTrackingId("");
+          setLocation("/track");
+        },
+        onError: (err: any) => {
+          toast({ title: "Delete failed", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
@@ -173,6 +209,50 @@ export default function Track() {
                         <SelectItem value="delivered">✅ Dispatched</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+                {canManage && shipment.id && (
+                  <div className="flex items-center gap-2">
+                    <Link href={`/shipments/${shipment.id}`}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-9 gap-1.5 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Update
+                      </Button>
+                    </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-9 gap-1.5 bg-white/10 border-white/20 text-red-300 hover:bg-red-500/20 hover:text-red-200"
+                          disabled={deleteShipment.isPending}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this shipment?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove shipment{" "}
+                            <span className="font-mono">{shipment.trackingId}</span>.
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 )}
               </div>
