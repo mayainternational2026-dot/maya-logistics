@@ -746,6 +746,131 @@ export const DeleteShippingRateResponse = zod.object({
 });
 
 /**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+metadata here, then uploads the file directly to the returned URL.
+
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1).describe("Original file name."),
+  size: zod.number().min(1).describe("File size in bytes."),
+  contentType: zod
+    .string()
+    .min(1)
+    .describe("MIME type of the file (e.g. `image\/jpeg`)."),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url().describe("Presigned GCS URL for PUT upload."),
+  objectPath: zod
+    .string()
+    .describe(
+      "Normalized object path (e.g. `\/objects\/uploads\/uuid`). Store this in your database.",
+    ),
+  metadata: zod
+    .object({
+      name: zod.string().min(1).describe("Original file name."),
+      size: zod.number().min(1).describe("File size in bytes."),
+      contentType: zod
+        .string()
+        .min(1)
+        .describe("MIME type of the file (e.g. `image\/jpeg`)."),
+    })
+    .optional(),
+});
+
+/**
+ * Unconditionally public — no authentication or ACL checks.
+Searches PUBLIC_OBJECT_SEARCH_PATHS for the given file path.
+
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  filePath: zod.coerce
+    .string()
+    .describe("Relative file path within the public search paths."),
+});
+
+/**
+ * Serves object entities uploaded via presigned URLs. These can optionally
+be protected with authentication or ACL checks based on the use case.
+
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce
+    .string()
+    .describe(
+      "Object path within the private object dir (e.g. `uploads\/some-uuid`).",
+    ),
+});
+
+/**
+ * @summary List product sourcing records (admin/staff)
+ */
+export const ListProductSourcingResponseItem = zod.object({
+  id: zod.number(),
+  sourceProduct: zod
+    .string()
+    .describe(
+      "Where the product is sourced from (supplier name, link, or platform)",
+    ),
+  productName: zod.string(),
+  quantity: zod.number(),
+  shippingCost: zod.number(),
+  customsCost: zod.number(),
+  serviceCharge: zod.number(),
+  totalCost: zod.number(),
+  productImagePath: zod.string().nullish(),
+  productVideoPath: zod.string().nullish(),
+  createdById: zod.number(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListProductSourcingResponse = zod.array(
+  ListProductSourcingResponseItem,
+);
+
+/**
+ * @summary Add a new product sourcing record (admin/staff)
+ */
+
+export const createProductSourcingBodyShippingCostMin = 0;
+
+export const createProductSourcingBodyCustomsCostMin = 0;
+
+export const createProductSourcingBodyServiceChargeMin = 0;
+
+export const CreateProductSourcingBody = zod.object({
+  sourceProduct: zod.string().min(1),
+  productName: zod.string().min(1),
+  quantity: zod.number().min(1).optional(),
+  shippingCost: zod
+    .number()
+    .min(createProductSourcingBodyShippingCostMin)
+    .optional(),
+  customsCost: zod
+    .number()
+    .min(createProductSourcingBodyCustomsCostMin)
+    .optional(),
+  serviceCharge: zod
+    .number()
+    .min(createProductSourcingBodyServiceChargeMin)
+    .optional(),
+  productImagePath: zod.string().optional(),
+  productVideoPath: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a product sourcing record (admin, or staff who created it)
+ */
+export const DeleteProductSourcingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List customer order records (admin/staff with canManageCustomers)
  */
 export const ListCustomerOrdersResponseItem = zod.object({

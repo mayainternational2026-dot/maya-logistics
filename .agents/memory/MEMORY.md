@@ -3,3 +3,4 @@
 - [Verifying a fix on minified frontend bundles](minified-bundle-verification.md) — grepping for source identifiers in prod JS often fails post-minification; prefer functional API/login end-to-end checks over bundle archaeology.
 - [Gmail OTP fallback](gmail-otp-fallback.md) — GMAIL creds present but invalid in dev; OTP fallbacks must trigger on actual send failure, not just missing config
 - [Drizzle push ambiguous rename prompts](drizzle-push-ambiguous-rename.md) — `drizzle-kit push` stalls on interactive create-vs-rename prompts for orphan tables not in schema; can't be piped past reliably, resolve by creating the table manually via SQL first.
+- [Object storage client href construction](object-storage-client-href.md) — stored objectPath must be remapped to `/api/storage/objects/...` before use in `<a href>`/`<img src>`, or links silently 404.

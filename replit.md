@@ -4,6 +4,7 @@ A logistics management web app for Maya Import Export Logistic, a Nepali cargo c
 
 ## Key Features
 
+- Product Sourcing (Admin Dashboard): admin and staff (unconditionally, no permission gate) can add sourced-product records with source product, product name, quantity per piece, shipping cost, customs cost, service charge, and an optional product image/video upload (object storage). Total cost is computed server-side. Staff can delete only their own records; admin can delete any.
 - 7-stage shipment tracking: pending → collected → at_warehouse → customs_clearance → in_transit → arrived → delivered
 - Role-based access: admin / staff / customer
 - SMTP email notifications via Gmail (nodemailer) on status changes and payment confirmation
@@ -59,8 +60,10 @@ Three roles enforced server-side:
 - `lib/api-spec/openapi.yaml` — single source of truth for the API contract
 - `lib/api-zod` — generated Zod schemas (re-exported from `src/index.ts`)
 - `lib/api-client-react` — generated React Query hooks
-- `lib/db/src/schema/` — Drizzle tables (users, permissions, shipments, password_resets, contact_messages, sessions)
-- `artifacts/api-server/src/routes/` — auth, users, shipments, dashboard, contact
+- `lib/db/src/schema/` — Drizzle tables (users, permissions, shipments, password_resets, contact_messages, sessions, product_sourcing)
+- `lib/object-storage-web` — shared `ObjectUploader`/`useUpload` client helpers for object storage uploads
+- `artifacts/api-server/src/routes/` — auth, users, shipments, dashboard, contact, product-sourcing, storage
+- `artifacts/api-server/src/lib/objectStorage.ts`, `objectAcl.ts` — object storage service (uploads/downloads) backing product sourcing image/video attachments
 - `artifacts/api-server/src/lib/auth.ts` — session middleware + `requireAuth(...roles)` guard
 - `artifacts/maya-logistics/src/pages/` — Home, Track, auth/, Dashboard, shipments/, admin/, Profile
 - `scripts/src/seed.ts` — idempotent seed script (run with `pnpm --filter @workspace/scripts run seed`)

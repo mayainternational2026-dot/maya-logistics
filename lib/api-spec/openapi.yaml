@@ -24,6 +24,10 @@ tags:
     description: Product inquiries and follow-ups
   - name: customer-orders
     description: Quick customer sales record entries (name, contact, product, payment)
+  - name: Storage
+    description: Object storage upload and serving endpoints.
+  - name: product-sourcing
+    description: Product sourcing records with cost breakdown and media (image/video)
 paths:
   /healthz:
     get:
@@ -735,6 +739,189 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ----- Storage -----
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      description: |
+        Returns a presigned GCS URL for direct upload. The client sends JSON
+        metadata here, then uploads the file directly to the returned URL.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+      description: |
+        Unconditionally public — no authentication or ACL checks.
+        Searches PUBLIC_OBJECT_SEARCH_PATHS for the given file path.
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Relative file path within the public search paths.
+      responses:
+        "200":
+          description: Object content streamed with correct Content-Type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: File not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to serve public object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      description: |
+        Serves object entities uploaded via presigned URLs. These can optionally
+        be protected with authentication or ACL checks based on the use case.
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Object path within the private object dir (e.g. `uploads/some-uuid`).
+      responses:
+        "200":
+          description: Object content streamed with correct Content-Type.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to serve object.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ----- Product Sourcing -----
+  /product-sourcing:
+    get:
+      operationId: listProductSourcing
+      tags: [product-sourcing]
+      summary: List product sourcing records (admin/staff)
+      responses:
+        "200":
+          description: List of product sourcing records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductSourcing"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createProductSourcing
+      tags: [product-sourcing]
+      summary: Add a new product sourcing record (admin/staff)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductSourcingInput"
+      responses:
+        "201":
+          description: Product sourcing record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSourcing"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /product-sourcing/{id}:
+    delete:
+      operationId: deleteProductSourcing
+      tags: [product-sourcing]
+      summary: Delete a product sourcing record (admin, or staff who created it)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not found
           content:
@@ -1610,6 +1797,115 @@ components:
           type: string
         adminNotes:
           type: string
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Original file name.
+        size:
+          type: integer
+          minimum: 1
+          description: File size in bytes.
+        contentType:
+          type: string
+          minLength: 1
+          description: MIME type of the file (e.g. `image/jpeg`).
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+          description: Presigned GCS URL for PUT upload.
+        objectPath:
+          type: string
+          description: Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database.
+        metadata:
+          $ref: "#/components/schemas/UploadUrlRequest"
+
+    ProductSourcing:
+      type: object
+      properties:
+        id:
+          type: integer
+        sourceProduct:
+          type: string
+          description: Where the product is sourced from (supplier name, link, or platform)
+        productName:
+          type: string
+        quantity:
+          type: integer
+        shippingCost:
+          type: number
+        customsCost:
+          type: number
+        serviceCharge:
+          type: number
+        totalCost:
+          type: number
+        productImagePath:
+          type: string
+          nullable: true
+        productVideoPath:
+          type: string
+          nullable: true
+        createdById:
+          type: integer
+        createdByName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          sourceProduct,
+          productName,
+          quantity,
+          shippingCost,
+          customsCost,
+          serviceCharge,
+          totalCost,
+          createdById,
+          createdAt,
+          updatedAt,
+        ]
+
+    ProductSourcingInput:
+      type: object
+      properties:
+        sourceProduct:
+          type: string
+          minLength: 1
+        productName:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+        shippingCost:
+          type: number
+          minimum: 0
+        customsCost:
+          type: number
+          minimum: 0
+        serviceCharge:
+          type: number
+          minimum: 0
+        productImagePath:
+          type: string
+        productVideoPath:
+          type: string
+      required: [sourceProduct, productName]
 
     CustomerOrder:
       type: object

@@ -12,6 +12,8 @@ import workLogRouter from "./workLog";
 import shippingRatesRouter from "./shippingRates";
 import expensesRouter from "./expenses";
 import customerOrdersRouter from "./customerOrders";
+import productSourcingRouter from "./productSourcing";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -28,5 +30,7 @@ router.use(workLogRouter);
 router.use(shippingRatesRouter);
 router.use(expensesRouter);
 router.use(customerOrdersRouter);
+router.use(productSourcingRouter);
+router.use(storageRouter);
 
 export default router;

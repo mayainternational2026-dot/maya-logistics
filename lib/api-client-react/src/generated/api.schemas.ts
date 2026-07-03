@@ -381,6 +381,67 @@ export interface UpdateInquiryBody {
   adminNotes?: string;
 }
 
+export interface UploadUrlRequest {
+  /**
+   * Original file name.
+   * @minLength 1
+   */
+  name: string;
+  /**
+   * File size in bytes.
+   * @minimum 1
+   */
+  size: number;
+  /**
+   * MIME type of the file (e.g. `image/jpeg`).
+   * @minLength 1
+   */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  /** Presigned GCS URL for PUT upload. */
+  uploadURL: string;
+  /** Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database. */
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export interface ProductSourcing {
+  id: number;
+  /** Where the product is sourced from (supplier name, link, or platform) */
+  sourceProduct: string;
+  productName: string;
+  quantity: number;
+  shippingCost: number;
+  customsCost: number;
+  serviceCharge: number;
+  totalCost: number;
+  productImagePath?: string | null;
+  productVideoPath?: string | null;
+  createdById: number;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductSourcingInput {
+  /** @minLength 1 */
+  sourceProduct: string;
+  /** @minLength 1 */
+  productName: string;
+  /** @minimum 1 */
+  quantity?: number;
+  /** @minimum 0 */
+  shippingCost?: number;
+  /** @minimum 0 */
+  customsCost?: number;
+  /** @minimum 0 */
+  serviceCharge?: number;
+  productImagePath?: string;
+  productVideoPath?: string;
+}
+
 export interface CustomerOrder {
   id: number;
   name: string;
