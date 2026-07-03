@@ -1,1 +1,2 @@
 - [Railway deployment layout](railway-deployment.md) — two Railway projects; maya-logistics service in easygoing-exploration owns www.mayaimportexport.com
+- [Verify git push actually shipped the diff](git-push-verification.md) — a "successful" push can still miss the intended code; always confirm the target file's content on the remote, not just push exit status.
