@@ -746,6 +746,53 @@ export const DeleteShippingRateResponse = zod.object({
 });
 
 /**
+ * @summary List customer order records (admin/staff with canManageCustomers)
+ */
+export const ListCustomerOrdersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  whatsappNumber: zod.string().nullish(),
+  email: zod.string().nullish(),
+  productName: zod.string(),
+  quantity: zod.number(),
+  totalPrice: zod.number(),
+  paidAmount: zod.number(),
+  dueAmount: zod.number(),
+  createdById: zod.number(),
+  createdByName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListCustomerOrdersResponse = zod.array(
+  ListCustomerOrdersResponseItem,
+);
+
+/**
+ * @summary Add a new customer order record
+ */
+
+export const createCustomerOrderBodyTotalPriceMin = 0;
+
+export const createCustomerOrderBodyPaidAmountMin = 0;
+
+export const CreateCustomerOrderBody = zod.object({
+  name: zod.string().min(1),
+  whatsappNumber: zod.string().optional(),
+  email: zod.string().optional(),
+  productName: zod.string().min(1),
+  quantity: zod.number().min(1).optional(),
+  totalPrice: zod.number().min(createCustomerOrderBodyTotalPriceMin),
+  paidAmount: zod.number().min(createCustomerOrderBodyPaidAmountMin).optional(),
+});
+
+/**
+ * @summary Delete a customer order record (admin/staff with canManageCustomers)
+ */
+export const DeleteCustomerOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List expenses (admin sees all, staff sees own)
  */
 export const ListExpensesResponseItem = zod.object({

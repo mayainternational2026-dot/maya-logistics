@@ -22,6 +22,8 @@ tags:
     description: Contact form
   - name: inquiries
     description: Product inquiries and follow-ups
+  - name: customer-orders
+    description: Quick customer sales record entries (name, contact, product, payment)
 paths:
   /healthz:
     get:
@@ -733,6 +735,96 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ----- Customer Orders -----
+  /customer-orders:
+    get:
+      operationId: listCustomerOrders
+      tags: [customer-orders]
+      summary: List customer order records (admin/staff with canManageCustomers)
+      responses:
+        "200":
+          description: List of customer orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomerOrder"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createCustomerOrder
+      tags: [customer-orders]
+      summary: Add a new customer order record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerOrderInput"
+      responses:
+        "201":
+          description: Customer order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerOrder"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /customer-orders/{id}:
+    delete:
+      operationId: deleteCustomerOrder
+      tags: [customer-orders]
+      summary: Delete a customer order record (admin/staff with canManageCustomers)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not found
           content:
@@ -1518,6 +1610,78 @@ components:
           type: string
         adminNotes:
           type: string
+
+    CustomerOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        whatsappNumber:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        productName:
+          type: string
+        quantity:
+          type: integer
+        totalPrice:
+          type: number
+        paidAmount:
+          type: number
+        dueAmount:
+          type: number
+        createdById:
+          type: integer
+        createdByName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        [
+          id,
+          name,
+          productName,
+          quantity,
+          totalPrice,
+          paidAmount,
+          dueAmount,
+          createdById,
+          createdAt,
+          updatedAt,
+        ]
+
+    CustomerOrderInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        whatsappNumber:
+          type: string
+        email:
+          type: string
+        productName:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+        totalPrice:
+          type: number
+          minimum: 0
+        paidAmount:
+          type: number
+          minimum: 0
+      required: [name, productName, totalPrice]
 
     Expense:
       type: object

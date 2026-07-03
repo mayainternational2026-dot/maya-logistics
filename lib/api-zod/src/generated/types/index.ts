@@ -16,6 +16,8 @@ export * from "./createShipmentBody";
 export * from "./createShippingRateBody";
 export * from "./createUserBody";
 export * from "./currentUserResponse";
+export * from "./customerOrder";
+export * from "./customerOrderInput";
 export * from "./dashboardSummary";
 export * from "./errorResponse";
 export * from "./expense";

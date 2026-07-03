@@ -12,3 +12,4 @@ export * from "./leaveRequests";
 export * from "./workLogs";
 export * from "./shippingRates";
 export * from "./expenses";
+export * from "./customerOrders";

@@ -381,6 +381,37 @@ export interface UpdateInquiryBody {
   adminNotes?: string;
 }
 
+export interface CustomerOrder {
+  id: number;
+  name: string;
+  whatsappNumber?: string | null;
+  email?: string | null;
+  productName: string;
+  quantity: number;
+  totalPrice: number;
+  paidAmount: number;
+  dueAmount: number;
+  createdById: number;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerOrderInput {
+  /** @minLength 1 */
+  name: string;
+  whatsappNumber?: string;
+  email?: string;
+  /** @minLength 1 */
+  productName: string;
+  /** @minimum 1 */
+  quantity?: number;
+  /** @minimum 0 */
+  totalPrice: number;
+  /** @minimum 0 */
+  paidAmount?: number;
+}
+
 export interface Expense {
   id: number;
   date: string;

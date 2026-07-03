@@ -7,8 +7,12 @@ import {
   useAdminResetUserPassword,
   useDeleteUser,
   useCreateShipment,
+  useListCustomerOrders,
+  useCreateCustomerOrder,
+  useDeleteCustomerOrder,
   getListUsersQueryKey,
   getListShipmentsQueryKey,
+  getListCustomerOrdersQueryKey,
 } from "@workspace/api-client-react";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,6 +56,7 @@ import {
   KeyRound,
   Plus,
   Settings,
+  ShoppingCart,
   Trash2,
   Users as UsersIcon,
   XCircle,
@@ -716,6 +721,336 @@ function QuickBookingDialog({
   );
 }
 
+function CustomerOrderDialog({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const create = useCreateCustomerOrder();
+
+  const [form, setForm] = useState({
+    name: "",
+    whatsappNumber: "",
+    email: "",
+    productName: "",
+    quantity: "1",
+    totalPrice: "",
+    paidAmount: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const set = (field: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((s) => ({ ...s, [field]: e.target.value }));
+      setErrors((p) => ({ ...p, [field]: "" }));
+    };
+
+  const totalPriceNum = parseFloat(form.totalPrice) || 0;
+  const paidAmountNum = parseFloat(form.paidAmount) || 0;
+  const dueAmount = Math.max(0, totalPriceNum - paidAmountNum);
+
+  function validate() {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Customer name is required";
+    if (!form.productName.trim()) errs.productName = "Product name is required";
+    if (!form.totalPrice || isNaN(Number(form.totalPrice)) || Number(form.totalPrice) < 0)
+      errs.totalPrice = "Enter a valid total price";
+    if (form.paidAmount && (isNaN(Number(form.paidAmount)) || Number(form.paidAmount) < 0))
+      errs.paidAmount = "Enter a valid amount";
+    if (paidAmountNum > totalPriceNum)
+      errs.paidAmount = "Paid amount cannot exceed total price";
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+      errs.email = "Enter a valid email address";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    create.mutate(
+      {
+        data: {
+          name: form.name.trim(),
+          whatsappNumber: form.whatsappNumber.trim() || undefined,
+          email: form.email.trim() || undefined,
+          productName: form.productName.trim(),
+          quantity: form.quantity ? Number(form.quantity) : undefined,
+          totalPrice: totalPriceNum,
+          paidAmount: paidAmountNum > 0 ? paidAmountNum : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Customer order saved" });
+          queryClient.invalidateQueries({ queryKey: getListCustomerOrdersQueryKey() });
+          onClose();
+        },
+        onError: (err: any) => {
+          toast({ title: "Could not save", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const FErr = ({ field }: { field: string }) =>
+    errors[field] ? (
+      <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+        <XCircle className="h-3 w-3 flex-shrink-0" />{errors[field]}
+      </p>
+    ) : null;
+
+  return (
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>Add customer order</DialogTitle>
+        <DialogDescription>Save a quick sales record for a customer.</DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Customer Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={form.name}
+              onChange={set("name")}
+              placeholder="e.g. Ramesh Shrestha"
+              className={cn("h-11", errors.name && "border-red-400")}
+            />
+            <FErr field="name" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number</label>
+            <Input
+              value={form.whatsappNumber}
+              onChange={set("whatsappNumber")}
+              placeholder="+977..."
+              className="h-11"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Gmail / Email</label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={set("email")}
+              placeholder="name@gmail.com"
+              className={cn("h-11", errors.email && "border-red-400")}
+            />
+            <FErr field="email" />
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Product Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={form.productName}
+              onChange={set("productName")}
+              placeholder="e.g. Electronics, Garments"
+              className={cn("h-11", errors.productName && "border-red-400")}
+            />
+            <FErr field="productName" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+            <Input
+              type="number"
+              min="1"
+              value={form.quantity}
+              onChange={set("quantity")}
+              placeholder="Units"
+              className="h-11"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Payment</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Price (NPR) <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.totalPrice}
+                onChange={set("totalPrice")}
+                placeholder="0.00"
+                className={cn("h-11", errors.totalPrice && "border-red-400")}
+              />
+              <FErr field="totalPrice" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Paid Amount (NPR)</label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.paidAmount}
+                onChange={set("paidAmount")}
+                placeholder="0.00"
+                className={cn("h-11", errors.paidAmount && "border-red-400")}
+              />
+              <FErr field="paidAmount" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-md bg-gray-50 px-4 py-2.5 border border-gray-100">
+            <span className="text-sm font-medium text-gray-600">Due Amount (NPR)</span>
+            <span className={cn(
+              "text-base font-bold",
+              dueAmount > 0 ? "text-red-600" : "text-green-600",
+            )}>
+              {dueAmount.toLocaleString("en-NP", { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" disabled={create.isPending} className="bg-primary hover:bg-primary/90">
+            {create.isPending ? "Saving…" : "Save customer"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  );
+}
+
+function CustomerOrdersSection() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useListCustomerOrders({
+    query: { queryKey: getListCustomerOrdersQueryKey() },
+  });
+  const remove = useDeleteCustomerOrder();
+
+  const handleDelete = (id: number) => {
+    remove.mutate(
+      { id },
+      {
+        onSuccess: () => {
+          toast({ title: "Customer order deleted" });
+          queryClient.invalidateQueries({ queryKey: getListCustomerOrdersQueryKey() });
+        },
+        onError: (err: any) => {
+          toast({ title: "Delete failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-secondary">Customer Orders</h2>
+          <p className="text-sm text-gray-600">Quick sales records saved outside of shipment tracking.</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary hover:bg-primary/90 gap-2">
+              <ShoppingCart className="h-4 w-4" /> Add customer
+            </Button>
+          </DialogTrigger>
+          <CustomerOrderDialog onClose={() => setOpen(false)} />
+        </Dialog>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        {isLoading ? (
+          <div className="p-6 space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full" />
+            ))}
+          </div>
+        ) : (data ?? []).length === 0 ? (
+          <div className="py-12 text-center">
+            <ShoppingCart className="mx-auto h-8 w-8 text-gray-300" />
+            <p className="mt-3 text-sm text-gray-500">No customer orders yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr className="text-left text-xs uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-4">Customer</th>
+                  <th className="px-6 py-4">Contact</th>
+                  <th className="px-6 py-4">Product</th>
+                  <th className="px-6 py-4">Qty</th>
+                  <th className="px-6 py-4">Total</th>
+                  <th className="px-6 py-4">Paid</th>
+                  <th className="px-6 py-4">Due</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data ?? []).map((o) => (
+                  <tr key={o.id} className="border-t border-gray-100 hover:bg-gray-50">
+                    <td className="px-6 py-4 font-semibold text-secondary">{o.name}</td>
+                    <td className="px-6 py-4 text-gray-700">
+                      <div className="flex flex-col">
+                        {o.whatsappNumber && <span>{o.whatsappNumber}</span>}
+                        {o.email && <span className="text-xs text-gray-500">{o.email}</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">{o.productName}</td>
+                    <td className="px-6 py-4 text-gray-700">{o.quantity}</td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {o.totalPrice.toLocaleString("en-NP", { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-4 text-gray-700">
+                      {o.paidAmount.toLocaleString("en-NP", { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={cn("font-semibold", o.dueAmount > 0 ? "text-red-600" : "text-green-600")}>
+                        {o.dueAmount.toLocaleString("en-NP", { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 gap-1 text-destructive">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete customer order?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove the record for {o.name}.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(o.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Users() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -893,6 +1228,8 @@ export default function Users() {
           <QuickBookingDialog customer={bookingFor} onClose={() => setBookingFor(null)} />
         </Dialog>
       )}
+
+      <CustomerOrdersSection />
 
       <WhatsAppButton />
     </div>

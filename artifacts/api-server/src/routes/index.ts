@@ -11,6 +11,7 @@ import leaveRouter from "./leave";
 import workLogRouter from "./workLog";
 import shippingRatesRouter from "./shippingRates";
 import expensesRouter from "./expenses";
+import customerOrdersRouter from "./customerOrders";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(leaveRouter);
 router.use(workLogRouter);
 router.use(shippingRatesRouter);
 router.use(expensesRouter);
+router.use(customerOrdersRouter);
 
 export default router;
