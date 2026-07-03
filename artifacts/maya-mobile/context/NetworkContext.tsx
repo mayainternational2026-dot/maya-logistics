@@ -33,7 +33,7 @@ export function NetworkProvider({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const checkingRef = useRef(false);
   const wasOfflineRef = useRef(false);
-  const { refresh: refreshAuth } = useAuth();
+  const { refresh: refreshAuth, initialCheckDoneRef } = useAuth();
 
   useEffect(() => {
     wasOfflineRef.current = isOffline;
@@ -78,12 +78,16 @@ export function NetworkProvider({
 
   useEffect(() => {
     setNetworkErrorHandler(() => {
+      // Ignore network errors that occur before the initial auth check has
+      // completed (e.g. cold start before the API base URL is fully wired
+      // up), so we don't flash a false "offline" overlay on app launch.
+      if (!initialCheckDoneRef.current) return;
       setIsOffline(true);
     });
     return () => {
       setNetworkErrorHandler(() => {});
     };
-  }, []);
+  }, [initialCheckDoneRef]);
 
   const retry = useCallback(() => {
     checkConnectivity();

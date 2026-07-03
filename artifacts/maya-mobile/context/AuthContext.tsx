@@ -15,6 +15,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  initialCheckDoneRef: React.MutableRefObject<boolean>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -71,7 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, logout, refresh, initialCheckDoneRef: initialCheckDone }}
+    >
       {children}
     </AuthContext.Provider>
   );
