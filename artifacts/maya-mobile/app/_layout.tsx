@@ -76,12 +76,12 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <NetworkProvider>
-                <AuthProvider>
+              <AuthProvider>
+                <NetworkProvider queryClient={queryClient}>
                   <RootLayoutNav />
                   <NetworkErrorOverlay />
-                </AuthProvider>
-              </NetworkProvider>
+                </NetworkProvider>
+              </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

@@ -1,3 +1,4 @@
+import type { QueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
   useCallback,
@@ -6,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { pingServer, setNetworkErrorHandler } from "@/lib/api";
 
 interface NetworkContextValue {
@@ -20,10 +22,22 @@ const NetworkContext = createContext<NetworkContextValue>({
 
 const RETRY_INTERVAL_MS = 5000;
 
-export function NetworkProvider({ children }: { children: React.ReactNode }) {
+export function NetworkProvider({
+  children,
+  queryClient,
+}: {
+  children: React.ReactNode;
+  queryClient: QueryClient;
+}) {
   const [isOffline, setIsOffline] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const checkingRef = useRef(false);
+  const wasOfflineRef = useRef(false);
+  const { refresh: refreshAuth } = useAuth();
+
+  useEffect(() => {
+    wasOfflineRef.current = isOffline;
+  }, [isOffline]);
 
   const checkConnectivity = useCallback(async () => {
     if (checkingRef.current) return;
@@ -31,12 +45,19 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     try {
       const reachable = await pingServer();
       if (reachable) {
+        if (wasOfflineRef.current) {
+          // Just came back online: refetch everything instead of leaving
+          // screens showing stale, pre-outage data, and re-verify the
+          // session in case it expired while we were offline.
+          queryClient.invalidateQueries();
+          refreshAuth();
+        }
         setIsOffline(false);
       }
     } finally {
       checkingRef.current = false;
     }
-  }, []);
+  }, [queryClient, refreshAuth]);
 
   useEffect(() => {
     if (isOffline) {
