@@ -112,7 +112,7 @@ export function ProofSection() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
-              href="https://wa.me/9779769686908?text=Hi%20Maya%20Logistics%2C%20I%20would%20like%20to%20share%20my%20feedback%20about%20my%20recent%20shipment."
+              href="https://wa.me/9779744732123?text=Hi%20Maya%20Logistics%2C%20I%20would%20like%20to%20share%20my%20feedback%20about%20my%20recent%20shipment."
               target="_blank"
               rel="noopener noreferrer"
             >

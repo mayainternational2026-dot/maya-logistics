@@ -73,7 +73,7 @@ export default function Testimonials() {
   const handleWhatsApp = () => {
     setMethod("whatsapp");
     setSent(true);
-    window.open(`https://wa.me/9779769686908?text=${encodeURIComponent(buildMessage())}`, "_blank");
+    window.open(`https://wa.me/9779744732123?text=${encodeURIComponent(buildMessage())}`, "_blank");
   };
 
   const handleEmail = () => {
@@ -346,7 +346,7 @@ export default function Testimonials() {
                 Get Free Quote
               </a>
               <a
-                href="https://wa.me/9779769686908"
+                href="https://wa.me/9779744732123"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium px-5 py-2.5 rounded-lg transition-colors text-sm"

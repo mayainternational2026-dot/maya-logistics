@@ -58,7 +58,7 @@ async function main() {
   const adminId = await ensureUser({
     name: "Maya Admin",
     email: "chapagainsirish@gmail.com",
-    phone: "9768595133",
+    phone: "9744732123",
     password: "Sirish@@2054",
     role: "admin",
   });
@@ -240,7 +240,7 @@ async function main() {
     },
     {
       sender: "Maya Import Export",
-      senderPhone: "9769686908",
+      senderPhone: "9744732123",
       receiver: "Dubai Logistics Hub",
       receiverPhone: "+971 4 555 0240",
       origin: "Kathmandu, Nepal",

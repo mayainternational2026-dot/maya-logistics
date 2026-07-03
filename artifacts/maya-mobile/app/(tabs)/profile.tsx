@@ -96,7 +96,7 @@ export default function ProfileScreen() {
         <View style={styles.aboutRow}>
           <Feather name="phone" size={14} color={colors.mutedForeground} />
           <Text style={[styles.aboutText, { color: colors.foreground }]}>
-            +977 9768595133
+            +977 9744732123
           </Text>
         </View>
       </View>

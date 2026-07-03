@@ -11,7 +11,7 @@ A logistics management web app for Maya Import Export Logistic, a Nepali cargo c
 - Product inquiry form at `/inquiry` (with image upload, product link, quantity, estimated value)
 - Admin inquiries management at `/admin/inquiries` with status workflow (pending → reviewing → quoted → closed)
 - Chat support bot (floating widget, rule-based FAQ, WhatsApp escalation) on every public page
-- WhatsApp button linking to `wa.me/9779768595133` on every public page
+- WhatsApp button linking to `wa.me/9779744732123` on every public page
 
 ## Tech stack
 
@@ -51,7 +51,7 @@ Three roles enforced server-side:
 - Shipment detail with status update + delete (admin/staff with permission), Generate Invoice deep-link to `https://invoice-generator.com/` with prefilled NPR pricing and shipment metadata.
 - Admin Users page: create staff/customers, edit per-user permissions, reset passwords, delete users.
 - Staff Activity leaderboard for admin.
-- Floating WhatsApp button on every page → `https://wa.me/9779769686908`.
+- Floating WhatsApp button on every page → `https://wa.me/9779744732123`.
 - Brand: deep navy + crimson red + white, with Nepali flag accents — sourced from the company logo at `public/maya-logo.jpeg`.
 
 ## Repository layout

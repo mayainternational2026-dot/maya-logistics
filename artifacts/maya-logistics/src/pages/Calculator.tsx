@@ -223,7 +223,7 @@ export default function Calculator() {
 💰 Estimated Cost: ${formatMoney(estimatedCost, currency)}
 
 Please confirm final pricing. Thank you.`;
-    window.open(`https://wa.me/9779769686908?text=${encodeURIComponent(msg)}`, "_blank");
+    window.open(`https://wa.me/9779744732123?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   return (

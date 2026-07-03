@@ -306,7 +306,7 @@ export default function InquiryPage() {
 
           <p className="text-center text-xs text-gray-400">
             We respond within 24 hours. You can also reach us on{" "}
-            <a href="https://wa.me/9779768595133" target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-medium">
+            <a href="https://wa.me/9779744732123" target="_blank" rel="noopener noreferrer" className="text-emerald-600 font-medium">
               WhatsApp
             </a>.
           </p>

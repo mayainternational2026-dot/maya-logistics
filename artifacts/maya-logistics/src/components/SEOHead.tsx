@@ -15,7 +15,7 @@ const SITE_NAME = "Maya Import Export Logistic";
 const BASE_URL = "https://www.mayaimportexport.com";
 const DEFAULT_IMAGE = `${BASE_URL}/opengraph.jpg`;
 const DEFAULT_DESC =
-  "Nepal's trusted freight forwarding company. Air cargo, sea freight, road freight & customs clearance from Kathmandu. Call 014527999 or +977 9769686908.";
+  "Nepal's trusted freight forwarding company. Air cargo, sea freight, road freight & customs clearance from Kathmandu. Call 014527999 or +977 9744732123.";
 const DEFAULT_KEYWORDS =
   "logistics company in Nepal, customs clearance Nepal, cargo service Kathmandu, freight forwarding Nepal, air cargo Nepal, sea freight Nepal, import export Nepal, cargo company Kathmandu, international shipping Nepal, Maya Import Export";
 

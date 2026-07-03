@@ -12,7 +12,7 @@ const CO = {
   name: "Maya Import Export Logistic",
   address1: "Anandamaya Marg, Dhumbarahi",
   address2: "Kathmandu, Nepal",
-  phone: "Tel: 014527999 | +977 9769686908",
+  phone: "Tel: 014527999 | +977 9744732123",
   email: "mayaimportexportinternational@gmail.com",
   website: "www.mayaimportexport.com",
 };

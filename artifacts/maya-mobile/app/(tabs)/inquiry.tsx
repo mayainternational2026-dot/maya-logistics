@@ -621,7 +621,7 @@ export default function InquiryScreen() {
             </Pressable>
 
             <Text style={[styles.footnote, { color: colors.mutedForeground }]}>
-              We respond within 24 hours. You can also reach us on WhatsApp: +977 9769686908
+              We respond within 24 hours. You can also reach us on WhatsApp: +977 9744732123
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>

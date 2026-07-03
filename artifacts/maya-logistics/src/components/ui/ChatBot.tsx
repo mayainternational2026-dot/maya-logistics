@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, ChevronRight } from "lucide-react";
 
-const WA_NUMBER = "9779768595133";
+const WA_NUMBER = "9779744732123";
 const WA_URL = `https://wa.me/${WA_NUMBER}`;
 
 interface Message {
@@ -39,7 +39,7 @@ const FAQS: Record<string, { answer: string; followUp?: QuickReply[] }> = {
     ],
   },
   contact: {
-    answer: "📍 Anandamaya Marg, Dhumbarahi, Kathmandu\n📞 +977 9768595133\n✉️ mayaimportexportinternational@gmail.com\n\nOffice hours: Sun–Fri, 9 AM – 6 PM NPT",
+    answer: "📍 Anandamaya Marg, Dhumbarahi, Kathmandu\n📞 +977 9744732123\n✉️ mayaimportexportinternational@gmail.com\n\nOffice hours: Sun–Fri, 9 AM – 6 PM NPT",
     followUp: [
       { label: "WhatsApp Us", value: "whatsapp" },
       { label: "Main menu", value: "menu" },

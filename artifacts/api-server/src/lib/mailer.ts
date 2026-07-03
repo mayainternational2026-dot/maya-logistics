@@ -4,9 +4,9 @@ import { logger } from "./logger";
 
 const COMPANY_NAME = "Maya Import Export Logistic";
 const COMPANY_ADDRESS = "Anandamaya Marg, Dhumbarahi, Kathmandu, Nepal";
-const COMPANY_PHONE = "+977 9769686908";
+const COMPANY_PHONE = "+977 9744732123";
 const COMPANY_EMAIL = "greenhouse2053@gmail.com";
-const WHATSAPP = "https://wa.me/9779769686908";
+const WHATSAPP = "https://wa.me/9779744732123";
 
 export type ShipmentStatus =
   | "pending"

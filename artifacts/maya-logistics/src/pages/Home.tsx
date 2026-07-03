@@ -21,7 +21,7 @@ const FAQ_ITEMS = [
   { q: "What documents are needed for customs clearance in Nepal?", a: "Typically you need a commercial invoice, packing list, bill of lading or airway bill, certificate of origin, and any applicable permits. Our team handles all customs documentation for you." },
   { q: "How long does air freight from Nepal take?", a: "Air cargo from Kathmandu (TIA) reaches most Asian destinations in 1–3 days, Europe and the Middle East in 2–4 days, and the USA or Americas in 3–5 days." },
   { q: "Do you handle sea freight from landlocked Nepal?", a: "Yes. We coordinate multi-modal transport from Kathmandu to Indian seaports (Kolkata, Haldia, Mundra) for container shipping worldwide. FCL and LCL options available." },
-  { q: "How can I contact Maya Import Export Logistic in Kathmandu?", a: "Call us at 014527999 or +977 9769686908, email mayaimportexportinternational@gmail.com, or WhatsApp us directly. Our office is at Anandamaya Marg, Dhumbarahi, Kathmandu." },
+  { q: "How can I contact Maya Import Export Logistic in Kathmandu?", a: "Call us at 014527999 or +977 9744732123, email mayaimportexportinternational@gmail.com, or WhatsApp us directly. Our office is at Anandamaya Marg, Dhumbarahi, Kathmandu." },
 ];
 
 const homeSchema = [
@@ -270,7 +270,7 @@ export default function Home() {
               <div className="space-y-6 mb-12">
                 {[
                   { Icon: MapPinIcon, title: "Head Office", lines: ["Anandamaya Marg, Dhumbarahi", "Kathmandu, Nepal"] },
-                  { Icon: Phone, title: "Phone & WhatsApp", lines: ["014527999", "+977 9769686908"] },
+                  { Icon: Phone, title: "Phone & WhatsApp", lines: ["014527999", "+977 9744732123"] },
                   { Icon: Mail, title: "Email", lines: ["mayaimportexportinternational@gmail.com"] },
                 ].map(({ Icon, title, lines }, i) => (
                   <motion.div
@@ -382,7 +382,7 @@ export default function Home() {
           </p>
           <p className="text-sm text-gray-400 mb-3">
             <a href="https://www.mayaimportexport.com" className="hover:text-primary transition-colors">www.mayaimportexport.com</a>
-            {" · "}014527999{" · "}+977 9769686908
+            {" · "}014527999{" · "}+977 9744732123
           </p>
 
           {/* Social Links */}
@@ -415,7 +415,7 @@ export default function Home() {
               <img src={`${import.meta.env.BASE_URL}doko-digital-logo.png`} alt="DokoDigital Tech" className="h-24 w-24 rounded-full object-cover ring-2 ring-blue-500/40 group-hover:ring-blue-400 group-hover:scale-105 transition-all duration-300 shadow-lg shadow-blue-900/30" />
               <div className="text-center">
                 <div className="text-lg font-bold text-blue-400 group-hover:text-blue-300 transition-colors tracking-wide">DokoDigital Tech</div>
-                <div className="text-sm text-gray-400 mt-0.5">📞 9768595133</div>
+                <div className="text-sm text-gray-400 mt-0.5">📞 9744732123</div>
               </div>
             </a>
           </div>
