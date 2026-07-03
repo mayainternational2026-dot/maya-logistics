@@ -1,11 +1,27 @@
 import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/Navbar";
 import { SEOHead } from "@/components/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText, Warehouse, ShieldCheck, PlaneTakeoff, Building2 } from "lucide-react";
-import { useTrackShipment, getTrackShipmentQueryKey } from "@workspace/api-client-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, Package, MapPin, CheckCircle, Clock, Truck, FileText, Warehouse, ShieldCheck, PlaneTakeoff, Building2, RefreshCw } from "lucide-react";
+import {
+  useTrackShipment,
+  getTrackShipmentQueryKey,
+  useUpdateShipment,
+  getGetDashboardSummaryQueryKey,
+  getListShipmentsQueryKey,
+} from "@workspace/api-client-react";
+import { useAuth } from "@/lib/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
@@ -31,11 +47,36 @@ export default function Track() {
   const [, setLocation] = useLocation();
   const [trackingId, setTrackingId] = useState(params.trackingId || "");
   const [searchQuery, setSearchQuery] = useState(params.trackingId || "");
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const canUpdateStatus = user?.role === "admin" || user?.role === "staff";
 
   const { data: shipment, isLoading, isError, error } = useTrackShipment(
     searchQuery,
     { query: { enabled: !!searchQuery, queryKey: getTrackShipmentQueryKey(searchQuery), retry: false } }
   );
+
+  const updateShipment = useUpdateShipment();
+
+  const handleStatusChange = (newStatus: ShipmentStatus) => {
+    if (!shipment?.id) return;
+    updateShipment.mutate(
+      { id: shipment.id, data: { status: newStatus } },
+      {
+        onSuccess: () => {
+          toast({ title: "Status updated" });
+          queryClient.invalidateQueries({ queryKey: getTrackShipmentQueryKey(searchQuery) });
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        },
+        onError: (err: any) => {
+          toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,13 +143,38 @@ export default function Track() {
                 <p className="text-gray-400 text-sm font-medium mb-1">TRACKING ID</p>
                 <h2 className="text-2xl md:text-3xl font-mono font-bold tracking-tight">{shipment.trackingId}</h2>
               </div>
-              <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full w-fit">
-                {shipment.status === "pending" && <Clock className="h-5 w-5 text-amber-400" />}
-                {shipment.status === "in_transit" && <Truck className="h-5 w-5 text-blue-400" />}
-                {shipment.status === "delivered" && <CheckCircle className="h-5 w-5 text-green-400" />}
-                <span className="font-bold text-lg capitalize">
-                  {shipment.status.replace("_", " ")}
-                </span>
+              <div className="flex flex-col items-start md:items-end gap-2">
+                <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-full w-fit">
+                  {shipment.status === "pending" && <Clock className="h-5 w-5 text-amber-400" />}
+                  {shipment.status === "in_transit" && <Truck className="h-5 w-5 text-blue-400" />}
+                  {shipment.status === "delivered" && <CheckCircle className="h-5 w-5 text-green-400" />}
+                  <span className="font-bold text-lg capitalize">
+                    {shipment.status.replace("_", " ")}
+                  </span>
+                </div>
+                {canUpdateStatus && shipment.id && (
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className={cn("h-3.5 w-3.5 text-white/60", updateShipment.isPending && "animate-spin")} />
+                    <Select
+                      value={shipment.status}
+                      onValueChange={(v) => handleStatusChange(v as ShipmentStatus)}
+                      disabled={updateShipment.isPending}
+                    >
+                      <SelectTrigger className="h-9 w-48 text-sm bg-white/10 border-white/20 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">📦 Order Received</SelectItem>
+                        <SelectItem value="collected">🚚 Shipment Collected</SelectItem>
+                        <SelectItem value="at_warehouse">🏭 At Warehouse</SelectItem>
+                        <SelectItem value="customs_clearance">🛃 Customs Clearance</SelectItem>
+                        <SelectItem value="in_transit">✈️ In Transit</SelectItem>
+                        <SelectItem value="arrived">🏢 Arrived at Office</SelectItem>
+                        <SelectItem value="delivered">✅ Dispatched</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </div>
 

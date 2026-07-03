@@ -1162,6 +1162,8 @@ components:
     PublicShipment:
       type: object
       properties:
+        id:
+          type: integer
         trackingId:
           type: string
         senderName:
@@ -1183,6 +1185,7 @@ components:
           type: string
           format: date-time
       required:
+        - id
         - trackingId
         - senderName
         - receiverName

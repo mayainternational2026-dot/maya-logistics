@@ -445,6 +445,7 @@ export const TrackShipmentParams = zod.object({
 });
 
 export const TrackShipmentResponse = zod.object({
+  id: zod.number(),
   trackingId: zod.string(),
   senderName: zod.string(),
   receiverName: zod.string(),

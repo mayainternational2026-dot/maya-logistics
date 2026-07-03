@@ -194,6 +194,7 @@ export interface Shipment {
 }
 
 export interface PublicShipment {
+  id: number;
   trackingId: string;
   senderName: string;
   receiverName: string;

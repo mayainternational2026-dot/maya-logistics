@@ -139,6 +139,7 @@ router.get(
     }
 
     res.json({
+      id:                row.id,
       trackingId:        row.trackingId,
       senderName:        row.senderName,
       senderPhone:       row.senderPhone ?? null,

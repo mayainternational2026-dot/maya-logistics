@@ -8,6 +8,7 @@
 import type { ShipmentStatus } from "./shipmentStatus";
 
 export interface PublicShipment {
+  id: number;
   trackingId: string;
   senderName: string;
   receiverName: string;
