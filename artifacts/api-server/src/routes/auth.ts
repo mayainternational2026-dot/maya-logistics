@@ -330,6 +330,7 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
   const otp = String(randomInt(100000, 1000000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
+  let emailDeliveryFailed = false;
   if (user) {
     // Delete any existing reset codes before issuing a new one so only one
     // valid code exists at a time, preventing OTP accumulation attacks.
@@ -342,19 +343,24 @@ router.post("/auth/forgot-password", async (req, res): Promise<void> => {
       otp,
       expiresAt,
     });
-    sendOtpEmail(user.email, otp).catch((err) =>
-      req.log.error({ err, email: user.email }, "Failed to send OTP email"),
-    );
+    try {
+      await sendOtpEmail(user.email, otp);
+    } catch (err) {
+      emailDeliveryFailed = true;
+      req.log.error({ err, email: user.email }, "Failed to send OTP email");
+    }
   }
 
   req.log.info({ email, hasUser: !!user }, "Password reset OTP generated");
 
-  // Only expose OTP in response when running in development AND no email
-  // provider is configured (i.e. SMTP secrets are absent). Once GMAIL or
-  // Resend credentials are set the code is delivered by email and must
-  // not appear in the response regardless of NODE_ENV.
+  // Only expose OTP in response when running in development AND the code was
+  // not actually delivered by email — either because no email provider is
+  // configured (SMTP secrets absent) or because the send attempt itself
+  // failed (e.g. misconfigured/expired credentials). In production the OTP
+  // must never appear in the response, regardless of delivery outcome.
   const isDev = process.env["NODE_ENV"] !== "production";
-  const showFallbackOtp = isDev && user && !isEmailConfigured();
+  const showFallbackOtp =
+    isDev && user && (!isEmailConfigured() || emailDeliveryFailed);
   res.json({
     message:
       "If that email is registered, a one-time code has been sent to your inbox.",

@@ -204,7 +204,7 @@ export default function ResetPasswordScreen() {
               </Pressable>
             </View>
             <Text style={styles.hint}>
-              At least 8 characters, one uppercase letter, one number.
+              At least 8 characters, one uppercase letter, one number, one special character.
             </Text>
           </View>
 
