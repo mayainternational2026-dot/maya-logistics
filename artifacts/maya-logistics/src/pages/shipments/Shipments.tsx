@@ -4,6 +4,7 @@ import {
   useListShipments,
   useCreateShipment,
   useUpdateShipment,
+  useDeleteShipment,
   useListUsers,
   getListShipmentsQueryKey,
   getListUsersQueryKey,
@@ -32,8 +33,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, FileText, MapPin, Package, Download } from "lucide-react";
+import { Search, Plus, FileText, MapPin, Package, Download, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn, formatNPR, statusBadgeClass, statusLabel } from "@/lib/utils";
 
@@ -113,6 +125,7 @@ export default function Shipments() {
 
   const create = useCreateShipment();
   const updateShipment = useUpdateShipment();
+  const deleteShipment = useDeleteShipment();
 
   type ShipStatus = "pending" | "collected" | "at_warehouse" | "customs_clearance" | "in_transit" | "arrived" | "delivered";
 
@@ -127,6 +140,22 @@ export default function Shipments() {
         },
         onError: (err: any) => {
           toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleDeleteRow = (rowId: number, trackingId: string) => {
+    deleteShipment.mutate(
+      { id: rowId },
+      {
+        onSuccess: () => {
+          toast({ title: "Shipment deleted", description: trackingId });
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        },
+        onError: (err: any) => {
+          toast({ title: "Delete failed", description: err?.data?.error, variant: "destructive" });
         },
       },
     );
@@ -318,6 +347,46 @@ export default function Shipments() {
                         <Link href={`/track/${row.trackingId}`}>
                           <Button size="sm" variant="outline" className="h-8">Track</Button>
                         </Link>
+                        {(isAdmin || (isStaff && (user?.permissions?.canManageShipments ?? false))) && (
+                          <>
+                            <Link href={`/shipments/${row.id}`}>
+                              <Button size="sm" variant="outline" className="h-8 gap-1 border-gray-300 text-gray-700 hover:bg-gray-50">
+                                <Pencil className="h-3.5 w-3.5" /> Update
+                              </Button>
+                            </Link>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 border-red-300 text-red-700 hover:bg-red-50"
+                                  disabled={deleteShipment.isPending}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this shipment?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently remove shipment{" "}
+                                    <span className="font-mono">{row.trackingId}</span>.
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteRow(row.id, row.trackingId)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
