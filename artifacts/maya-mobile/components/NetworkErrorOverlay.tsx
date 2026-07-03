@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
@@ -11,128 +11,96 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useNetwork } from "@/context/NetworkContext";
 
+const BANNER_HEIGHT = 44;
+
 export function NetworkErrorOverlay() {
   const { isOffline, retry } = useNetwork();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(-(BANNER_HEIGHT + insets.top))).current;
+  const [mounted, setMounted] = useState(isOffline);
 
   useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: isOffline ? 1 : 0,
+    if (isOffline) {
+      setMounted(true);
+    }
+    Animated.timing(translateY, {
+      toValue: isOffline ? 0 : -(BANNER_HEIGHT + insets.top),
       duration: 250,
       useNativeDriver: true,
-    }).start();
-  }, [isOffline, opacity]);
+    }).start(({ finished }) => {
+      if (finished && !isOffline) {
+        setMounted(false);
+      }
+    });
+  }, [isOffline, insets.top, translateY]);
 
-  if (!isOffline) return null;
+  if (!mounted) return null;
 
   return (
     <Animated.View
-      style={[styles.overlay, { opacity }]}
-      pointerEvents={isOffline ? "auto" : "none"}
+      style={[
+        styles.banner,
+        {
+          backgroundColor: colors.crimson,
+          paddingTop: insets.top,
+          height: BANNER_HEIGHT + insets.top,
+          transform: [{ translateY }],
+        },
+      ]}
+      pointerEvents={isOffline ? "box-none" : "none"}
     >
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.border,
-            paddingBottom: insets.bottom + 24,
-            paddingTop: insets.top + 24,
-          },
-        ]}
-      >
-        <View style={styles.iconWrap}>
-          <Feather name="wifi-off" size={52} color={colors.mutedForeground} />
-        </View>
-
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          No Connection
+      <View style={styles.content}>
+        <Feather name="wifi-off" size={14} color="#FFFFFF" style={styles.icon} />
+        <Text style={styles.text} numberOfLines={1}>
+          No connection — retrying…
         </Text>
-
-        <Text style={[styles.body, { color: colors.mutedForeground }]}>
-          Check your internet connection and tap retry to continue.
-        </Text>
-
         <Pressable
           onPress={retry}
-          style={({ pressed }) => [
-            styles.retryBtn,
-            { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-          ]}
+          hitSlop={8}
+          style={({ pressed }) => [styles.retryBtn, { opacity: pressed ? 0.6 : 1 }]}
           accessibilityRole="button"
           accessibilityLabel="Retry connection"
         >
-          <Feather name="refresh-cw" size={16} color="#FFFFFF" style={styles.retryIcon} />
-          <Text style={styles.retryText}>Tap to Retry</Text>
+          <Text style={styles.retryText}>Retry</Text>
         </Pressable>
-
-        <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-          We&apos;ll reconnect automatically when internet is back.
-        </Text>
       </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "center",
-    alignItems: "center",
+  banner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 9999,
+    justifyContent: "flex-end",
   },
-  card: {
-    width: "85%",
-    maxWidth: 380,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: "center",
-    paddingHorizontal: 28,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 12,
-  },
-  iconWrap: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: "Inter_700Bold",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  body: {
-    fontSize: 15,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  retryBtn: {
+  content: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: BANNER_HEIGHT,
   },
-  retryIcon: {
+  icon: {
     marginRight: 8,
+  },
+  text: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontFamily: "Inter_600SemiBold",
+  },
+  retryBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   retryText: {
     color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "Inter_600SemiBold",
-  },
-  hint: {
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    textAlign: "center",
-    lineHeight: 18,
+    fontSize: 13,
+    fontFamily: "Inter_700Bold",
+    textDecorationLine: "underline",
   },
 });
