@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -30,9 +30,42 @@ export default function ResetPasswordScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((v) => (v <= 1 ? 0 : v - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (resending || resendCooldown > 0) return;
+    setError(null);
+    setResendMessage(null);
+    setResending(true);
+    try {
+      const data = await api.forgotPassword((email ?? "").trim().toLowerCase());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setResendMessage("A new code has been sent to your email.");
+      setResendCooldown(30);
+      if (data.otp) {
+        router.setParams({ demoOtp: data.otp } as any);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Could not resend code";
+      setError(msg);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async () => {
     const trimmedOtp = otp.trim();
@@ -110,6 +143,13 @@ export default function ResetPasswordScreen() {
             <View style={styles.errorBox}>
               <Feather name="alert-circle" size={14} color={colors.destructive} />
               <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {resendMessage && (
+            <View style={styles.successBox}>
+              <Feather name="check-circle" size={14} color="#15803D" />
+              <Text style={styles.successText}>{resendMessage}</Text>
             </View>
           )}
 
@@ -211,13 +251,26 @@ export default function ResetPasswordScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => router.push("/(auth)/forgot-password" as any)}
+            onPress={handleResend}
+            disabled={resending || resendCooldown > 0}
             style={styles.resendLink}
+            testID="reset-resend"
           >
-            <Text style={styles.resendLinkText}>
-              Didn't receive the code?{" "}
-              <Text style={styles.resendLinkBold}>Resend</Text>
-            </Text>
+            {resending ? (
+              <ActivityIndicator color={colors.crimson} size="small" />
+            ) : (
+              <Text style={styles.resendLinkText}>
+                Didn't receive the code?{" "}
+                <Text
+                  style={[
+                    styles.resendLinkBold,
+                    resendCooldown > 0 && { color: colors.mutedForeground },
+                  ]}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend"}
+                </Text>
+              </Text>
+            )}
           </Pressable>
         </View>
 
@@ -320,6 +373,21 @@ function makeStyles(colors: ReturnType<typeof useColors>, insets: ReturnType<typ
       fontSize: 13,
       fontFamily: "Inter_400Regular",
       color: colors.destructive,
+    },
+    successBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: "#DCFCE7",
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+    },
+    successText: {
+      flex: 1,
+      fontSize: 13,
+      fontFamily: "Inter_400Regular",
+      color: "#15803D",
     },
     fieldGroup: {
       marginBottom: 16,
