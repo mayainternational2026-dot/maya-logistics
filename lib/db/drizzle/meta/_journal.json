@@ -8,6 +8,13 @@
       "when": 1782799126786,
       "tag": "0000_soft_lifeguard",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782982485815,
+      "tag": "0001_glamorous_thor",
+      "breakpoints": true
     }
   ]
 }

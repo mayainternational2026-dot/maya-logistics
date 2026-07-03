@@ -20,6 +20,8 @@ tags:
     description: Dashboard analytics
   - name: contact
     description: Contact form
+  - name: inquiries
+    description: Product inquiries and follow-ups
 paths:
   /healthz:
     get:
@@ -535,6 +537,80 @@ paths:
                   $ref: "#/components/schemas/Inquiry"
         "401":
           description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /inquiries/{id}/followups:
+    post:
+      operationId: createInquiryFollowup
+      tags: [inquiries]
+      summary: Submit a follow-up message on an existing inquiry (customer)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInquiryFollowupBody"
+      responses:
+        "201":
+          description: Follow-up created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InquiryFollowup"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden — not your inquiry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Inquiry not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listInquiryFollowups
+      tags: [inquiries]
+      summary: List follow-ups for an inquiry (authenticated owner or admin/staff)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Follow-up messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InquiryFollowup"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Inquiry not found
           content:
             application/json:
               schema:
@@ -1327,6 +1403,31 @@ components:
           type: string
           format: date-time
       required: [id, name, email, productDetails, status, createdAt]
+
+    InquiryFollowup:
+      type: object
+      properties:
+        id:
+          type: integer
+        inquiryId:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, inquiryId, message, createdAt]
+
+    CreateInquiryFollowupBody:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required: [message]
 
     CreateInquiryBody:
       type: object

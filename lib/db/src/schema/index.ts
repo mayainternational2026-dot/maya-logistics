@@ -6,6 +6,7 @@ export * from "./registrationOtps";
 export * from "./contactMessages";
 export * from "./sessions";
 export * from "./inquiries";
+export * from "./inquiry-followups";
 export * from "./attendance";
 export * from "./leaveRequests";
 export * from "./workLogs";

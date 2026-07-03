@@ -22,6 +22,7 @@ import type {
   ContactBody,
   CreateExpenseBody,
   CreateInquiryBody,
+  CreateInquiryFollowupBody,
   CreateShipmentBody,
   CreateShippingRateBody,
   CreateUserBody,
@@ -33,6 +34,7 @@ import type {
   ForgotPasswordResponse,
   HealthStatus,
   Inquiry,
+  InquiryFollowup,
   ListShipmentsParams,
   ListUsersParams,
   LoginBody,
@@ -2245,6 +2247,182 @@ export function useListMyInquiries<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListMyInquiriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a follow-up message on an existing inquiry (customer)
+ */
+export const getCreateInquiryFollowupUrl = (id: number) => {
+  return `/api/inquiries/${id}/followups`;
+};
+
+export const createInquiryFollowup = async (
+  id: number,
+  createInquiryFollowupBody: CreateInquiryFollowupBody,
+  options?: RequestInit,
+): Promise<InquiryFollowup> => {
+  return customFetch<InquiryFollowup>(getCreateInquiryFollowupUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInquiryFollowupBody),
+  });
+};
+
+export const getCreateInquiryFollowupMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInquiryFollowup>>,
+    TError,
+    { id: number; data: BodyType<CreateInquiryFollowupBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInquiryFollowup>>,
+  TError,
+  { id: number; data: BodyType<CreateInquiryFollowupBody> },
+  TContext
+> => {
+  const mutationKey = ["createInquiryFollowup"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInquiryFollowup>>,
+    { id: number; data: BodyType<CreateInquiryFollowupBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createInquiryFollowup(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInquiryFollowupMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInquiryFollowup>>
+>;
+export type CreateInquiryFollowupMutationBody =
+  BodyType<CreateInquiryFollowupBody>;
+export type CreateInquiryFollowupMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Submit a follow-up message on an existing inquiry (customer)
+ */
+export const useCreateInquiryFollowup = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInquiryFollowup>>,
+    TError,
+    { id: number; data: BodyType<CreateInquiryFollowupBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createInquiryFollowup>>,
+  TError,
+  { id: number; data: BodyType<CreateInquiryFollowupBody> },
+  TContext
+> => {
+  return useMutation(getCreateInquiryFollowupMutationOptions(options));
+};
+
+/**
+ * @summary List follow-ups for an inquiry (authenticated owner or admin/staff)
+ */
+export const getListInquiryFollowupsUrl = (id: number) => {
+  return `/api/inquiries/${id}/followups`;
+};
+
+export const listInquiryFollowups = async (
+  id: number,
+  options?: RequestInit,
+): Promise<InquiryFollowup[]> => {
+  return customFetch<InquiryFollowup[]>(getListInquiryFollowupsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInquiryFollowupsQueryKey = (id: number) => {
+  return [`/api/inquiries/${id}/followups`] as const;
+};
+
+export const getListInquiryFollowupsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInquiryFollowups>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInquiryFollowups>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInquiryFollowupsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInquiryFollowups>>
+  > = ({ signal }) => listInquiryFollowups(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInquiryFollowups>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListInquiryFollowupsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInquiryFollowups>>
+>;
+export type ListInquiryFollowupsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List follow-ups for an inquiry (authenticated owner or admin/staff)
+ */
+
+export function useListInquiryFollowups<
+  TData = Awaited<ReturnType<typeof listInquiryFollowups>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listInquiryFollowups>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListInquiryFollowupsQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

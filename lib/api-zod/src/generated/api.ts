@@ -609,6 +609,37 @@ export const ListMyInquiriesResponseItem = zod.object({
 export const ListMyInquiriesResponse = zod.array(ListMyInquiriesResponseItem);
 
 /**
+ * @summary Submit a follow-up message on an existing inquiry (customer)
+ */
+export const CreateInquiryFollowupParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const createInquiryFollowupBodyMessageMax = 2000;
+
+export const CreateInquiryFollowupBody = zod.object({
+  message: zod.string().min(1).max(createInquiryFollowupBodyMessageMax),
+});
+
+/**
+ * @summary List follow-ups for an inquiry (authenticated owner or admin/staff)
+ */
+export const ListInquiryFollowupsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListInquiryFollowupsResponseItem = zod.object({
+  id: zod.number(),
+  inquiryId: zod.number(),
+  userId: zod.number().nullish(),
+  message: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListInquiryFollowupsResponse = zod.array(
+  ListInquiryFollowupsResponseItem,
+);
+
+/**
  * @summary Update inquiry status or admin notes (admin/staff)
  */
 export const UpdateInquiryParams = zod.object({

@@ -311,6 +311,23 @@ export interface Inquiry {
   createdAt: string;
 }
 
+export interface InquiryFollowup {
+  id: number;
+  inquiryId: number;
+  /** @nullable */
+  userId?: number | null;
+  message: string;
+  createdAt: string;
+}
+
+export interface CreateInquiryFollowupBody {
+  /**
+   * @minLength 1
+   * @maxLength 2000
+   */
+  message: string;
+}
+
 export interface CreateInquiryBody {
   /** @minLength 1 */
   name: string;

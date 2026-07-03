@@ -20,7 +20,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { api, type Inquiry } from "@/lib/api";
+import { api, type Inquiry, type InquiryFollowup } from "@/lib/api";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/context/AuthContext";
 
@@ -774,6 +774,53 @@ function InquiryDetailModal({
     ? (() => { try { return JSON.parse(inquiry.images) as Array<{ name: string; dataUrl: string }>; } catch { return []; } })()
     : [];
 
+  const [followups, setFollowups] = useState<InquiryFollowup[]>([]);
+  const [followupsLoading, setFollowupsLoading] = useState(true);
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeText, setComposeText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentSuccess, setSentSuccess] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setFollowupsLoading(true);
+      try {
+        const data = await api.listInquiryFollowups(inquiry.id);
+        if (!cancelled) setFollowups(data);
+      } catch {
+        // silently ignore — follow-up thread is non-critical
+      } finally {
+        if (!cancelled) setFollowupsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [inquiry.id]);
+
+  const handleSendFollowup = async () => {
+    const msg = composeText.trim();
+    if (!msg) return;
+    setSending(true);
+    try {
+      const newFollowup = await api.createInquiryFollowup(inquiry.id, msg);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setFollowups((prev) => [newFollowup, ...prev]);
+      setComposeText("");
+      setShowCompose(false);
+      setSentSuccess(true);
+      setTimeout(() => setSentSuccess(false), 3000);
+    } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (Platform.OS === "web") {
+        alert(err.message ?? "Failed to send. Please try again.");
+      } else {
+        Alert.alert("Send failed", err.message ?? "Please try again.");
+      }
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <Modal animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -796,68 +843,200 @@ function InquiryDetailModal({
           </Pressable>
         </View>
 
-        <ScrollView
-          contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: insets.bottom + 32 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <StatusBadge status={inquiry.status} />
-            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: colors.mutedForeground }}>
-              {formatDate(inquiry.createdAt)}
-            </Text>
-          </View>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <ScrollView
+            contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: insets.bottom + 32 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <StatusBadge status={inquiry.status} />
+              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: colors.mutedForeground }}>
+                {formatDate(inquiry.createdAt)}
+              </Text>
+            </View>
 
-          <DetailSection label="Product Description" colors={colors}>
-            <Text style={{ fontFamily: "Inter_400Regular", fontSize: 15, color: colors.foreground, lineHeight: 22 }}>
-              {inquiry.productDetails}
-            </Text>
-          </DetailSection>
-
-          {inquiry.productLink ? (
-            <DetailSection label="Product Link" colors={colors}>
-              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.primary, lineHeight: 20 }} numberOfLines={2}>
-                {inquiry.productLink}
+            <DetailSection label="Product Description" colors={colors}>
+              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 15, color: colors.foreground, lineHeight: 22 }}>
+                {inquiry.productDetails}
               </Text>
             </DetailSection>
-          ) : null}
 
-          {(inquiry.quantity != null || inquiry.estimatedCost != null) && (
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              {inquiry.quantity != null && (
-                <DetailSection label="Quantity" colors={colors} style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground }}>{inquiry.quantity}</Text>
-                </DetailSection>
+            {inquiry.productLink ? (
+              <DetailSection label="Product Link" colors={colors}>
+                <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.primary, lineHeight: 20 }} numberOfLines={2}>
+                  {inquiry.productLink}
+                </Text>
+              </DetailSection>
+            ) : null}
+
+            {(inquiry.quantity != null || inquiry.estimatedCost != null) && (
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                {inquiry.quantity != null && (
+                  <DetailSection label="Quantity" colors={colors} style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground }}>{inquiry.quantity}</Text>
+                  </DetailSection>
+                )}
+                {inquiry.estimatedCost != null && (
+                  <DetailSection label="Est. Value" colors={colors} style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground }}>NPR {inquiry.estimatedCost.toLocaleString()}</Text>
+                  </DetailSection>
+                )}
+              </View>
+            )}
+
+            {images.length > 0 && (
+              <DetailSection label="Attached Photos" colors={colors}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {images.map((img, i) => (
+                    <Image
+                      key={i}
+                      source={{ uri: img.dataUrl }}
+                      style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
+                    />
+                  ))}
+                </View>
+              </DetailSection>
+            )}
+
+            {inquiry.adminNotes ? (
+              <DetailSection label="Admin Notes" colors={colors}>
+                <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.foreground, lineHeight: 20 }}>
+                  {inquiry.adminNotes}
+                </Text>
+              </DetailSection>
+            ) : null}
+
+            {/* ── Follow-up thread ── */}
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: colors.foreground }}>
+                  Follow-ups
+                </Text>
+                {!showCompose && (
+                  <Pressable
+                    onPress={() => { setShowCompose(true); setSentSuccess(false); }}
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 5,
+                      backgroundColor: colors.primary,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      opacity: pressed ? 0.8 : 1,
+                    })}
+                    testID="followup-btn"
+                  >
+                    <Feather name="message-circle" size={14} color="#fff" />
+                    <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 13, color: "#fff" }}>Follow up</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {sentSuccess && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#D1FAE5", borderRadius: 10, padding: 12 }}>
+                  <Feather name="check-circle" size={16} color="#065F46" />
+                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 13, color: "#065F46", flex: 1 }}>
+                    Message sent — we'll get back to you soon.
+                  </Text>
+                </View>
               )}
-              {inquiry.estimatedCost != null && (
-                <DetailSection label="Est. Value" colors={colors} style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: "Inter_500Medium", fontSize: 15, color: colors.foreground }}>NPR {inquiry.estimatedCost.toLocaleString()}</Text>
-                </DetailSection>
+
+              {showCompose && (
+                <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, gap: 10 }}>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 12, color: colors.mutedForeground, textTransform: "uppercase", letterSpacing: 0.6 }}>
+                    Your message
+                  </Text>
+                  <TextInput
+                    style={{
+                      minHeight: 90,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 10,
+                      padding: 10,
+                      fontSize: 15,
+                      fontFamily: "Inter_400Regular",
+                      color: colors.foreground,
+                      backgroundColor: colors.surface,
+                      textAlignVertical: "top",
+                    }}
+                    placeholder="Add any extra details or questions about your inquiry…"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={composeText}
+                    onChangeText={setComposeText}
+                    multiline
+                    maxLength={2000}
+                    autoFocus
+                  />
+                  <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.mutedForeground, textAlign: "right" }}>
+                    {composeText.length}/2000
+                  </Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <Pressable
+                      onPress={() => { setShowCompose(false); setComposeText(""); }}
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        height: 42,
+                        borderRadius: 10,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: colors.surface,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <Text style={{ fontFamily: "Inter_500Medium", fontSize: 14, color: colors.foreground }}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        handleSendFollowup();
+                      }}
+                      disabled={sending || !composeText.trim()}
+                      style={({ pressed }) => ({
+                        flex: 2,
+                        height: 42,
+                        borderRadius: 10,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: colors.primary,
+                        opacity: pressed || sending || !composeText.trim() ? 0.6 : 1,
+                      })}
+                      testID="send-followup-btn"
+                    >
+                      <Text style={{ fontFamily: "Inter_600SemiBold", fontSize: 14, color: "#fff" }}>
+                        {sending ? "Sending…" : "Send Message"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+              {followupsLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} style={{ alignSelf: "center", marginTop: 8 }} />
+              ) : followups.length === 0 ? (
+                <Text style={{ fontFamily: "Inter_400Regular", fontSize: 13, color: colors.mutedForeground, textAlign: "center", paddingVertical: 8 }}>
+                  No follow-ups yet. Tap "Follow up" to add context or ask a question.
+                </Text>
+              ) : (
+                <View style={{ gap: 8 }}>
+                  {followups.map((fu) => (
+                    <View key={fu.id} style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, gap: 6 }}>
+                      <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.foreground, lineHeight: 20 }}>
+                        {fu.message}
+                      </Text>
+                      <Text style={{ fontFamily: "Inter_400Regular", fontSize: 11, color: colors.mutedForeground }}>
+                        {formatDate(fu.createdAt)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               )}
             </View>
-          )}
-
-          {images.length > 0 && (
-            <DetailSection label="Attached Photos" colors={colors}>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {images.map((img, i) => (
-                  <Image
-                    key={i}
-                    source={{ uri: img.dataUrl }}
-                    style={{ width: 80, height: 80, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
-                  />
-                ))}
-              </View>
-            </DetailSection>
-          )}
-
-          {inquiry.adminNotes ? (
-            <DetailSection label="Admin Notes" colors={colors}>
-              <Text style={{ fontFamily: "Inter_400Regular", fontSize: 14, color: colors.foreground, lineHeight: 20 }}>
-                {inquiry.adminNotes}
-              </Text>
-            </DetailSection>
-          ) : null}
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );

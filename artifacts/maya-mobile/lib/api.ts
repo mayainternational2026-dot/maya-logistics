@@ -155,6 +155,14 @@ export interface Inquiry {
   createdAt: string;
 }
 
+export interface InquiryFollowup {
+  id: number;
+  inquiryId: number;
+  userId: number | null;
+  message: string;
+  createdAt: string;
+}
+
 export const api = {
   async login(email: string, password: string): Promise<{ user: User }> {
     const res = await apiFetch("/auth/login", {
@@ -276,6 +284,22 @@ export const api = {
     const res = await apiFetch("/inquiries/mine");
     if (!res.ok) throw new Error("Failed to load inquiries");
     return res.json();
+  },
+
+  async listInquiryFollowups(inquiryId: number): Promise<InquiryFollowup[]> {
+    const res = await apiFetch(`/inquiries/${inquiryId}/followups`);
+    if (!res.ok) throw new Error("Failed to load follow-ups");
+    return res.json();
+  },
+
+  async createInquiryFollowup(inquiryId: number, message: string): Promise<InquiryFollowup> {
+    const res = await apiFetch(`/inquiries/${inquiryId}/followups`, {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Failed to send follow-up");
+    return data;
   },
 
   async forgotPassword(email: string): Promise<{ message: string; otp?: string }> {
