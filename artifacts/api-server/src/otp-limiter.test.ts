@@ -295,6 +295,81 @@ describe("/api/auth/reset-password — per-email rate limit", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 5b. /api/auth/register-verify — per-email limit + pending-OTP invalidation
+// ─────────────────────────────────────────────────────────────────────────────
+describe("/api/auth/register-verify — per-email rate limit clears the pending OTP", () => {
+  const ROUTE = "/api/auth/register-verify";
+  const EMAIL_LIMIT = 5; // mirrors production (reg-verify-email:)
+
+  function buildVerifyApp(deletedEmails: string[]) {
+    const app = express();
+    app.use(express.json());
+
+    const emailLimiter = rateLimit({
+      windowMs: 60_000,
+      limit: EMAIL_LIMIT,
+      keyGenerator: (req) => {
+        const email = (typeof req.body?.email === "string" ? req.body.email : "")
+          .toLowerCase()
+          .trim();
+        return email ? `reg-verify-email:${email}` : `reg-verify-ip:${getRealIp(req)}`;
+      },
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      handler: (req, res) => {
+        const email = (typeof req.body?.email === "string" ? req.body.email : "")
+          .toLowerCase()
+          .trim();
+        if (email) deletedEmails.push(email);
+        res.status(429).json({
+          error: "Too many verification attempts. Please request a new verification code.",
+        });
+      },
+    });
+
+    app.use(ROUTE, emailLimiter);
+    app.post(ROUTE, (_req, res) => res.json({ ok: true }));
+    return app;
+  }
+
+  it("returns 200 for attempts up to the per-email threshold", async () => {
+    const deletedEmails: string[] = [];
+    const app = buildVerifyApp(deletedEmails);
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      const res = await post(app, ROUTE, "verify-user@example.com");
+      expect(res.status, `attempt ${i + 1} should succeed`).toBe(200);
+    }
+    expect(deletedEmails).toEqual([]);
+  });
+
+  it("returns 429 and invalidates the pending OTP once the threshold is exceeded", async () => {
+    const deletedEmails: string[] = [];
+    const app = buildVerifyApp(deletedEmails);
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      await post(app, ROUTE, "verify-limit@example.com");
+    }
+
+    const blocked = await post(app, ROUTE, "verify-limit@example.com");
+    expect(blocked.status).toBe(429);
+    expect(blocked.body.error).toMatch(/too many/i);
+
+    // The handler must have triggered OTP invalidation for this email exactly once.
+    expect(deletedEmails).toEqual(["verify-limit@example.com"]);
+  });
+
+  it("does not affect a different target email's bucket or OTP", async () => {
+    const deletedEmails: string[] = [];
+    const app = buildVerifyApp(deletedEmails);
+    for (let i = 0; i < EMAIL_LIMIT; i++) {
+      await post(app, ROUTE, "verify-a@example.com");
+    }
+    const res = await post(app, ROUTE, "verify-b@example.com");
+    expect(res.status).toBe(200);
+    expect(deletedEmails).not.toContain("verify-b@example.com");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 5. IP limiter fires independently of the email limiter
 // ─────────────────────────────────────────────────────────────────────────────
 describe("IP limiter fires independently of the email limiter", () => {

@@ -10,7 +10,8 @@ import { logger } from "./lib/logger";
 import { attachUser } from "./lib/auth";
 import { PgRateLimitStore } from "./lib/pg-rate-limit-store";
 import { getRealIp } from "./lib/get-real-ip";
-import { pool } from "@workspace/db";
+import { pool, db, registrationOtpsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
@@ -160,6 +161,39 @@ const registerOtpEmailLimiter = rateLimit({
   message: { error: "Too many OTP requests for this email address. Please try again later." },
 });
 
+// Per-email gate for OTP verification: max 5 attempts per email per 15-minute
+// window regardless of IP. On limit hit, the pending OTP is deleted so an
+// attacker who exhausted their attempts must request a brand-new code,
+// resetting their brute-force progress instead of just waiting out a window.
+const registerVerifyEmailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 5,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (typeof req.body?.email === "string" ? req.body.email : "")
+      .toLowerCase()
+      .trim();
+    return email ? `reg-verify-email:${email}` : `reg-verify-ip:${getRealIp(req)}`;
+  },
+  store: new PgRateLimitStore(pool, "reg-verify-email"),
+  handler: async (req, res) => {
+    const email = (typeof req.body?.email === "string" ? req.body.email : "")
+      .toLowerCase()
+      .trim();
+    if (email) {
+      try {
+        await db.delete(registrationOtpsTable).where(eq(registrationOtpsTable.email, email));
+      } catch (err) {
+        logger.warn({ err, email }, "Failed to clear registration OTP after rate limit hit");
+      }
+    }
+    res.status(429).json({
+      error: "Too many verification attempts. Please request a new verification code.",
+    });
+  },
+});
+
 // Per-email gate for password reset: max 3 emails per hour for the same address.
 const forgotPasswordEmailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -232,6 +266,7 @@ app.use("/api/auth/reset-password", resetPasswordEmailLimiter);
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register-otp", registerOtpLimiter);
 app.use("/api/auth/register-otp", registerOtpEmailLimiter);
+app.use("/api/auth/register-verify", registerVerifyEmailLimiter);
 app.use("/api/contact", contactLimiter);
 app.use("/api/contact", contactEmailLimiter);
 
