@@ -437,13 +437,6 @@ export default function CreateInvoice() {
               {form.senderPhone && <div style={{ fontSize: 11, color: GRAY }}>{form.senderPhone}</div>}
             </div>
           )}
-          {form.receiverName && (
-            <div>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, letterSpacing: 0.8, marginBottom: 2 }}>Receiver</div>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>{form.receiverName}</div>
-              {form.receiverPhone && <div style={{ fontSize: 11, color: GRAY }}>{form.receiverPhone}</div>}
-            </div>
-          )}
           {form.weight && (
             <div>
               <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, letterSpacing: 0.8, marginBottom: 2 }}>Weight</div>
@@ -521,13 +514,12 @@ export default function CreateInvoice() {
       </table>
 
       {/* ── NOTES ── */}
-      {(form.senderName || form.receiverName || form.extraNotes) && (
+      {(form.senderName || form.extraNotes) && (
         <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, marginBottom: 5, letterSpacing: 0.8 }}>Notes</div>
           <div style={{ fontSize: 12, whiteSpace: "pre-line" as const, lineHeight: 1.7, color: "#333" }}>
             {[
-              form.senderName   ? `Sender: ${form.senderName}${form.senderPhone   ? " · " + form.senderPhone   : ""}` : "",
-              form.receiverName ? `Receiver: ${form.receiverName}${form.receiverPhone ? " · " + form.receiverPhone : ""}` : "",
+              form.senderName ? `Sender: ${form.senderName}${form.senderPhone ? " · " + form.senderPhone : ""}` : "",
               "Thank you for choosing Maya Import Export Logistic.",
               form.extraNotes || "",
             ].filter(Boolean).join("\n")}
