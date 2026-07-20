@@ -13,6 +13,16 @@ import { useAuth } from "@/lib/use-auth";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -44,6 +54,7 @@ import {
   CheckCircle2,
   XCircle,
   BadgeDollarSign,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -72,6 +83,56 @@ export default function ShipmentDetails() {
   useEffect(() => {
     if (data?.status) setStatus(data.status);
   }, [data?.status]);
+
+  /* ── Edit dialog state ── */
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    senderName: "", senderPhone: "",
+    origin: "", destination: "",
+    weight: "", customerName: "", customerEmail: "", notes: "",
+  });
+  useEffect(() => {
+    if (data) {
+      setEditForm({
+        senderName:    data.senderName ?? "",
+        senderPhone:   data.senderPhone ?? "",
+        origin:        data.origin ?? "",
+        destination:   data.destination ?? "",
+        weight:        String(data.weight ?? ""),
+        customerName:  data.customerName ?? "",
+        customerEmail: data.customerEmail ?? "",
+        notes:         data.notes ?? "",
+      });
+    }
+  }, [data]);
+
+  const handleEditSave = () => {
+    update.mutate(
+      {
+        id,
+        data: {
+          senderName:    editForm.senderName.trim() || undefined,
+          senderPhone:   editForm.senderPhone.trim() || undefined,
+          origin:        editForm.origin.trim() || undefined,
+          destination:   editForm.destination.trim() || undefined,
+          weight:        editForm.weight ? Number(editForm.weight) : undefined,
+          customerName:  editForm.customerName.trim() || undefined,
+          customerEmail: editForm.customerEmail.trim() || undefined,
+          notes:         editForm.notes.trim() || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Shipment details updated" });
+          setEditOpen(false);
+          invalidate();
+        },
+        onError: (err: any) => {
+          toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
 
   if (isLoading) return <Skeleton className="h-96 w-full rounded-2xl" />;
   if (!data) {
@@ -324,6 +385,17 @@ export default function ShipmentDetails() {
               </Link>
             )}
 
+            {/* Edit Details button — admin/staff only */}
+            {canManage && (
+              <Button
+                variant="outline"
+                className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="h-4 w-4" /> Edit Details
+              </Button>
+            )}
+
             {/* Admin/staff controls */}
             {canManage && (
               <div className="flex items-center gap-2 sm:ml-auto flex-wrap">
@@ -397,6 +469,79 @@ export default function ShipmentDetails() {
           </div>
         </div>
       </div>
+
+      {/* ── EDIT DETAILS DIALOG ── */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-blue-600" /> Edit Shipment Details
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+            <div className="space-y-1">
+              <Label>Sender Name</Label>
+              <Input autoComplete="new-password" value={editForm.senderName}
+                onChange={(e) => setEditForm((p) => ({ ...p, senderName: e.target.value }))}
+                placeholder="Full name" />
+            </div>
+            <div className="space-y-1">
+              <Label>Sender Phone</Label>
+              <Input autoComplete="new-password" value={editForm.senderPhone}
+                onChange={(e) => setEditForm((p) => ({ ...p, senderPhone: e.target.value }))}
+                placeholder="+977 98…" />
+            </div>
+            <div className="space-y-1">
+              <Label>Origin</Label>
+              <Input autoComplete="new-password" value={editForm.origin}
+                onChange={(e) => setEditForm((p) => ({ ...p, origin: e.target.value }))}
+                placeholder="Kathmandu, Nepal" />
+            </div>
+            <div className="space-y-1">
+              <Label>Destination</Label>
+              <Input autoComplete="new-password" value={editForm.destination}
+                onChange={(e) => setEditForm((p) => ({ ...p, destination: e.target.value }))}
+                placeholder="Tokyo, Japan" />
+            </div>
+            <div className="space-y-1">
+              <Label>Weight (kg)</Label>
+              <Input autoComplete="new-password" type="number" step="0.01" min="0" value={editForm.weight}
+                onChange={(e) => setEditForm((p) => ({ ...p, weight: e.target.value }))}
+                placeholder="5" />
+            </div>
+            <div className="space-y-1">
+              <Label>Customer Name</Label>
+              <Input autoComplete="new-password" value={editForm.customerName}
+                onChange={(e) => setEditForm((p) => ({ ...p, customerName: e.target.value }))}
+                placeholder="Ram Bahadur Thapa" />
+            </div>
+            <div className="sm:col-span-2 space-y-1">
+              <Label>Customer Email</Label>
+              <Input autoComplete="new-password" type="email" value={editForm.customerEmail}
+                onChange={(e) => setEditForm((p) => ({ ...p, customerEmail: e.target.value }))}
+                placeholder="customer@example.com" />
+            </div>
+            <div className="sm:col-span-2 space-y-1">
+              <Label>Notes</Label>
+              <Textarea value={editForm.notes} rows={3}
+                onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))}
+                placeholder="Any additional notes…" className="resize-none" />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleEditSave}
+              disabled={update.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {update.isPending ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <WhatsAppButton />
     </div>
