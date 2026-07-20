@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import {
   ArrowLeft, Printer, FileText, RefreshCw,
   Upload, ImageIcon, Zap, CheckCircle2, ExternalLink,
-  User, Package, CreditCard, Truck, UserPlus, PlusCircle, Trash2,
+  User, Package, CreditCard, Truck, UserPlus, PlusCircle, Trash2, Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -113,6 +113,7 @@ function parseSearchParams(search: string): Partial<InvoiceForm> {
   if (p.get("receiverPhone")) out.receiverPhone  = p.get("receiverPhone")!;
   if (p.get("billToName"))    out.billToName     = p.get("billToName")!;
   if (p.get("billToEmail"))   out.billToEmail    = p.get("billToEmail")!;
+  if (p.get("billToPhone"))   out.billToPhone    = p.get("billToPhone")!;
   if (p.get("date"))          out.invoiceDate    = p.get("date")!;
   if (p.get("cost"))          out.shippingCost   = p.get("cost")!;
   if (p.get("paid") === "true")  out.paymentTerms = "Payment Received";
@@ -151,6 +152,7 @@ export default function CreateInvoice() {
   const [cdOpen, setCdOpen] = useState(false);
   const [cd, setCd] = useState({
     name: "", whatsapp: "", email: "",
+    senderName: "", senderPhone: "",
     productName: "", quantity: "", perPicCost: "",
     origin: "", destination: "",
     shippingCost: "", customCost: "", serviceCharge: "",
@@ -165,6 +167,8 @@ export default function CreateInvoice() {
       name:          form.billToName,
       whatsapp:      form.billToPhone,
       email:         form.billToEmail,
+      senderName:    form.senderName,
+      senderPhone:   form.senderPhone,
       productName:   form.productName,
       quantity:      form.productQuantity,
       perPicCost:    form.perPicCost,
@@ -183,10 +187,10 @@ export default function CreateInvoice() {
       billToName:      cd.name,
       billToPhone:     cd.whatsapp,
       billToEmail:     cd.email,
-      /* customer is the receiver; Maya is the sender */
+      senderName:      cd.senderName || p.senderName || "Maya Import Export Logistic",
+      senderPhone:     cd.senderPhone,
       receiverName:    cd.name,
       receiverPhone:   cd.whatsapp,
-      senderName:      p.senderName || "Maya Import Export Logistic",
       origin:          cd.origin,
       destination:     cd.destination,
       productName:     cd.productName,
@@ -203,10 +207,8 @@ export default function CreateInvoice() {
     }));
     setCdOpen(false);
     toast({
-      title: "Customer details saved",
-      description: cd.destination
-        ? "All fields saved — click Generate Tracking ID to create the shipment."
-        : "Saved! Add a destination then click Generate Tracking ID.",
+      title: "Invoice details updated",
+      description: "All changes saved to the invoice preview.",
     });
   };
 
@@ -593,8 +595,10 @@ export default function CreateInvoice() {
               onClick={openCd}
               className="gap-2 bg-primary hover:bg-primary/90 text-white shadow-md"
             >
-              <UserPlus className="h-4 w-4" />
-              Add Customer Details
+              {form.billToName || fromShipment
+                ? <><Pencil className="h-4 w-4" /> Edit Details</>
+                : <><UserPlus className="h-4 w-4" /> Add Customer Details</>
+              }
             </Button>
           </div>
         </div>
@@ -914,11 +918,16 @@ export default function CreateInvoice() {
         {/* PREVIEW */}
         {showPreview && (
           <div id="invoice-preview" className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4 md:p-6 overflow-x-auto">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <h2 className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest">Invoice Preview</h2>
-              <Button size="sm" onClick={handlePrint} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs">
-                <Printer className="h-3.5 w-3.5" /> Print
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={openCd} className="gap-1.5 h-8 text-xs border-primary text-primary hover:bg-primary/5">
+                  <Pencil className="h-3.5 w-3.5" /> Edit Details
+                </Button>
+                <Button size="sm" onClick={handlePrint} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs">
+                  <Printer className="h-3.5 w-3.5" /> Print
+                </Button>
+              </div>
             </div>
             <InvoiceDoc />
           </div>
@@ -937,8 +946,8 @@ export default function CreateInvoice() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
-              <UserPlus className="h-5 w-5 text-primary" />
-              Add Customer Details
+              <Pencil className="h-5 w-5 text-primary" />
+              Edit Invoice Details
             </DialogTitle>
           </DialogHeader>
 
@@ -948,28 +957,46 @@ export default function CreateInvoice() {
             <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-4 space-y-3">
               <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest flex items-center gap-1">
                 <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold">1</span>
-                Customer Info
+                Customer (Bill To)
               </p>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Customer Name <span className="text-primary">*</span></label>
-                <Input name="name" value={cd.name} onChange={setcd} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" autoComplete="off" />
+                <Input name="name" value={cd.name} onChange={setcd} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" autoComplete="new-password" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">WhatsApp Number</label>
-                  <Input name="whatsapp" value={cd.whatsapp} onChange={setcd} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" autoComplete="off" />
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Phone / WhatsApp</label>
+                  <Input name="whatsapp" value={cd.whatsapp} onChange={setcd} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" autoComplete="new-password" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Gmail / Email ID</label>
-                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@gmail.com" className="h-10 bg-white" autoComplete="off" />
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Email ID</label>
+                  <Input name="email" type="email" value={cd.email} onChange={setcd} placeholder="customer@gmail.com" className="h-10 bg-white" autoComplete="new-password" />
                 </div>
               </div>
             </div>
 
-            {/* ② Product Info */}
+            {/* ① Sender Info */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+              <p className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest flex items-center gap-1">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-500 text-white text-[9px] font-bold">2</span>
+                Sender
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Sender Name</label>
+                  <Input name="senderName" value={cd.senderName} onChange={setcd} placeholder="Maya Import Export Logistic" className="h-10 bg-white" autoComplete="new-password" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Sender Phone</label>
+                  <Input name="senderPhone" value={cd.senderPhone} onChange={setcd} placeholder="+977 9744732123" className="h-10 bg-white" autoComplete="new-password" />
+                </div>
+              </div>
+            </div>
+
+            {/* ③ Product Info */}
             <div className="rounded-lg border border-purple-100 bg-purple-50/40 p-4 space-y-3">
               <p className="text-[10px] font-extrabold text-purple-600 uppercase tracking-widest flex items-center gap-1">
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold">2</span>
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-purple-600 text-white text-[9px] font-bold">3</span>
                 Product Info
               </p>
               <div className="grid grid-cols-3 gap-3">
@@ -988,10 +1015,10 @@ export default function CreateInvoice() {
               </div>
             </div>
 
-            {/* ③ Shipment Route — required for tracking ID */}
+            {/* ④ Shipment Route — required for tracking ID */}
             <div className="rounded-lg border border-yellow-200 bg-yellow-50/50 p-4 space-y-3">
               <p className="text-[10px] font-extrabold text-yellow-700 uppercase tracking-widest flex items-center gap-1">
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-yellow-500 text-white text-[9px] font-bold">3</span>
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-yellow-500 text-white text-[9px] font-bold">4</span>
                 Shipment Route <span className="text-[9px] normal-case font-normal text-yellow-600 ml-1">(needed for Tracking ID)</span>
               </p>
               <div className="grid grid-cols-2 gap-3">
