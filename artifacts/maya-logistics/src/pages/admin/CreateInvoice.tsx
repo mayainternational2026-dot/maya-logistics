@@ -432,7 +432,7 @@ export default function CreateInvoice() {
       </div>
 
       {/* ── PRODUCT / SHIPMENT INFO BAND ── */}
-      {(products.some((p) => p.name) || form.senderName || form.receiverName || form.weight) && (
+      {(products.some((p) => p.name) || form.senderName || form.weight) && (
         <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "10px 14px", marginBottom: 18, display: "flex", gap: 28, flexWrap: "wrap" as const }}>
           {products.filter((p) => p.name).length > 0 && (
             <div>
@@ -449,13 +449,6 @@ export default function CreateInvoice() {
               {form.senderPhone && <div style={{ fontSize: 11, color: GRAY }}>{form.senderPhone}</div>}
             </div>
           )}
-          {form.receiverName && (
-            <div>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, letterSpacing: 0.8, marginBottom: 2 }}>Receiver</div>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>{form.receiverName}</div>
-              {form.receiverPhone && <div style={{ fontSize: 11, color: GRAY }}>{form.receiverPhone}</div>}
-            </div>
-          )}
           {form.weight && (
             <div>
               <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, letterSpacing: 0.8, marginBottom: 2 }}>Weight</div>
@@ -465,12 +458,14 @@ export default function CreateInvoice() {
         </div>
       )}
 
-      {/* ── COST TABLE ── */}
-      <table style={{ width: "100%", borderCollapse: "collapse" as const, marginBottom: 0 }}>
+      {/* ── PRODUCT DETAILS TABLE ── */}
+      <table style={{ width: "100%", borderCollapse: "collapse" as const, marginBottom: 10 }}>
         <thead>
           <tr style={{ background: BLUE, color: "white" }}>
-            <th style={{ textAlign: "left" as const,  padding: "9px 12px", fontWeight: 600, fontSize: 11 }}>Description</th>
-            <th style={{ textAlign: "right" as const, padding: "9px 12px", fontWeight: 600, fontSize: 11, width: 160 }}>Amount (NPR)</th>
+            <th style={{ textAlign: "left" as const,   padding: "8px 12px", fontWeight: 600, fontSize: 11 }}>Product Name</th>
+            <th style={{ textAlign: "center" as const, padding: "8px 10px", fontWeight: 600, fontSize: 11, width: 70 }}>Qty (Pcs)</th>
+            <th style={{ textAlign: "right" as const,  padding: "8px 10px", fontWeight: 600, fontSize: 11, width: 120 }}>Per Pic (NPR)</th>
+            <th style={{ textAlign: "right" as const,  padding: "8px 12px", fontWeight: 600, fontSize: 11, width: 130 }}>Total (NPR)</th>
           </tr>
         </thead>
         <tbody>
@@ -478,42 +473,45 @@ export default function CreateInvoice() {
             const rowCost = n(p.qty) * n(p.perPicCost);
             if (!p.name && rowCost === 0) return null;
             return (
-              <tr key={i} style={{ background: "white", borderBottom: `1px solid ${BORDER}` }}>
-                <td style={{ padding: "9px 12px", fontSize: 12 }}>
-                  {p.name || "Product"}
-                  {p.qty && p.perPicCost
-                    ? ` (${p.qty} × Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n(p.perPicCost))})`
-                    : ""}
-                </td>
-                <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(rowCost)}</td>
+              <tr key={i} style={{ background: i % 2 === 0 ? "white" : LIGHT, borderBottom: `1px solid ${BORDER}` }}>
+                <td style={{ padding: "8px 12px", fontSize: 12 }}>{p.name || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 12, textAlign: "center" as const }}>{p.qty || "—"}</td>
+                <td style={{ padding: "8px 10px", fontSize: 12, textAlign: "right" as const }}>{p.perPicCost ? formatNPR(n(p.perPicCost)) : "—"}</td>
+                <td style={{ padding: "8px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(rowCost)}</td>
               </tr>
             );
           })}
+        </tbody>
+      </table>
+
+      {/* ── CHARGES + TOTALS TABLE ── */}
+      <table style={{ width: "100%", borderCollapse: "collapse" as const, marginBottom: 0 }}>
+        <tbody>
           <tr style={{ background: LIGHT, borderBottom: `1px solid ${BORDER}` }}>
-            <td style={{ padding: "9px 12px", fontSize: 12 }}>Shipping Cost</td>
-            <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(shipping)}</td>
+            <td style={{ padding: "8px 12px", fontSize: 12 }}>Shipping Cost</td>
+            <td style={{ padding: "8px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(shipping)}</td>
           </tr>
           <tr style={{ background: "white", borderBottom: `1px solid ${BORDER}` }}>
-            <td style={{ padding: "9px 12px", fontSize: 12 }}>Custom / Duties Cost</td>
-            <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(customs)}</td>
+            <td style={{ padding: "8px 12px", fontSize: 12 }}>Custom / Duties Cost</td>
+            <td style={{ padding: "8px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(customs)}</td>
           </tr>
           <tr style={{ background: LIGHT, borderBottom: `1px solid ${BORDER}` }}>
-            <td style={{ padding: "9px 12px", fontSize: 12 }}>Service Charge</td>
-            <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(service)}</td>
+            <td style={{ padding: "8px 12px", fontSize: 12 }}>Service Charge</td>
+            <td style={{ padding: "8px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(service)}</td>
           </tr>
         </tbody>
         <tfoot>
           <tr style={{ borderTop: `2px solid ${BORDER}`, background: "#f0f4ff" }}>
-            <td style={{ padding: "9px 12px", fontSize: 13, fontWeight: 700, color: BLUE }}>Subtotal</td>
-            <td style={{ padding: "9px 12px", fontSize: 13, fontWeight: 700, color: BLUE, textAlign: "right" as const }}>{formatNPR(subtotal)}</td>
+            <td style={{ padding: "8px 12px", fontSize: 13, fontWeight: 700, color: BLUE }}>Subtotal</td>
+            <td style={{ padding: "8px 12px", fontSize: 13, fontWeight: 700, color: BLUE, textAlign: "right" as const }}>{formatNPR(subtotal)}</td>
           </tr>
           <tr style={{ borderTop: `1px solid ${BORDER}` }}>
             <td style={{ padding: "7px 12px", fontSize: 12, color: GRAY }}>Tax / VAT</td>
             <td style={{ padding: "7px 12px", fontSize: 12, color: GRAY, textAlign: "right" as const }}>NPR 0.00</td>
           </tr>
           <tr style={{ background: BLUE }}>
-            <td style={{ padding: "11px 12px", fontSize: 14, fontWeight: 700, color: "white" }}>Total</td>
-            <td style={{ padding: "11px 12px", fontSize: 14, fontWeight: 700, color: "white", textAlign: "right" as const }}>{formatNPR(total)}</td>
+            <td style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "white" }}>Total</td>
+            <td style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "white", textAlign: "right" as const }}>{formatNPR(total)}</td>
           </tr>
           {paid > 0 && (
             <tr style={{ borderTop: `1px solid ${BORDER}` }}>
@@ -543,7 +541,6 @@ export default function CreateInvoice() {
           <div style={{ fontSize: 12, whiteSpace: "pre-line" as const, lineHeight: 1.7, color: "#333" }}>
             {[
               form.senderName ? `Sender: ${form.senderName}${form.senderPhone ? " · " + form.senderPhone : ""}` : "",
-              form.receiverName ? `Receiver: ${form.receiverName}${form.receiverPhone ? " · " + form.receiverPhone : ""}` : "",
               "Thank you for choosing Maya Import Export Logistic.",
               form.extraNotes || "",
             ].filter(Boolean).join("\n")}
