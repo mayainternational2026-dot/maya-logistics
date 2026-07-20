@@ -44,6 +44,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Plus, FileText, MapPin, Package, Download, Pencil, Trash2 } from "lucide-react";
 import { format } from "date-fns";
@@ -74,6 +82,57 @@ export default function Shipments() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [shipForm, setShipForm] = useState(() => emptyShipment(user));
+
+  /* ── Inline Edit Dialog ── */
+  const [editRow, setEditRow] = useState<null | { id: number; trackingId: string }>(null);
+  const [editForm, setEditForm] = useState({
+    senderName: "", senderPhone: "", origin: "", destination: "",
+    weight: "", customerName: "", customerEmail: "", notes: "",
+  });
+
+  const openEdit = (row: any) => {
+    setEditRow({ id: row.id, trackingId: row.trackingId });
+    setEditForm({
+      senderName:    row.senderName ?? "",
+      senderPhone:   row.senderPhone ?? "",
+      origin:        row.origin ?? "",
+      destination:   row.destination ?? "",
+      weight:        String(row.weight ?? ""),
+      customerName:  row.customerName ?? "",
+      customerEmail: row.customerEmail ?? "",
+      notes:         row.notes ?? "",
+    });
+  };
+
+  const handleEditSave = () => {
+    if (!editRow) return;
+    updateShipment.mutate(
+      {
+        id: editRow.id,
+        data: {
+          senderName:    editForm.senderName.trim() || undefined,
+          senderPhone:   editForm.senderPhone.trim() || undefined,
+          origin:        editForm.origin.trim() || undefined,
+          destination:   editForm.destination.trim() || undefined,
+          weight:        editForm.weight ? Number(editForm.weight) : undefined,
+          customerName:  editForm.customerName.trim() || undefined,
+          customerEmail: editForm.customerEmail.trim() || undefined,
+          notes:         editForm.notes.trim() || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Shipment updated successfully" });
+          setEditRow(null);
+          queryClient.invalidateQueries({ queryKey: getListShipmentsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        },
+        onError: (err: any) => {
+          toast({ title: "Update failed", description: err?.data?.error, variant: "destructive" });
+        },
+      },
+    );
+  };
 
   const isAdmin = user?.role === "admin";
   const isStaff = user?.role === "staff";
@@ -349,11 +408,14 @@ export default function Shipments() {
                         </Link>
                         {(isAdmin || (isStaff && (user?.permissions?.canManageShipments ?? false))) && (
                           <>
-                            <Link href={`/shipments/${row.id}`}>
-                              <Button size="sm" variant="outline" className="h-8 gap-1 border-gray-300 text-gray-700 hover:bg-gray-50">
-                                <Pencil className="h-3.5 w-3.5" /> Update
-                              </Button>
-                            </Link>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 gap-1 border-blue-300 text-blue-700 hover:bg-blue-50"
+                              onClick={() => openEdit(row)}
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Update
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -398,6 +460,79 @@ export default function Shipments() {
       </div>
 
       <WhatsAppButton />
+
+      {/* ── Inline Edit Dialog ── */}
+      <Dialog open={editRow !== null} onOpenChange={(o) => !o && setEditRow(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-blue-600" />
+              Edit Shipment
+              {editRow && <span className="font-mono text-sm font-normal text-gray-500 ml-1">{editRow.trackingId}</span>}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+            <div className="space-y-1">
+              <Label>Sender Name</Label>
+              <Input autoComplete="new-password" value={editForm.senderName}
+                onChange={(e) => setEditForm((p) => ({ ...p, senderName: e.target.value }))}
+                placeholder="Full name" />
+            </div>
+            <div className="space-y-1">
+              <Label>Sender Phone</Label>
+              <Input autoComplete="new-password" value={editForm.senderPhone}
+                onChange={(e) => setEditForm((p) => ({ ...p, senderPhone: e.target.value }))}
+                placeholder="+977 98…" />
+            </div>
+            <div className="space-y-1">
+              <Label>Origin</Label>
+              <Input autoComplete="new-password" value={editForm.origin}
+                onChange={(e) => setEditForm((p) => ({ ...p, origin: e.target.value }))}
+                placeholder="Kathmandu, Nepal" />
+            </div>
+            <div className="space-y-1">
+              <Label>Destination</Label>
+              <Input autoComplete="new-password" value={editForm.destination}
+                onChange={(e) => setEditForm((p) => ({ ...p, destination: e.target.value }))}
+                placeholder="Tokyo, Japan" />
+            </div>
+            <div className="space-y-1">
+              <Label>Weight (kg)</Label>
+              <Input autoComplete="new-password" type="number" step="0.01" min="0" value={editForm.weight}
+                onChange={(e) => setEditForm((p) => ({ ...p, weight: e.target.value }))}
+                placeholder="5" />
+            </div>
+            <div className="space-y-1">
+              <Label>Customer Name</Label>
+              <Input autoComplete="new-password" value={editForm.customerName}
+                onChange={(e) => setEditForm((p) => ({ ...p, customerName: e.target.value }))}
+                placeholder="Ram Bahadur Thapa" />
+            </div>
+            <div className="sm:col-span-2 space-y-1">
+              <Label>Customer Email</Label>
+              <Input autoComplete="new-password" type="email" value={editForm.customerEmail}
+                onChange={(e) => setEditForm((p) => ({ ...p, customerEmail: e.target.value }))}
+                placeholder="customer@example.com" />
+            </div>
+            <div className="sm:col-span-2 space-y-1">
+              <Label>Notes</Label>
+              <Textarea value={editForm.notes} rows={3}
+                onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))}
+                placeholder="Any additional notes…" className="resize-none" />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditRow(null)}>Cancel</Button>
+            <Button
+              onClick={handleEditSave}
+              disabled={updateShipment.isPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {updateShipment.isPending ? "Saving…" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Quick New Shipment Sheet ── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
