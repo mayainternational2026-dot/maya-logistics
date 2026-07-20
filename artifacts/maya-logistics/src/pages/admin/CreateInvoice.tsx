@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import {
   ArrowLeft, Printer, FileText, RefreshCw,
   Upload, ImageIcon, Zap, CheckCircle2, ExternalLink,
-  User, Package, CreditCard, Truck, UserPlus,
+  User, Package, CreditCard, Truck, UserPlus, PlusCircle, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +40,9 @@ const LIGHT = "#f8f9fa";
 const BORDER= "#dee2e6";
 const GREEN = "#198754";
 const RED   = "#dc3545";
+
+interface ProductRow { name: string; qty: string; perPicCost: string; }
+const emptyProduct = (): ProductRow => ({ name: "", qty: "", perPicCost: "" });
 
 interface InvoiceForm {
   invoiceDate: string;
@@ -135,8 +138,14 @@ export default function CreateInvoice() {
   const createShipment = useCreateShipment();
 
   const [form, setForm]               = useState<InvoiceForm>(emptyForm);
+  const [products, setProducts]       = useState<ProductRow[]>([emptyProduct()]);
   const [showPreview, setShowPreview] = useState(false);
   const [generatedId, setGeneratedId] = useState<string | null>(null);
+
+  const addProduct    = () => setProducts((p) => [...p, emptyProduct()]);
+  const removeProduct = (i: number) => setProducts((p) => p.length === 1 ? p : p.filter((_, idx) => idx !== i));
+  const setProduct    = (i: number, field: keyof ProductRow, val: string) =>
+    setProducts((p) => p.map((row, idx) => idx === i ? { ...row, [field]: val } : row));
 
   /* ── Customer Details Dialog ── */
   const [cdOpen, setCdOpen] = useState(false);
@@ -231,7 +240,7 @@ export default function CreateInvoice() {
   const shipping     = n(form.shippingCost);
   const customs      = n(form.customCost);
   const service      = n(form.serviceCharge);
-  const productCost  = n(form.productQuantity) * n(form.perPicCost);
+  const productCost  = products.reduce((sum, p) => sum + n(p.qty) * n(p.perPicCost), 0);
   const subtotal     = shipping + customs + service + productCost;
   const total        = subtotal;
   const paid         = n(form.paidAmount);
@@ -265,8 +274,9 @@ export default function CreateInvoice() {
       }));
     }
 
+    const filledProducts = products.filter((p) => p.name.trim());
     const notesParts = [
-      form.productName ? `Product: ${form.productName}` : "",
+      filledProducts.length > 0 ? `Products: ${filledProducts.map((p) => p.name).join(", ")}` : "",
       form.extraNotes,
     ].filter(Boolean);
 
@@ -280,8 +290,8 @@ export default function CreateInvoice() {
           customerPhone:     form.billToPhone.trim() || undefined,
           origin:            form.origin.trim(),
           destination:       form.destination.trim(),
-          productName:       form.productName.trim() || undefined,
-          quantity:          Number(form.productQuantity) > 0 ? Number(form.productQuantity) : undefined,
+          productName:       filledProducts[0]?.name.trim() || undefined,
+          quantity:          Number(filledProducts[0]?.qty) > 0 ? Number(filledProducts[0]?.qty) : undefined,
           weight:            n(form.weight),
           freightMode:       form.freightMode,
           cost:              total > 0 ? total : 0,
@@ -317,7 +327,7 @@ export default function CreateInvoice() {
 
   const handlePrint = () => { setShowPreview(true); setTimeout(() => window.print(), 400); };
   const handleClear = () => {
-    setForm(emptyForm); setShowPreview(false); setGeneratedId(null);
+    setForm(emptyForm); setProducts([emptyProduct()]); setShowPreview(false); setGeneratedId(null);
     if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
@@ -422,12 +432,14 @@ export default function CreateInvoice() {
       </div>
 
       {/* ── PRODUCT / SHIPMENT INFO BAND ── */}
-      {(form.productName || form.senderName || form.receiverName || form.weight) && (
+      {(products.some((p) => p.name) || form.senderName || form.weight) && (
         <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "10px 14px", marginBottom: 18, display: "flex", gap: 28, flexWrap: "wrap" as const }}>
-          {form.productName && (
+          {products.filter((p) => p.name).length > 0 && (
             <div>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, letterSpacing: 0.8, marginBottom: 2 }}>Product</div>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>{form.productName}{form.productQuantity && Number(form.productQuantity) > 0 ? ` × ${form.productQuantity}` : ""}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, letterSpacing: 0.8, marginBottom: 2 }}>Products</div>
+              {products.filter((p) => p.name).map((p, i) => (
+                <div key={i} style={{ fontSize: 12, fontWeight: 600 }}>{p.name}{p.qty && Number(p.qty) > 0 ? ` × ${p.qty}` : ""}</div>
+              ))}
             </div>
           )}
           {form.senderName && (
@@ -455,17 +467,21 @@ export default function CreateInvoice() {
           </tr>
         </thead>
         <tbody>
-          {productCost > 0 && (
-            <tr style={{ background: "white", borderBottom: `1px solid ${BORDER}` }}>
-              <td style={{ padding: "9px 12px", fontSize: 12 }}>
-                Product Cost
-                {form.productQuantity && form.perPicCost
-                  ? ` (${form.productQuantity} × Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n(form.perPicCost))})`
-                  : ""}
-              </td>
-              <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(productCost)}</td>
-            </tr>
-          )}
+          {products.map((p, i) => {
+            const rowCost = n(p.qty) * n(p.perPicCost);
+            if (!p.name && rowCost === 0) return null;
+            return (
+              <tr key={i} style={{ background: "white", borderBottom: `1px solid ${BORDER}` }}>
+                <td style={{ padding: "9px 12px", fontSize: 12 }}>
+                  {p.name || "Product"}
+                  {p.qty && p.perPicCost
+                    ? ` (${p.qty} × Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n(p.perPicCost))})`
+                    : ""}
+                </td>
+                <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(rowCost)}</td>
+              </tr>
+            );
+          })}
           <tr style={{ background: LIGHT, borderBottom: `1px solid ${BORDER}` }}>
             <td style={{ padding: "9px 12px", fontSize: 12 }}>Shipping Cost</td>
             <td style={{ padding: "9px 12px", fontSize: 12, textAlign: "right" as const, fontWeight: 600 }}>{formatNPR(shipping)}</td>
@@ -688,18 +704,36 @@ export default function CreateInvoice() {
           {/* ── PRODUCT DETAILS ── */}
           <div className="rounded-xl border-2 border-purple-100 bg-purple-50/30 p-5">
             <SecHead icon={Package} title="Product Details" color="purple" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><Lbl t="Product Name" /><Input name="productName" value={form.productName} onChange={set} placeholder="e.g. Electronics, Clothes…" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Quantity (Pcs)" /><Input name="productQuantity" type="number" min="1" value={form.productQuantity} onChange={set} placeholder="e.g. 10" className="h-10 bg-white" autoComplete="off" /></div>
-              <div>
-                <Lbl t="Per Pic Cost (NPR)" />
-                <Input name="perPicCost" type="number" min="0" step="0.01" value={form.perPicCost} onChange={set} placeholder="0.00" className="h-10 bg-white text-right font-mono" autoComplete="off" />
-                {n(form.productQuantity) > 0 && n(form.perPicCost) > 0 && (
-                  <p className="mt-1 text-xs text-purple-600 font-semibold">
-                    Product Cost: {formatNPR(n(form.productQuantity) * n(form.perPicCost))}
-                  </p>
-                )}
-              </div>
+            <div className="space-y-3">
+              {products.map((p, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <Lbl t={`Product Name${products.length > 1 ? ` #${i + 1}` : ""}`} />
+                    <Input value={p.name} onChange={(e) => setProduct(i, "name", e.target.value)} placeholder="e.g. Electronics, Clothes…" className="h-10 bg-white" autoComplete="off" />
+                  </div>
+                  <div className="w-28 flex-shrink-0">
+                    <Lbl t="Qty (Pcs)" />
+                    <Input type="number" min="1" value={p.qty} onChange={(e) => setProduct(i, "qty", e.target.value)} placeholder="10" className="h-10 bg-white" autoComplete="off" />
+                  </div>
+                  <div className="w-36 flex-shrink-0">
+                    <Lbl t="Per Pic (NPR)" />
+                    <Input type="number" min="0" step="0.01" value={p.perPicCost} onChange={(e) => setProduct(i, "perPicCost", e.target.value)} placeholder="0.00" className="h-10 bg-white text-right font-mono" autoComplete="off" />
+                    {n(p.qty) > 0 && n(p.perPicCost) > 0 && (
+                      <p className="mt-0.5 text-xs text-purple-600 font-semibold text-right">= {formatNPR(n(p.qty) * n(p.perPicCost))}</p>
+                    )}
+                  </div>
+                  <div className="pt-5 flex-shrink-0">
+                    <button type="button" onClick={() => removeProduct(i)} disabled={products.length === 1}
+                      className="h-10 w-10 flex items-center justify-center rounded-md border border-red-200 text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button type="button" onClick={addProduct}
+                className="mt-1 flex items-center gap-2 text-sm text-purple-600 font-semibold hover:text-purple-800 transition-colors">
+                <PlusCircle className="h-4 w-4" /> Add Another Product
+              </button>
             </div>
           </div>
 
@@ -728,12 +762,16 @@ export default function CreateInvoice() {
 
             {/* Live summary: rows + bold Total */}
             <div className="rounded-lg border border-orange-200 overflow-hidden text-sm">
-              {productCost > 0 && (
-                <div className="flex justify-between items-center px-4 py-2.5 bg-purple-50/40 border-b border-orange-100">
-                  <span className="text-gray-600">📦 Product Cost ({form.productQuantity} × {formatNPR(n(form.perPicCost))})</span>
-                  <span className="font-mono font-semibold text-gray-800">{formatNPR(productCost)}</span>
-                </div>
-              )}
+              {products.map((p, i) => {
+                const rc = n(p.qty) * n(p.perPicCost);
+                if (!p.name && rc === 0) return null;
+                return (
+                  <div key={i} className="flex justify-between items-center px-4 py-2.5 bg-purple-50/40 border-b border-orange-100">
+                    <span className="text-gray-600">📦 {p.name || `Product #${i+1}`}{p.qty ? ` (${p.qty} × ${formatNPR(n(p.perPicCost))})` : ""}</span>
+                    <span className="font-mono font-semibold text-gray-800">{formatNPR(rc)}</span>
+                  </div>
+                );
+              })}
               <div className="flex justify-between items-center px-4 py-2.5 bg-white border-b border-orange-100">
                 <span className="text-gray-600">🚚 Shipping Cost</span>
                 <span className="font-mono font-semibold text-gray-800">{formatNPR(shipping)}</span>
