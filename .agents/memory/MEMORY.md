@@ -4,3 +4,4 @@
 - [Gmail OTP fallback](gmail-otp-fallback.md) — GMAIL creds present but invalid in dev; OTP fallbacks must trigger on actual send failure, not just missing config
 - [Drizzle push ambiguous rename prompts](drizzle-push-ambiguous-rename.md) — `drizzle-kit push` stalls on interactive create-vs-rename prompts for orphan tables not in schema; can't be piped past reliably, resolve by creating the table manually via SQL first.
 - [Object storage client href construction](object-storage-client-href.md) — stored objectPath must be remapped to `/api/storage/objects/...` before use in `<a href>`/`<img src>`, or links silently 404.
+- [GitHub push method](github-push-method.md) — `git remote add` is blocked; use inline URL with `GITHUB_PAT` (not `GITHUB_PAT_PUSH`, which 403s) for all pushes to this repo.
