@@ -261,16 +261,15 @@ export default function CreateInvoice() {
       return;
     }
 
-    /* auto-fill sender / receiver if the user skipped those fields */
+    /* auto-fill sender if the user skipped that field */
     const effectiveSender   = form.senderName.trim()   || CO.name;
-    const effectiveReceiver = form.receiverName.trim()  || form.billToName.trim() || form.destination.trim();
+    const effectiveReceiver = form.billToName.trim() || form.destination.trim();
 
     /* keep the form in sync so the invoice preview updates too */
-    if (!form.senderName.trim() || !form.receiverName.trim()) {
+    if (!form.senderName.trim()) {
       setForm((p) => ({
         ...p,
-        senderName:   p.senderName.trim()   || CO.name,
-        receiverName: p.receiverName.trim()  || p.billToName.trim() || p.destination.trim(),
+        senderName: p.senderName.trim() || CO.name,
       }));
     }
 
@@ -535,7 +534,7 @@ export default function CreateInvoice() {
       </table>
 
       {/* ── NOTES ── */}
-      {(form.senderName || form.receiverName || form.extraNotes) && (
+      {(form.senderName || form.extraNotes) && (
         <div style={{ marginTop: 20, paddingTop: 14, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase" as const, color: GRAY, marginBottom: 5, letterSpacing: 0.8 }}>Notes</div>
           <div style={{ fontSize: 12, whiteSpace: "pre-line" as const, lineHeight: 1.7, color: "#333" }}>
@@ -654,9 +653,9 @@ export default function CreateInvoice() {
           <div className="rounded-xl border-2 border-blue-100 bg-blue-50/30 p-5">
             <SecHead icon={User} title="Customer Details" color="blue" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><Lbl t="Customer Name" /><Input name="billToName" value={form.billToName} onChange={set} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Phone Number" /><Input name="billToPhone" value={form.billToPhone} onChange={set} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Email ID" /><Input name="billToEmail" type="email" value={form.billToEmail} onChange={set} placeholder="customer@example.com" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Customer Name" /><Input name="billToName" value={form.billToName} onChange={set} placeholder="Ram Bahadur Thapa" className="h-10 bg-white" autoComplete="new-password" /></div>
+              <div><Lbl t="Phone Number" /><Input name="billToPhone" value={form.billToPhone} onChange={set} placeholder="+977 98XXXXXXXX" className="h-10 bg-white" autoComplete="new-password" /></div>
+              <div><Lbl t="Email ID" /><Input name="billToEmail" type="email" value={form.billToEmail} onChange={set} placeholder="customer@example.com" className="h-10 bg-white" autoComplete="new-password" /></div>
             </div>
           </div>
 
@@ -667,13 +666,11 @@ export default function CreateInvoice() {
               Fill these fields then click <strong>Generate Tracking ID</strong> — the ID will appear on the invoice automatically.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><Lbl t="Sender Name" req /><Input name="senderName" value={form.senderName} onChange={set} placeholder="Full name" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Sender Phone" /><Input name="senderPhone" value={form.senderPhone} onChange={set} placeholder="+977 98…" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Receiver Name" req /><Input name="receiverName" value={form.receiverName} onChange={set} placeholder="Full name" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Receiver Phone" /><Input name="receiverPhone" value={form.receiverPhone} onChange={set} placeholder="+81 90…" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Origin" req /><Input name="origin" value={form.origin} onChange={set} placeholder="Kathmandu, Nepal" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Destination" req /><Input name="destination" value={form.destination} onChange={set} placeholder="Tokyo, Japan" className="h-10 bg-white" autoComplete="off" /></div>
-              <div><Lbl t="Weight (kg)" /><Input name="weight" type="number" step="0.01" min="0" value={form.weight} onChange={set} placeholder="5" className="h-10 bg-white" autoComplete="off" /></div>
+              <div><Lbl t="Sender Name" req /><Input name="senderName" value={form.senderName} onChange={set} placeholder="Full name" className="h-10 bg-white" autoComplete="new-password" /></div>
+              <div><Lbl t="Sender Phone" /><Input name="senderPhone" value={form.senderPhone} onChange={set} placeholder="+977 98…" className="h-10 bg-white" autoComplete="new-password" /></div>
+              <div><Lbl t="Origin" req /><Input name="origin" value={form.origin} onChange={set} placeholder="Kathmandu, Nepal" className="h-10 bg-white" autoComplete="new-password" /></div>
+              <div><Lbl t="Destination" req /><Input name="destination" value={form.destination} onChange={set} placeholder="Tokyo, Japan" className="h-10 bg-white" autoComplete="new-password" /></div>
+              <div><Lbl t="Weight (kg)" /><Input name="weight" type="number" step="0.01" min="0" value={form.weight} onChange={set} placeholder="5" className="h-10 bg-white" autoComplete="new-password" /></div>
 
               {/* Generate button */}
               <div className="flex items-end">
