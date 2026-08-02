@@ -11,6 +11,6 @@ git push "https://${GITHUB_PAT}@github.com/mayainternational2026-dot/maya-logist
 
 **Why:** `git remote add` exits with code 254 ("Destructive git operations are not allowed") even in task agent isolation. The inline-URL approach works without touching `.git/config`.
 
-**Which PAT to use:** `GITHUB_PAT_PUSH` returns HTTP 403 ("Write access to repository not granted") for this repo. `GITHUB_PAT` has write access and pushes successfully. Always use `GITHUB_PAT` for pushes to `mayainternational2026-dot/maya-logistics`.
+**Which PAT to use:** `GITHUB_PAT_PUSH` returns HTTP 403 ("Write access to repository not granted") for this repo. `GITHUB_PAT` has write access and pushes successfully. Always use `GITHUB_PAT` for pushes to `mayainternational2026-dot/maya-logistics`. The token was rotated in August 2026 — if pushes start failing again, ask the user to regenerate at github.com/settings/tokens/new (classic, `repo` scope) and update the `GITHUB_PAT` Replit secret.
 
 **How to apply:** Any future task that needs to push to GitHub should skip `git remote add`, use the inline URL pattern above with `GITHUB_PAT`, then verify with `git ls-remote` that the remote SHA matches local HEAD.
