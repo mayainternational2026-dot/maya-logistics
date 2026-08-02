@@ -1109,11 +1109,19 @@ export default function CreateInvoice() {
           .print-only { display: none !important; }
         }
         @media print {
-          @page { size: A4 portrait; margin: 10mm; }
+          @page { size: A4 portrait; margin: 5mm; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-          .no-print  { display: none !important; }
-          .print-only{ display: block !important; }
-          html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          .no-print   { display: none !important; }
+          .print-only { display: block !important; }
+          html, body  { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+
+          /* Scale the whole invoice to guarantee it fits on one A4 page */
+          .print-only {
+            transform: scale(0.88);
+            transform-origin: top left;
+            width: 113.6% !important;
+          }
+
           #invoice-doc {
             display: block !important;
             width: 100% !important;
@@ -1121,14 +1129,26 @@ export default function CreateInvoice() {
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
-            padding: 0 !important;
+            padding: 12px 16px !important;
             margin: 0 !important;
-            font-size: 11px !important;
-            line-height: 1.35 !important;
+            font-size: 9.5px !important;
+            line-height: 1.25 !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
           }
-          #invoice-doc table { page-break-inside: avoid !important; }
-          #invoice-doc tr    { page-break-inside: avoid !important; }
-          #invoice-doc td, #invoice-doc th { font-size: 11px !important; }
+
+          /* Compress every section gap */
+          #invoice-doc > div  { margin-bottom: 6px !important; margin-top: 0 !important; }
+          #invoice-doc hr     { margin: 6px 0 !important; }
+
+          /* Compress table cells */
+          #invoice-doc table  { font-size: 9px !important; margin-bottom: 4px !important; page-break-inside: avoid !important; }
+          #invoice-doc tr     { page-break-inside: avoid !important; }
+          #invoice-doc td,
+          #invoice-doc th     { padding: 3px 7px !important; font-size: 9px !important; }
+
+          /* Shrink logo */
+          #invoice-doc img    { width: 44px !important; height: 44px !important; }
         }
       `}</style>
     </>
