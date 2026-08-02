@@ -1105,38 +1105,30 @@ export default function CreateInvoice() {
       </Dialog>
 
       <style>{`
+        @media screen {
+          .print-only { display: none !important; }
+        }
         @media print {
-          @page { size: A4 portrait; margin: 5mm; }
+          @page { size: A4 portrait; margin: 10mm; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .no-print  { display: none !important; }
           .print-only{ display: block !important; }
-          html, body { background: white !important; margin: 0 !important; padding: 0 !important; height: 297mm !important; overflow: hidden !important; }
-          body > * { display: none !important; }
+          html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
           #invoice-doc {
             display: block !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 200mm !important;
-            max-height: 287mm !important;
-            overflow: hidden !important;
+            width: 100% !important;
+            max-width: 100% !important;
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
-            padding: 5mm 5mm 4mm 5mm !important;
+            padding: 0 !important;
             margin: 0 !important;
-            font-size: 9px !important;
-            line-height: 1.25 !important;
-            page-break-after: avoid !important;
-            page-break-inside: avoid !important;
+            font-size: 11px !important;
+            line-height: 1.35 !important;
           }
-          #invoice-doc * { page-break-inside: avoid !important; }
-          #invoice-doc table { page-break-inside: avoid !important; font-size: 9px !important; }
-          #invoice-doc tr { page-break-inside: avoid !important; }
-          #invoice-doc td, #invoice-doc th { padding: 5px 8px !important; font-size: 9px !important; }
-        }
-        @media screen {
-          .print-only { display: none !important; }
+          #invoice-doc table { page-break-inside: avoid !important; }
+          #invoice-doc tr    { page-break-inside: avoid !important; }
+          #invoice-doc td, #invoice-doc th { font-size: 11px !important; }
         }
       `}</style>
     </>
